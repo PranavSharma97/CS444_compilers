@@ -1,5 +1,7 @@
 #pragma once
 
 enum DFAStates{
-  AcceptIntLiteral = 200
-}
+  START = 0,
+  ACCEPTINTLITERAL = 200,
+  FORWARD_SLASH = 201
+};

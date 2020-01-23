@@ -3,25 +3,30 @@
 #include <map>
 #include <string>
 #include <vector>
+
+#include "dfa_states.h"
+
 using namespace std;
 
-string transition (map<string, map<char, string>> transitions, string state, char c) {
-  map<string, map<char, string>>::iterator transition_input_state;
+int transition (map<int, map<char, int>> transitions, int state, char c) {
+  map<int, map<char, int>>::iterator transition_input_state;
 
-  map<char, string> state_transitions;
-  map<char, string>::iterator transition_output_state;
+  map<char, int> state_transitions;
+  map<char, int>::iterator transition_output_state;
  
   transition_input_state = transitions.find(state);
 
   if (transition_input_state == transitions.end()) {
-    return "Could not find input state.";
+    cout << "Could not find input state." << endl;
+    return -1;
   }
   else { 
     state_transitions = transition_input_state->second;
     transition_output_state = state_transitions.find(c);
 
     if (transition_output_state == state_transitions.end()) {
-      return "Could not find transition.";
+       cout << "Could not find transition." << endl;
+       return -1;
     }
     else {
       return transition_output_state->second;
@@ -34,12 +39,12 @@ int main (int argc, char* argv[]) {
 
   vector<pair<string, string>> tokens;
 
-  map<string, map<char, string>> transitions = {
-    {"start", {{'/', "forwardSlash"}}}
+  map<int, map<char, int>> transitions = {
+    {START, {{'/', FORWARD_SLASH}}}
   };
 
-  string current_state = "start";
-  vector<string> seenStates = {};
+  int current_state = START;
+  vector<int> seenStates = {};
 
   string line;
   ifstream javaFile (argv[1]);
@@ -48,10 +53,9 @@ int main (int argc, char* argv[]) {
       for (char& c : line) {
 	 cout << "Current State: " << current_state << endl;
 	 cout << "Transition Character: " << '/' << endl;
-	 string transition_state = transition(transitions, current_state, '/');
+	 int transition_state = transition(transitions, current_state, '/');
          cout << "Transition State: " << transition_state << endl;
-	 if (transition_state == "Could not find input state." ||
-	     transition_state == "Could not find transition.") {
+	 if (transition_state == -1) {
 	   cout << "IMPLEMENT FUNCTION TO BACKTRACK" << endl;
 	 }
 	 else {
