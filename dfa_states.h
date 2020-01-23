@@ -1,10 +1,11 @@
 enum States {
 	START: 0,
+	// Accepting States
 	SLASH: 1,
 	DOUBLE_SLASH: 2,
 	SLASH_STAR: 3,
-	SLASH_STAR_STAR: 4,
-	SLASH_STAR_STAR_SLASH: 5,
+	// SLASH_STAR_STAR: 4,  this is stte is not needed
+	STAR_SLASH: 5,
 	EQUAL: 6,
 	PLUS: 7,
 	MINUS: 8,
@@ -29,8 +30,8 @@ enum States {
 	COLON: 27,
 	SEMICOLON: 28,
 	INTEGER: 29,
-	SINGLE_QUOTE: 30,
-	DOUBLE_QUOTE: 31,
+	// SINGLE_QUOTE: 30, the first ' is not an accepting state
+	// DOUBLE_QUOTE: 31, the first " is not an accepting state
 	PLUS_EQUAL: 32,
 	MINUS_EQUAL: 33,
 	STAR_EQUAL: 34,
@@ -57,5 +58,14 @@ enum States {
 	CHARACTER: 55,
 	STRING: 56,
 	POSSIBLY_IDENTIFIER: 57,
-	IDENTIFIER: 58
+	IDENTIFIER: 58,
+
+	// State where everything other than 
+
+	// The Non-Accepting States
+	SINGLE_QUOTE: 101,
+	OPEN_CHAR_LITERAL: 102,
+	SINGLE_QUOTE_SLASH: 103,
+	DOUBLE_QUOTE: 104,
+	DOUBLE_QUOTE_SLASH: 105,
 }
