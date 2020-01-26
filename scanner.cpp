@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <ctype.h>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -80,28 +81,35 @@ int main (int argc, char* argv[]) {
   if (javaFile.is_open()) {
     while (getline(javaFile, line)) {
       for (char& c : line) {
-	 cout << "Current State: " << currentState << endl;
-	 cout << "Transition Character: " << c << endl;
 	 int transitionState = transition(transitions, currentState, c);
+	 cout << "Current State: " << currentState << endl;
+         cout << "Transition Character: " << c << endl;
          cout << "Transition State: " << transitionState << endl;
-	 if (transitionState == -1) {
-	   int tokenState = lastAcceptingState(seenStates, acceptingStates);
-	   cout << "Last accepting state: " << tokenState << endl;
-	   if (tokenState != -1) {
-	     cout << "Pushing back state: " << tokenState << endl;
-	     tokenStates.push_back(tokenState);
-	     seenStates = {};
-	     acceptingStates = {};
+
+	 if (transitionState != -1) {
+	   seenStates.push_back(transitionState);
+           currentState = transitionState;
+	 }
+	 else {
+	   int acceptState = lastAcceptingState(seenStates, acceptingStates);
+
+	   if (acceptState != -1) {
+	     cout << "Pushing back state: " << acceptState << endl;
+	     tokenStates.push_back(acceptState);
+
+	     if (isspace(c)) {
+	       currentState = START;
+               seenStates = {};
+	     }
+	     else {
+	       currentState = transition(transitions, START, c);	     
+	       seenStates = {currentState};
+	     }
 	   }
-	   // If no accepting state exists return error
 	   else {
 	     cout << "ERROR: could not parse Java file" << endl;
 	     return -1;
 	   }
-	 }
-	 else {
-	   seenStates.push_back(transitionState);
-	   currentState = transitionState;
 	 }
 	 // break; 
       }

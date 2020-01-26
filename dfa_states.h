@@ -1,6 +1,6 @@
 #pragma_once
 
-enum States {
+enum DFAStates {
 	START = 0,
 	// Accepting States
 	SLASH = 1,
@@ -70,4 +70,4 @@ enum States {
 	SINGLE_QUOTE_SLASH = 103,
 	DOUBLE_QUOTE = 104,
 	DOUBLE_QUOTE_SLASH = 105,
-}
+};
