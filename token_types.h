@@ -28,4 +28,5 @@ enum TokenType{
  MODIFIER = 24,
  KEYWORDS = 25,
  IDENTIFIER = 26
-}
+};
+
