@@ -1,4 +1,4 @@
-#pragma_once
+#pragma once
 
 enum DFAStates {
 	START = 0,
