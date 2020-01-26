@@ -20,6 +20,16 @@ std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
   entrance_0[' '] = DFAStates::OPEN_CHAR_LITERAL;
   DFAMap[DFAStates::SINGLE_QUOTE] = entrance_0;
   entrance_0.clear();
+
+  // Add Start to identifiers
+  // Anything Starts with $,_,letters is legal
+  for(char c = '$'; c <= 'z'; c++){
+    if((c>='A' && c<='Z')||(c>='a' && c<= 'z')||(c=='$')||(c=='_')){
+      std::map<char,DFAStates> entrance;
+      entrance[c]=DFAStates::POSSIBLY_IDENTIFIER;
+      DFAMap[DFAStates::START] = entrance;
+    }
+  }
   
   // Read in states
   // Assume the dfa.in file is in correct form.
