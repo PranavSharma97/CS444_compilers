@@ -38,8 +38,8 @@ int transition (map<int, map<char, int>> transitions, int state, char c) {
   }
 }
 
+// TODO: Extra scanning logic (keywords)
 int extraScanningLogic(string lexeme) {
-  // TODO: Extra scanning logic (keywords)
   int state;
   if (lexeme == "int") {
     state = INTEGER;
@@ -68,18 +68,31 @@ string getTokenKind(string lexeme, vector<int> seenStates, map<int, string> acce
   return "";
 }
 
+int outputTokens(vector<pair<string, string>> tokens) {
+  int tokenSize = tokens.size();
+
+  cout << endl << "Token states: ";
+  for (int i=0; i<tokenSize; i++) {
+    cout << get<0>(tokens[i]) << " " << get<1>(tokens[i]) << " ";
+  }
+  cout << endl;
+
+  return 0;
+}
+
 int main (int argc, char* argv[]) {
   cout << "Reading from file: " << argv[1] << endl;
 
-  // TODO: Find a way to connect accepting states to token kinds
   vector<pair<string, string>> tokens;
 
+  // TODO: CREATE DFA
   map<int, map<char, int>> transitions = {
     {START, {{'i', KEYWORD}, {'=', EQUAL}, {'1', INTEGER}, {';', SEMICOLON}, {'/', SLASH}, {' ', START}}},
     {KEYWORD, {{'n', KEYWORD}, {'t', KEYWORD}}},
     {SLASH, {{'*', STAR_SLASH}, {'/', DOUBLE_SLASH}}}
   };
 
+  // TODO: read in all accepting states and token kinds
   map<int, string> acceptingStates = {{START, "START"}, {KEYWORD, "KEYWORD"}, {EQUAL, "OPERATOR"}, {INTEGER, "INTEGER"}};
 
   int currentState = START;
@@ -94,7 +107,7 @@ int main (int argc, char* argv[]) {
 	 if (currentState == STAR_SLASH) {
 	   lexeme += c;
 	   if (lexeme.substr(lexeme.length() - 2) == "*/") {
-	     currentState = COMMENT;
+             currentState = COMMENT;
 	   }
 	 }
 	 else if (currentState == DOUBLE_SLASH) {
@@ -149,14 +162,7 @@ int main (int argc, char* argv[]) {
       return -1;
     }
 
-    // TODO: Output all tokens
-    int tokenSize = tokens.size();
-
-    cout << endl << "Token states: ";
-    for (int i=0; i<tokenSize; i++) {
-      cout << get<0>(tokens[i]) << " " << get<1>(tokens[i]) << " ";
-    }
-    cout << endl;
+    outputTokens(tokens);
 
     javaFile.close();
   }
