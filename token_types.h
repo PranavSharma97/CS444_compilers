@@ -1,4 +1,4 @@
-#pragma_once
+#pragma once
 
 enum TokenType{
  COMMENT = 0,
