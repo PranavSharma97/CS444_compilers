@@ -28,7 +28,7 @@ int transition (map<int, map<char, int>> transitions, int state, char c) {
        return transition_output_state->second;
     }
     else {
-      cout << "Could not find transition." << endl;
+      cout << "Could not find transition from " << state << " with " << c << endl;
       return -1;
     }
   }
@@ -57,6 +57,16 @@ int lastAcceptingState(vector<int> seenStates, vector<int> acceptingStates) {
   return -1;
 }
 
+int extraSanningLogic(int state, string lexeme) {
+  // TODO: Extra scanning logic (keywords)
+  if (state == KEYWORD) {
+    if (lexeme == "int") {
+      state = INT;
+    }
+  }
+  return state;
+}
+
 int main (int argc, char* argv[]) {
   cout << "Reading from file: " << argv[1] << endl;
 
@@ -67,21 +77,24 @@ int main (int argc, char* argv[]) {
   vector<int> tokenStates;
 
   map<int, map<char, int>> transitions = {
-    {START, {{'/', FORWARD_SLASH}}},
-    {FORWARD_SLASH, {{'/', COMMENT}}}
+    {START, {{'i', KEYWORD}, {'=', EQUAL}, {'1', INTEGER}, {';', SEMICOLON}}},
+    {KEYWORD, {{'n', KEYWORD}, {'t', KEYWORD}}}
   };
 
-  vector<int> acceptingStates = {START, COMMENT};
+  vector<int> acceptingStates = {START, KEYWORD, EQUAL, INTEGER};
 
   int currentState = START;
   vector<int> seenStates = {};
+  string lexeme = "";
 
   string line;
   ifstream javaFile (argv[1]);
   if (javaFile.is_open()) {
     while (getline(javaFile, line)) {
       for (char& c : line) {
+	 cout << endl;
 	 int transitionState = transition(transitions, currentState, c);
+
 	 cout << "Current State: " << currentState << endl;
          cout << "Transition Character: " << c << endl;
          cout << "Transition State: " << transitionState << endl;
@@ -89,21 +102,26 @@ int main (int argc, char* argv[]) {
 	 if (transitionState != -1) {
 	   seenStates.push_back(transitionState);
            currentState = transitionState;
+	   cout << "Adding " << c << " to lexeme " << lexeme <<endl;
+	   lexeme += c;
 	 }
 	 else {
 	   int acceptState = lastAcceptingState(seenStates, acceptingStates);
+	   acceptState = extraSanningLogic(acceptState, lexeme);
 
 	   if (acceptState != -1) {
-	     cout << "Pushing back state: " << acceptState << endl;
+	     cout << "Pushing back state: " << acceptState << " for lexeme " << lexeme <<  endl;
 	     tokenStates.push_back(acceptState);
 
 	     if (isspace(c)) {
 	       currentState = START;
                seenStates = {};
+	       lexeme = "";
 	     }
 	     else {
 	       currentState = transition(transitions, START, c);	     
 	       seenStates = {currentState};
+	       lexeme = c;
 	     }
 	   }
 	   else {
@@ -111,10 +129,18 @@ int main (int argc, char* argv[]) {
 	     return -1;
 	   }
 	 }
-	 // break; 
       }
-      break;
     }
+
+    // TODO: Output all tokens
+    int statesSize = tokenStates.size();
+
+    cout << endl << "Token states: ";
+    for (int i=0; i<statesSize; i++) {
+      cout << tokenStates[i] << " ";
+    }
+    cout << endl;
+
     javaFile.close();
   }
   return 0;
