@@ -79,7 +79,7 @@ int main (int argc, char* argv[]) {
   map<int, map<char, int>> transitions = {
     {START, {{'i', KEYWORD}, {'=', EQUAL}, {'1', INTEGER}, {';', SEMICOLON}, {'/', SLASH}}},
     {KEYWORD, {{'n', KEYWORD}, {'t', KEYWORD}}},
-    {SLASH, {{'*', STAR_SLASH}}}
+    {SLASH, {{'*', STAR_SLASH}, {'/', DOUBLE_SLASH}}}
   };
 
   vector<int> acceptingStates = {START, KEYWORD, EQUAL, INTEGER};
@@ -98,6 +98,12 @@ int main (int argc, char* argv[]) {
 	   if (lexeme.substr(lexeme.length() - 2) == "*/") {
 	     currentState = COMMENT;
 	   }
+	 }
+	 else if (currentState == DOUBLE_SLASH) {
+	   currentState = START;
+           seenStates = {};
+	   lexeme = "";
+	   break;
 	 }
 	 else {
 	   cout << endl;
