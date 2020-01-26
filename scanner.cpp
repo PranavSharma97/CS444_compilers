@@ -57,12 +57,10 @@ int lastAcceptingState(vector<int> seenStates, vector<int> acceptingStates) {
   return -1;
 }
 
-int extraSanningLogic(int state, string lexeme) {
+// Input only the lexeme that's believed as identifier
+int extraSanningLogic(string lexeme) {
   // TODO: Extra scanning logic (keywords)
-  if (state == KEYWORD) {
-    if (lexeme == "int") {
-      state = INTEGER;
-    }
+  for(char c: lexeme){
   }
   return state;
 }
