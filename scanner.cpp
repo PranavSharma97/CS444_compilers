@@ -38,33 +38,34 @@ int transition (map<int, map<char, int>> transitions, int state, char c) {
   }
 }
 
+int extraScanningLogic(string lexeme) {
+  // TODO: Extra scanning logic (keywords)
+  int state;
+  if (lexeme == "int") {
+    state = INTEGER;
+  }
+  return state;
+}
+
 // Given all seenStates and acceptingStates return last seen accepting state
 // If no acceptingStates exist in seenStates return error
-int lastAcceptingState(vector<int> seenStates, vector<int> acceptingStates) {
+string getTokenKind(string lexeme, vector<int> seenStates, map<int, string> acceptingStates) {
+  // TODO: not exactly sure if  extraScanningLogic returns state, may need to change
+  seenStates.push_back(extraScanningLogic(lexeme));
+
   while (seenStates.size() > 0) {
     int lastState = seenStates.back();
-    vector<int>::iterator it;
 
-    it = find(acceptingStates.begin(), acceptingStates.end(), lastState);
+    map<int, string>::iterator it = acceptingStates.find(lastState);
      
     if (it != acceptingStates.end()) {
-      return * it;
+      return acceptingStates[lastState];
     }
     else {
       seenStates.pop_back();
     }
   }
-  return -1;
-}
-
-int extraSanningLogic(int state, string lexeme) {
-  // TODO: Extra scanning logic (keywords)
-  if (state == KEYWORD) {
-    if (lexeme == "int") {
-      state = INTEGER;
-    }
-  }
-  return state;
+  return "";
 }
 
 int main (int argc, char* argv[]) {
@@ -73,16 +74,13 @@ int main (int argc, char* argv[]) {
   // TODO: Find a way to connect accepting states to token kinds
   vector<pair<string, string>> tokens;
 
-  // List of accepting states
-  vector<int> tokenStates;
-
   map<int, map<char, int>> transitions = {
-    {START, {{'i', KEYWORD}, {'=', EQUAL}, {'1', INTEGER}, {';', SEMICOLON}, {'/', SLASH}}},
+    {START, {{'i', KEYWORD}, {'=', EQUAL}, {'1', INTEGER}, {';', SEMICOLON}, {'/', SLASH}, {' ', START}}},
     {KEYWORD, {{'n', KEYWORD}, {'t', KEYWORD}}},
     {SLASH, {{'*', STAR_SLASH}, {'/', DOUBLE_SLASH}}}
   };
 
-  vector<int> acceptingStates = {START, KEYWORD, EQUAL, INTEGER};
+  map<int, string> acceptingStates = {{START, "START"}, {KEYWORD, "KEYWORD"}, {EQUAL, "OPERATOR"}, {INTEGER, "INTEGER"}};
 
   int currentState = START;
   vector<int> seenStates = {};
@@ -120,12 +118,11 @@ int main (int argc, char* argv[]) {
 	     lexeme += c;
 	   }
 	   else {
-	     int acceptState = lastAcceptingState(seenStates, acceptingStates);
-	     acceptState = extraSanningLogic(acceptState, lexeme);
+	     string tokenKind = getTokenKind(lexeme, seenStates, acceptingStates);
 
-	     if (acceptState != -1) {
-	       cout << "Pushing back state: " << acceptState << " for lexeme " << lexeme <<  endl;
-	       tokenStates.push_back(acceptState);
+	     if (tokenKind != "") {
+	       cout << "Pushing back state: " << tokenKind << " for lexeme " << lexeme <<  endl;
+	       tokens.push_back(make_pair(tokenKind, lexeme));
 
 	       if (isspace(c)) {
 	         currentState = START;
@@ -153,11 +150,11 @@ int main (int argc, char* argv[]) {
     }
 
     // TODO: Output all tokens
-    int statesSize = tokenStates.size();
+    int tokenSize = tokens.size();
 
     cout << endl << "Token states: ";
-    for (int i=0; i<statesSize; i++) {
-      cout << tokenStates[i] << " ";
+    for (int i=0; i<tokenSize; i++) {
+      cout << get<0>(tokens[i]) << " " << get<1>(tokens[i]) << " ";
     }
     cout << endl;
 
