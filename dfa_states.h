@@ -5,9 +5,9 @@ enum DFAStates {
 	// Accepting States
 	SLASH = 1,
 	DOUBLE_SLASH = 2,
-	SLASH_STAR = 3,
-	//SLASH_STAR_STAR = 4,
-	STAR_SLASH = 5,
+	//SLASH_STAR = 3, Non-Accepting
+	//SLASH_STAR_STAR = 4, Not Needed
+	//STAR_SLASH = 5, Non-Accepting
 	EQUAL = 6,
 	PLUS = 7,
 	MINUS = 8,
@@ -70,5 +70,6 @@ enum DFAStates {
 	SINGLE_QUOTE_SLASH = 103,
 	DOUBLE_QUOTE = 104,
 	DOUBLE_QUOTE_SLASH = 105,
-	SLASH_STAR_STAR = 106,
+	SLASH_STAR = 106,
+	STAR_SLASH = 107,
 };
