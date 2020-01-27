@@ -75,7 +75,9 @@ std::map<DFAStates,TokenType> TokenReader(){
   int dfa_state,token_type;
   std::ifstream token_input("accept_state.in");
   std::map<DFAStates,TokenType> token_map;
+
   for(unsigned int line_count = 0;; line_count++){
+    // Break when end of line
     if(token_input.eof()){
       token_input.close();
       break;
@@ -94,5 +96,4 @@ std::map<DFAStates,TokenType> TokenReader(){
     }
   }
   return token_map;
-  
 }
