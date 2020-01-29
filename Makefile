@@ -8,7 +8,7 @@ OBJECTS1 = readers.o scanner.o
 EXEC1 = scanner
 
 OBJECTS = ${OBJECTS1}
-DEPENDS = ${OBJECTS:.0=.d}
+DEPENDS = ${OBJECTS:.o=.d}
 EXECS = ${EXEC1}
 
 ####################################################3
@@ -17,10 +17,13 @@ EXECS = ${EXEC1}
 
 all : ${EXECS}
 
+
 ${EXEC1} : ${OBJECTS1}
 	${CXX} ${CXXFLAGS} $^ -o $@
 
 ${OBJECTS} : ${MAKEFILE_NAME}
+
+
 
 -include ${DEPENDS}
 
