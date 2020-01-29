@@ -72,4 +72,7 @@ enum DFAStates {
 	DOUBLE_QUOTE_SLASH = 105,
 	SLASH_STAR = 106,
 	STAR_SLASH = 107,
+
+	// Failure State
+	FAILURE = 999,
 };

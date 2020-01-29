@@ -6,17 +6,18 @@
 #include <string>
 #include <vector>
 
+#include "readers.h"
 #include "dfa_states.h"
 
 using namespace std;
 
 // Given all transitions, current state, and character return the next state
 // If no transition exists returns error
-int transition (map<int, map<char, int>> transitions, int state, char c) {
-  map<int, map<char, int>>::iterator transition_input_state;
+DFAStates transition (map<DFAStates, map<char, DFAStates>> transitions,DFAStates state, char c) {
+  map<DFAStates, map<char, DFAStates>>::iterator transition_input_state;
 
-  map<char, int> state_transitions;
-  map<char, int>::iterator transition_output_state;
+  map<char, DFAStates> state_transitions;
+  map<char, DFAStates>::iterator transition_output_state;
  
   transition_input_state = transitions.find(state);
 
@@ -29,46 +30,44 @@ int transition (map<int, map<char, int>> transitions, int state, char c) {
     }
     else {
       cout << "Could not find transition from " << state << " with " << c << endl;
-      return -1;
+      return FAILURE;
     }
   }
   else {
     cout << "Could not find input state." << endl;
-    return -1;
+    return FAILURE;
   }
 }
 
 // TODO: Extra scanning logic (keywords)
-int extraScanningLogic(string lexeme) {
-  int state;
-  if (lexeme == "int") {
-    state = INTEGER;
-  }
-  return state;
+TokenType extraScanningLogic(string lexeme) {
+  TokenType type;
+  // TODO: Add function
+  return type;
 }
 
-// Given all seenStates and acceptingStates return last seen accepting state
-// If no acceptingStates exist in seenStates return error
-string getTokenKind(string lexeme, vector<int> seenStates, map<int, string> acceptingStates) {
+// Given lastState and acceptingStates return last seen accepting state
+// If no acceptingStates exist in lastState return error
+TokenType getTokenKind(string lexeme, DFAStates lastState, map<DFAStates, TokenType> acceptingStates) {
   // TODO: not exactly sure if  extraScanningLogic returns state, may need to change
-  seenStates.push_back(extraScanningLogic(lexeme));
-
-  while (seenStates.size() > 0) {
-    int lastState = seenStates.back();
-
-    map<int, string>::iterator it = acceptingStates.find(lastState);
+  TokenType type;
+  if (lastState == DFAStates::POSSIBLY_IDENTIFIER) {
+    type = extraScanningLogic(lexeme);
+  }
+  else {
+    map<DFAStates, TokenType>::iterator it = acceptingStates.find(lastState);
      
     if (it != acceptingStates.end()) {
-      return acceptingStates[lastState];
+      type = acceptingStates[lastState];
     }
     else {
-      seenStates.pop_back();
+      return TOKEN_FAILURE;
     }
   }
-  return "";
+  return type;
 }
 
-int outputTokens(vector<pair<string, string>> tokens) {
+int outputTokens(vector<pair<TokenType, string>> tokens) {
   int tokenSize = tokens.size();
 
   cout << endl << "Token states: ";
@@ -83,9 +82,12 @@ int outputTokens(vector<pair<string, string>> tokens) {
 int main (int argc, char* argv[]) {
   cout << "Reading from file: " << argv[1] << endl;
 
-  vector<pair<string, string>> tokens;
+  vector<pair<TokenType, string>> tokens;
 
-  // TODO: CREATE DFA
+  map<DFAStates, map<char, DFAStates>> transitions = DFAReader();
+
+  map<DFAStates, TokenType> acceptingStates = TokenReader();
+  /* TODO: CREATE DFA
   map<int, map<char, int>> transitions = {
     {START, {{'i', KEYWORD}, {'=', EQUAL}, {'1', INTEGER}, {';', SEMICOLON}, {'/', SLASH}, {' ', START}}},
     {KEYWORD, {{'n', KEYWORD}, {'t', KEYWORD}}},
@@ -94,9 +96,10 @@ int main (int argc, char* argv[]) {
 
   // TODO: read in all accepting states and token kinds
   map<int, string> acceptingStates = {{START, "START"}, {KEYWORD, "KEYWORD"}, {EQUAL, "OPERATOR"}, {INTEGER, "INTEGER"}};
+	*/
 
-  int currentState = START;
-  vector<int> seenStates = {};
+  DFAStates currentState = START;
+  DFAStates lastState = START;
   string lexeme = "";
 
   string line;
@@ -104,47 +107,45 @@ int main (int argc, char* argv[]) {
   if (javaFile.is_open()) {
     while (getline(javaFile, line)) {
       for (char& c : line) {
-	 if (currentState == STAR_SLASH) {
+	 if (currentState == SLASH_STAR) {
 	   lexeme += c;
 	   if (lexeme.substr(lexeme.length() - 2) == "*/") {
-             currentState = COMMENT;
+             currentState = DOUBLE_SLASH;
 	   }
 	 }
 	 else if (currentState == DOUBLE_SLASH) {
 	   currentState = START;
-           seenStates = {};
+           lastState = START;
 	   lexeme = "";
 	   break;
 	 }
 	 else {
 	   cout << endl;
-	   int transitionState = transition(transitions, currentState, c);
+	   lastState = currentState;
+	   DFAStates transitionState = transition(transitions, currentState, c);
 
 	   cout << "Current State: " << currentState << endl;
            cout << "Transition Character: " << c << endl;
            cout << "Transition State: " << transitionState << endl;
 
 	   if (transitionState != -1) {
-	     seenStates.push_back(transitionState);
              currentState = transitionState;
 	     cout << "Adding " << c << " to lexeme " << lexeme <<endl;
 	     lexeme += c;
 	   }
 	   else {
-	     string tokenKind = getTokenKind(lexeme, seenStates, acceptingStates);
+	     TokenType tokenKind = getTokenKind(lexeme, lastState, acceptingStates);
 
-	     if (tokenKind != "") {
+	     if (tokenKind != TOKEN_FAILURE) {
 	       cout << "Pushing back state: " << tokenKind << " for lexeme " << lexeme <<  endl;
 	       tokens.push_back(make_pair(tokenKind, lexeme));
 
 	       if (isspace(c)) {
 	         currentState = START;
-                 seenStates = {};
 	         lexeme = "";
 	       }
 	       else {
 	         currentState = transition(transitions, START, c);
-	         seenStates = {currentState};
 	         lexeme = c;
 	       }
 	     }
@@ -157,7 +158,7 @@ int main (int argc, char* argv[]) {
       }
     }
 
-    if (currentState == STAR_SLASH) {
+    if (currentState == SLASH_STAR) {
       cout << "ERROR: no accepting state reached at end of Java file" << endl;
       return -1;
     }

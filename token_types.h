@@ -31,4 +31,7 @@ enum TokenType{
   T_STAR = 27,
   T_MINUS = 28,
   T_PLUS = 29,
+
+  // Failure type
+  TOKEN_FAILURE = 1000,
 };
