@@ -39,11 +39,28 @@ DFAStates transition (map<DFAStates, map<char, DFAStates>> transitions,DFAStates
   }
 }
 
-// TODO: Extra scanning logic (keywords)
+map<string, TokenType> readSpecialWords() {
+    map<string, TokenType> specialWordsMap;
+    ifstream specialWordsFile;
+    specialWordsFile.open("special_words_to_kinds");
+    string word;
+    int kind;
+    while(!specialWordsFile.eof()) {
+        specialWordsFile>>word;
+        specialWordsFile>>kind;
+        specialWordsMap[word] = static_cast<TokenType>(kind);
+    }
+
+    return specialWordsMap;
+}
+
 TokenType extraScanningLogic(string lexeme) {
-  TokenType type;
-  // TODO: Add function
-  return type;
+    map<string, TokenType> specialWordsMap = readSpecialWords();
+    if (specialWordsMap.find(lexeme) != specialWordsMap.end()) {
+        return specialWordsMap[lexeme];
+    } else {
+        return TokenType::T_IDENTIFIER;
+    }
 }
 
 // Given lastState and acceptingStates return last seen accepting state
@@ -65,30 +82,6 @@ TokenType getTokenKind(string lexeme, DFAStates lastState, map<DFAStates, TokenT
     }
   }
   return type;
-}
-
-map<string, TokenType> readSpecialWords() {
-    map<string, TokenType> specialWordsMap;
-    ifstream specialWordsFile;
-    specialWordsFile.open("special_words_to_kinds");
-    string word;
-    int kind;
-    while(!specialWordsFile.eof()) {
-        specialWordsFile>>word;
-        specialWordsFile>>kind;
-        specialWordsMap[word] = static_cast<TokenType>(kind);
-    }
-
-    return specialWordsMap;
-}
-
-int extraSanningLogic(int state, string lexeme) {
-    map<string, TokenType> specialWordsMap = readSpecialWords();
-    if (specialWordsMap.find(lexeme) != specialWordsMap.end()) {
-        return specialWordsMap[lexeme];
-    } else {
-        return TokenType::T_IDENTIFIER;
-    }
 }
 
 int main (int argc, char* argv[]) {
