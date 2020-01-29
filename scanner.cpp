@@ -67,16 +67,28 @@ TokenType getTokenKind(string lexeme, DFAStates lastState, map<DFAStates, TokenT
   return type;
 }
 
-int outputTokens(vector<pair<TokenType, string>> tokens) {
-  int tokenSize = tokens.size();
+map<string, TokenType> readSpecialWords() {
+    map<string, TokenType> specialWordsMap;
+    ifstream specialWordsFile;
+    specialWordsFile.open("special_words_to_kinds");
+    string word;
+    int kind;
+    while(!specialWordsFile.eof()) {
+        specialWordsFile>>word;
+        specialWordsFile>>kind;
+        specialWordsMap[word] = static_cast<TokenType>(kind);
+    }
 
-  cout << endl << "Token states: ";
-  for (int i=0; i<tokenSize; i++) {
-    cout << get<0>(tokens[i]) << " " << get<1>(tokens[i]) << " ";
-  }
-  cout << endl;
+    return specialWordsMap;
+}
 
-  return 0;
+int extraSanningLogic(int state, string lexeme) {
+    map<string, TokenType> specialWordsMap = readSpecialWords();
+    if (specialWordsMap.find(lexeme) != specialWordsMap.end()) {
+        return specialWordsMap[lexeme];
+    } else {
+        return TokenType::T_IDENTIFIER;
+    }
 }
 
 int main (int argc, char* argv[]) {
