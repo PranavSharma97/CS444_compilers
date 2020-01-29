@@ -27,8 +27,22 @@ std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
   for(char c = '$'; c <= 'z'; c++){
     if((c>='A' && c<='Z')||(c>='a' && c<= 'z')||(c=='$')||(c=='_')){
       DFAMap[DFAStates::START][c] = DFAStates::POSSIBLY_IDENTIFIER;
+      // Add possibly_identifier to possibly_identifier
+      if(c == '$'){
+	entrance_0['$'] = DFAStates::POSSIBLY_IDENTIFIER;
+	DFAMap[DFAStates::POSSIBLY_IDENTIFIER] = entrance_0;
+	entrance_0.clear();
+      }
+      DFAMap[DFAStates::POSSIBLY_IDENTIFIER][c] = DFAStates::POSSIBLY_IDENTIFIER;
     }
+    
   }
+
+  // Added numbers to possibly identifiers
+  for(char c = '0'; c<='9'; c++){
+    DFAMap[DFAStates::POSSIBLY_IDENTIFIER][c] = DFAStates::POSSIBLY_IDENTIFIER;
+  }
+  
   
   // Read in states
   // Assume the dfa.in file is in correct form.
