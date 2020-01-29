@@ -1,4 +1,4 @@
-f = open("states_to_numbers", "r")
+f = open("dfa.translate", "r")
 lines = f.readlines()
 states_to_numbers = {}
 for line in lines:
@@ -17,7 +17,7 @@ for dfa_line in dfa_lines:
     c = states_to_numbers[dfa_line.split()[2]]
     dfa_list.append((a, b, c))
 
-output_file = open("dfa.converted", "w")
+output_file = open("dfa.in", "w")
 for d, e, f2 in dfa_list:
     output_file.write(d)
     output_file.write(" ")

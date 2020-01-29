@@ -22,7 +22,7 @@ enum TokenType{
   CHAR_LITERAL = 18,
   STRING_LITERAL = 19,
   BOOL_LITERAL = 20,
-  NULL_LITERLA = 21,
+  NULL_LITERAL = 21,
   BASIC_TYPE = 22,
   VOID= 23,
   MODIFIER = 24,
@@ -31,4 +31,7 @@ enum TokenType{
   T_STAR = 27,
   T_MINUS = 28,
   T_PLUS = 29,
+
+  // Failure type
+  TOKEN_FAILURE = 1000,
 };

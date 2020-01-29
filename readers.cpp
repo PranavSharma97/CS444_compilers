@@ -6,13 +6,14 @@
 std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
   std::map<DFAStates, std::map<char, DFAStates>> DFAMap;
   // Add Start SPACE Start
+  
   std::map<char, DFAStates> entrance_0;
   entrance_0[' '] = DFAStates::START;
   DFAMap[DFAStates::START] = entrance_0;
   entrance_0.clear();
-
+  
   // Add DOUBLE_QUOTE SPACE DOUBLE_QUOTE
-  entrance_0[' ',DFAStates::DOUBLE_QUOTE];
+  entrance_0[' '] = DFAStates::DOUBLE_QUOTE;
   DFAMap[DFAStates::DOUBLE_QUOTE] = entrance_0;
   entrance_0.clear();
   
@@ -25,9 +26,7 @@ std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
   // Anything Starts with $,_,letters is legal
   for(char c = '$'; c <= 'z'; c++){
     if((c>='A' && c<='Z')||(c>='a' && c<= 'z')||(c=='$')||(c=='_')){
-      std::map<char,DFAStates> entrance;
-      entrance[c]=DFAStates::POSSIBLY_IDENTIFIER;
-      DFAMap[DFAStates::START] = entrance;
+      DFAMap[DFAStates::START][c] = DFAStates::POSSIBLY_IDENTIFIER;
     }
   }
   
@@ -49,18 +48,24 @@ std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
       dfa_input>>cur_state;
       dfa_input>>in_char;
       dfa_input>>next_state;
-
-      std::map<char,DFAStates> entrance;
       DFAStates current = static_cast<DFAStates>(cur_state);
       DFAStates next = static_cast<DFAStates>(next_state);
-      entrance[in_char] = next;
-      DFAMap[current] = entrance;
+
+      // Check if key exists
+      if(DFAMap.find(current) == DFAMap.end()){
+	std::map<char,DFAStates> entrance;
+	entrance[in_char] = next;
+	DFAMap[current] = entrance;
+      }else{
+	DFAMap[current][in_char] = next;
+      }
+    
     } catch (const std::exception& e){
       std::cerr<<"DFAReader ERROR:"<<e.what()<<" at line: "<<line_count;
       std::cerr<<std::endl;
     }
   }
-
+  std::cout<<"DFA READER SIZE:"<<DFAMap.size()<<std::endl;
   return DFAMap;
 }
 
@@ -70,7 +75,9 @@ std::map<DFAStates,TokenType> TokenReader(){
   int dfa_state,token_type;
   std::ifstream token_input("accept_state.in");
   std::map<DFAStates,TokenType> token_map;
+
   for(unsigned int line_count = 0;; line_count++){
+    // Break when end of line
     if(token_input.eof()){
       token_input.close();
       break;
@@ -89,5 +96,4 @@ std::map<DFAStates,TokenType> TokenReader(){
     }
   }
   return token_map;
-  
 }
