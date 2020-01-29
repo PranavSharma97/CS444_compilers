@@ -99,16 +99,6 @@ int main (int argc, char* argv[]) {
   map<DFAStates, map<char, DFAStates>> transitions = DFAReader();
 
   map<DFAStates, TokenType> acceptingStates = TokenReader();
-  /* TODO: CREATE DFA
-  map<int, map<char, int>> transitions = {
-    {START, {{'i', KEYWORD}, {'=', EQUAL}, {'1', INTEGER}, {';', SEMICOLON}, {'/', SLASH}, {' ', START}}},
-    {KEYWORD, {{'n', KEYWORD}, {'t', KEYWORD}}},
-    {SLASH, {{'*', STAR_SLASH}, {'/', DOUBLE_SLASH}}}
-  };
-
-  // TODO: read in all accepting states and token kinds
-  map<int, string> acceptingStates = {{START, "START"}, {KEYWORD, "KEYWORD"}, {EQUAL, "OPERATOR"}, {INTEGER, "INTEGER"}};
-	*/
 
   DFAStates currentState = START;
   DFAStates lastState = START;
@@ -140,7 +130,7 @@ int main (int argc, char* argv[]) {
            cout << "Transition Character: " << c << endl;
            cout << "Transition State: " << transitionState << endl;
 
-	   if (transitionState != -1) {
+	   if (transitionState != FAILURE) {
              currentState = transitionState;
 	     cout << "Adding " << c << " to lexeme " << lexeme <<endl;
 	     lexeme += c;
@@ -174,8 +164,6 @@ int main (int argc, char* argv[]) {
       cout << "ERROR: no accepting state reached at end of Java file" << endl;
       return -1;
     }
-
-    outputTokens(tokens);
 
     javaFile.close();
   }
