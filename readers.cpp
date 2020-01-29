@@ -13,7 +13,7 @@ std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
   entrance_0.clear();
   
   // Add DOUBLE_QUOTE SPACE DOUBLE_QUOTE
-  entrance_0[' '] = DFAStates::DOUBLE_QUOTE];
+  entrance_0[' '] = DFAStates::DOUBLE_QUOTE;
   DFAMap[DFAStates::DOUBLE_QUOTE] = entrance_0;
   entrance_0.clear();
   
