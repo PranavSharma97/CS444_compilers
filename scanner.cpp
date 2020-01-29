@@ -57,14 +57,28 @@ int lastAcceptingState(vector<int> seenStates, vector<int> acceptingStates) {
   return -1;
 }
 
-int extraSanningLogic(int state, string lexeme) {
-  // TODO: Extra scanning logic (keywords)
-  if (state == KEYWORD) {
-    if (lexeme == "int") {
-      state = INTEGER;
+map<string, TokenType> readSpecialWords() {
+    map<string, TokenType> specialWordsMap;
+    ifstream specialWordsFile;
+    specialWordsFile.open("special_words_to_kinds");
+    string word;
+    int kind;
+    while(!specialWordsFile.eof()) {
+        specialWordsFile>>word;
+        specialWordsFile>>kind;
+        specialWordsMap[word] = static_cast<TokenType>(kind);
     }
-  }
-  return state;
+
+    return specialWordsMap;
+}
+
+int extraSanningLogic(int state, string lexeme) {
+    map<string, TokenType> specialWordsMap = readSpecialWords();
+    if (specialWordsMap.find(lexeme) != specialWordsMap.end()) {
+        return specialWordsMap[lexeme];
+    } else {
+        return TokenType::T_IDENTIFIER;
+    }
 }
 
 int main (int argc, char* argv[]) {
