@@ -103,6 +103,7 @@ int main (int argc, char* argv[]) {
   ifstream javaFile (argv[1]);
   if (javaFile.is_open()) {
     while (getline(javaFile, line)) {
+      line += " ";
       for (char& c : line) {
 	 if (lexeme == "" && isspace(c)) { continue; }
 
