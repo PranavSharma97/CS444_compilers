@@ -4,7 +4,7 @@ CXX = g++
 CXXFLAGS = -std=c++14 -Wall -Wextra -MMD -D${OUTPUT} #-O2
 MAKEFILE_NAME = ${firstword ${MAKEFILE_LIST}}
 
-OBJECTS1 = readers.o scanner.o
+OBJECTS1 = readers.o scanner.o token.o
 EXEC1 = scanner
 
 OBJECTS = ${OBJECTS1}
