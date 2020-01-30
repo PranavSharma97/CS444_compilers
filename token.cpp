@@ -102,3 +102,8 @@ Token::Token(TokenType type, std::string& lex):
     break;
   }
 }
+
+std::ostream& operator<<(std::ostream& os, const Token& t){
+  os << t.m_display_name;
+  return os;
+}
