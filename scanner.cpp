@@ -104,6 +104,8 @@ int main (int argc, char* argv[]) {
   if (javaFile.is_open()) {
     while (getline(javaFile, line)) {
       for (char& c : line) {
+	 if (lexeme == "" && isspace(c)) { continue; }
+
 	 if (currentState == SLASH_STAR) {
 	   lexeme += c;
 	   if (lexeme.substr(lexeme.length() - 2) == "*/") {
