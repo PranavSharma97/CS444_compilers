@@ -84,7 +84,6 @@ std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
       std::cerr<<std::endl;
     }
   }
-  std::cout<<"DFA READER SIZE:"<<DFAMap.size()<<std::endl;
   return DFAMap;
 }
 
