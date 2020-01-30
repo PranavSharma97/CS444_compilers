@@ -11,6 +11,11 @@ std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
   entrance_0[' '] = DFAStates::START;
   DFAMap[DFAStates::START] = entrance_0;
   entrance_0.clear();
+
+  // Add Start TAB/newline Start
+  DFAMap[DFAStates::START]['\t'] = DFAStates::START;
+  DFAMap[DFAStates::START]['\n'] = DFAStates::START;
+  DFAMap[DFAStates::START]['\v'] = DFAStates::START;
   
   // Add DOUBLE_QUOTE SPACE DOUBLE_QUOTE
   entrance_0[' '] = DFAStates::DOUBLE_QUOTE;
