@@ -8,6 +8,7 @@
 
 #include "readers.h"
 #include "dfa_states.h"
+#include "token.h"
 
 using namespace std;
 
@@ -87,8 +88,9 @@ TokenType getTokenKind(string lexeme, DFAStates lastState, map<DFAStates, TokenT
 int main (int argc, char* argv[]) {
   cout << "Reading from file: " << argv[1] << endl;
 
-  vector<pair<TokenType, string>> tokens;
-
+  //vector<pair<TokenType, string>> tokens;
+  vector<Token> tokens;
+  
   map<DFAStates, map<char, DFAStates>> transitions = DFAReader();
 
   map<DFAStates, TokenType> acceptingStates = TokenReader();
@@ -133,8 +135,9 @@ int main (int argc, char* argv[]) {
 
 	     if (tokenKind != TOKEN_FAILURE) {
 	       cout << "Pushing back state: " << tokenKind << " for lexeme " << lexeme <<  endl;
-	       tokens.push_back(make_pair(tokenKind, lexeme));
-
+	       //tokens.push_back(make_pair(tokenKind, lexeme));
+	       tokens.push_back(Token(tokenKind,lexeme));
+				
 	       if (isspace(c)) {
 	         currentState = START;
 	         lexeme = "";
@@ -158,6 +161,11 @@ int main (int argc, char* argv[]) {
       return -1;
     }
 
+    for(Token& t: tokens){
+      cout<<'['<<t<<","<<t.m_lex<<"] ";
+    }
+    cout<<endl;
+    
     javaFile.close();
   }
   return 0;
