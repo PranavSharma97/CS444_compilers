@@ -107,7 +107,8 @@ int main (int argc, char* argv[]) {
 	 if (currentState == SLASH_STAR) {
 	   lexeme += c;
 	   if (lexeme.substr(lexeme.length() - 2) == "*/") {
-             currentState = DOUBLE_SLASH;
+             currentState = START;
+	     lexeme = "";
 	   }
 	 }
 	 else if (currentState == DOUBLE_SLASH) {
