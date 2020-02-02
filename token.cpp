@@ -4,6 +4,7 @@ Token::Token(TokenType type, std::string& lex):
   m_type(type),
   m_lex(lex)
 {
+  m_rule = -1;
   // Determine the display name
   int type_int = static_cast<int>(type);
   switch(type_int){
@@ -102,6 +103,15 @@ Token::Token(TokenType type, std::string& lex):
     break;
   }
 }
+
+Token::Token(TokenType type, int rule, std::vector<Token>& generated_token):
+  m_type(type),
+  rule(rule),
+  m_generated_tokens(generated_token)
+{
+  // Need huge switch statement to determine the display name
+}
+
 
 std::ostream& operator<<(std::ostream& os, const Token& t){
   os << t.m_display_name;
