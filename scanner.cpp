@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <ctype.h>
+#include <exception>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -8,7 +9,7 @@
 
 #include "readers.h"
 #include "dfa_states.h"
-#include "token.h"
+#include "scanner.h"
 
 using namespace std;
 
@@ -85,8 +86,8 @@ TokenType getTokenKind(string lexeme, DFAStates lastState, map<DFAStates, TokenT
   return type;
 }
 
-int main (int argc, char* argv[]) {
-  cout << "Reading from file: " << argv[1] << endl;
+vector<Token> scanner (string filename) {
+  cout << "Reading from file: " << filename << endl;
 
   //vector<pair<TokenType, string>> tokens;
   vector<Token> tokens;
@@ -100,7 +101,7 @@ int main (int argc, char* argv[]) {
   string lexeme = "";
 
   string line;
-  ifstream javaFile (argv[1]);
+  ifstream javaFile (filename);
   if (javaFile.is_open()) {
     while (getline(javaFile, line)) {
       line += " ";
@@ -153,7 +154,7 @@ int main (int argc, char* argv[]) {
 	     }
 	     else {
 	       cout << "ERROR: could not parse Java file" << endl;
-	       return -1;
+	       throw logic_error("ERROR: could not parse Java file");
 	     }
 	   }
 	 }
@@ -162,7 +163,7 @@ int main (int argc, char* argv[]) {
 
     if (currentState == SLASH_STAR) {
       cout << "ERROR: no accepting state reached at end of Java file" << endl;
-      return -1;
+      throw logic_error("ERROR: no accepting state reached at end of Java file");
     }
 
     for(Token& t: tokens){
@@ -172,5 +173,5 @@ int main (int argc, char* argv[]) {
     
     javaFile.close();
   }
-  return 0;
-}
+  return tokens;
+};
