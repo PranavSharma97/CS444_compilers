@@ -106,7 +106,7 @@ Token::Token(TokenType type, std::string& lex):
 
 Token::Token(TokenType type, int rule, std::vector<Token>& generated_token):
   m_type(type),
-  rule(rule),
+  m_rule(rule),
   m_generated_tokens(generated_token)
 {
   // Need huge switch statement to determine the display name

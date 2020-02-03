@@ -1,0 +1,62 @@
+6
+COMMENT
+T_DOT
+T_PLUS
+VOID
+T_STAR
+KEYWORDS
+3
+T_MINUS
+MODIFIER
+T_COMMA
+T_MINUS
+5
+T_MINUS COMMENT MODIFIER T_DOT
+MODIFIER T_COMMA
+MODIFIER MODIFIER VOID T_COMMA
+T_COMMA T_PLUS
+T_COMMA T_STAR MODIFIER KEYWORDS
+18
+42
+6 T_STAR shift 1
+12 KEYWORDS reduce 4
+16 T_PLUS shift 2
+13 KEYWORDS shift 3
+1 T_STAR shift 1
+16 T_STAR shift 4
+1 T_PLUS shift 5
+17 VOID shift 6
+15 T_DOT reduce 1
+2 VOID reduce 3
+7 VOID reduce 2
+4 T_STAR shift 1
+15 VOID reduce 1
+4 T_PLUS shift 5
+6 T_COMMA shift 7
+3 VOID reduce 4
+0 COMMENT shift 8
+1 T_COMMA shift 9
+3 T_DOT reduce 4
+13 VOID shift 6
+16 T_COMMA shift 10
+8 MODIFIER shift 11
+5 VOID reduce 3
+17 KEYWORDS shift 12
+7 KEYWORDS reduce 2
+4 MODIFIER shift 13
+11 T_DOT shift 14
+9 VOID reduce 1
+8 T_COMMA shift 15
+10 T_DOT reduce 2
+2 T_DOT reduce 3
+8 T_PLUS shift 2
+6 T_PLUS shift 5
+4 T_COMMA shift 9
+14 COMMENT reduce 0
+8 T_STAR shift 4
+5 KEYWORDS reduce 3
+11 VOID shift 16
+10 VOID reduce 2
+12 VOID reduce 4
+1 MODIFIER shift 17
+9 KEYWORDS reduce 1
