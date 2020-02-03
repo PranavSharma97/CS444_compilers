@@ -12,10 +12,10 @@ void updateType(vector<Token>::iterator token, TokenType type, string name) {
 }
 
 vector<Token> extraTokenLogic(vector<Token> tokens) {
-	for(vector<Token>::iterator it = tokens.begin(); it != tokens.end(); it++) {
-		switch(it->m_type) {
-			case ASSIGNMENT_OP:
-			  if (it->m_lex == "=") { updateType(it, T_EQUAL, "T_EQUAL"); }
+  for(vector<Token>::iterator it = tokens.begin(); it != tokens.end(); it++) {
+    switch(it->m_type) {
+      case ASSIGNMENT_OP:
+        if (it->m_lex == "=") { updateType(it, T_EQUAL, "T_EQUAL"); }
         else if (it->m_lex == "+=") { updateType(it, T_PLUS_EQUAL, "T_PLUS_EQUAL"); }
         else if (it->m_lex == "-=") { updateType(it, T_MINUS_EQUAL, "T_MINUS_EQUAL"); }
         else if (it->m_lex == "*=") { updateType(it, T_STAR_EQUAL, "T_STAR_EQUAL"); }
@@ -107,7 +107,7 @@ vector<Token> extraTokenLogic(vector<Token> tokens) {
         break;
       default:
         break;
-		}
-	}
-	return tokens;
+    }
+  }
+  return tokens;
 }
