@@ -244,7 +244,7 @@ AssignmentOperator
 Expression
 ConstantExpression
 Goal
-340
+339
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
