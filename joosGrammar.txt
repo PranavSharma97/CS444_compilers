@@ -274,8 +274,8 @@ ArrayType Name T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
 ArrayType ArrayType T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
 Name SimpleName
 Name QualifiedName
-SimpleName Identifier
-QualifiedName Name T_DOT Identifier
+SimpleName T_IDENTIFIER
+QualifiedName Name T_DOT T_IDENTIFIER
 CompilationUnit PackageDeclaration
 CompilationUnit ImportDeclarations
 CompilationUnit TypeDeclarations
