@@ -498,7 +498,6 @@ ArrayCreationExpression T_NEW PrimitiveType DimExprs
 ArrayCreationExpression T_NEW ClassOrInterfaceType DimExprs Dims
 ArrayCreationExpression T_NEW ClassOrInterfaceType DimExprs
 DimExprs DimExpr
-DimExprs DimExpr
 DimExpr T_LEFT_SQUARE_BRACKET Expression T_RIGHT_SQUARE_BRACKET
 Dims T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
 Dims Dims T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
