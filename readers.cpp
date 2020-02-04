@@ -80,6 +80,7 @@ std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
       }
     
     } catch (const std::exception& e){
+      dfa_input.close();
       std::cerr<<"DFAReader ERROR:"<<e.what()<<" at line: "<<line_count;
       std::cerr<<std::endl;
     }
@@ -109,6 +110,7 @@ std::map<DFAStates,TokenType> TokenReader(){
       TokenType token = static_cast<TokenType>(token_type);
       token_map[accept] = token;
     }  catch (const std::exception& e){
+      token_input.close();
       std::cerr<<"TokenReader ERROR:"<<e.what()<<" at line: "<<line_count;
       std::cerr<<std::endl;
     }
