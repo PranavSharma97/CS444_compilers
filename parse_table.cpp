@@ -237,3 +237,19 @@ void ParseTable::readin(std::string input_file){
   }
   
 }
+
+ParseTable::LR1StackLayer::LR1StackLayer(int state):
+  no_token(true),
+  m_state(state)
+{}
+
+
+ParseTable::LR1StackLayer::LR1StackLayer(int state, Token& token):
+  no_token(false),
+  m_state(state),
+  m_token(token)
+{}
+
+bool ParseTable::parse(std::vector<Token>& token_vec){
+  return true;
+}

@@ -12,7 +12,8 @@ class Token{
 
   int m_rule;
   std::vector<Token> m_generated_tokens;
-  
+
+  Token();
   Token(TokenType type, std::string& lex);
   Token(TokenType type, int rule, std::vector<Token>& generated_token);
   friend std::ostream& operator<<(std::ostream& os, const Token& t);
