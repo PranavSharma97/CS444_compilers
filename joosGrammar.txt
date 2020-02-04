@@ -244,7 +244,7 @@ AssignmentOperator
 Expression
 ConstantExpression
 Goal
-340
+339
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
@@ -282,7 +282,6 @@ CompilationUnit ImportDeclarations
 CompilationUnit TypeDeclarations
 CompilationUnit PackageDeclaration ImportDeclarations
 CompilationUnit PackageDeclaration TypeDeclarations
-CompilationUnit ImportDeclarations TypeDeclarations 
 CompilationUnit ImportDeclarations TypeDeclarations
 CompilationUnit PackageDeclaration ImportDeclarations TypeDeclarations
 ImportDeclarations ImportDeclaration
