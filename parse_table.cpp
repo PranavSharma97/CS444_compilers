@@ -27,7 +27,7 @@ ParseTable::ParseTable(std::string& input_file):
 
 void ParseTable::readin(std::string input_file){
   std::ifstream token_ifs("token_str_to_num.txt");
-   
+
   // Read in token string to number converting table
   std::string err_msg = "Cannot open token_str_to_num.txt";
   if(!token_ifs.is_open()) throw std::runtime_error(err_msg);
@@ -228,7 +228,6 @@ void ParseTable::readin(std::string input_file){
       m_parse_table[num][t] = transition;
       token_name.clear();
     }
-    std::cerr<<"FUCK!"<<std::endl;
     
   } catch (const std::exception& e){
     ifs.close();

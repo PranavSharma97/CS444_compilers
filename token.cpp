@@ -1,8 +1,7 @@
 #include "token.h"
 
 Token::Token():
-  m_type(TokenType::TOKEN_FAILURE),
-  m_lex("")
+  m_type(TokenType::TOKEN_FAILURE)
 {
   m_rule = -1;
   m_display_name = "TOKEN_FILURE";
