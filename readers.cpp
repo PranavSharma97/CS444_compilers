@@ -52,7 +52,7 @@ std::map<DFAStates, std::map<char, DFAStates>> DFAReader(){
   // Read in states
   // Assume the dfa.in file is in correct form.
   // i.e. int char int for each line
-  std::ifstream dfa_input("dfa.in");
+  std::ifstream dfa_input("data/scanner/dfa.in");
 
   int cur_state,next_state;
   char in_char;
@@ -92,7 +92,7 @@ std::map<DFAStates,TokenType> TokenReader(){
   // Read in accepting state to token type
   // Assuming format is correct, i.e. int int
   int dfa_state,token_type;
-  std::ifstream token_input("accept_state.in");
+  std::ifstream token_input("data/scanner/accept_state.in");
   std::map<DFAStates,TokenType> token_map;
 
   for(unsigned int line_count = 0;; line_count++){

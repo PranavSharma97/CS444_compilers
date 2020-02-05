@@ -9,7 +9,7 @@ ParseTable::ParseTable():
   m_states_count(-1)
 {
   try{
-    readin("parse_table.lr1");
+    readin("data/parser/parse_table.lr1");
   } catch (const std::exception& e){
     std::cerr<<"ERROR: Parse Table Readin Failed. "<<e.what()<<std::endl;
   }
@@ -26,7 +26,7 @@ ParseTable::ParseTable(std::string& input_file):
 }
 
 void ParseTable::readin(std::string input_file){
-  std::ifstream token_ifs("token_str_to_num.txt");
+  std::ifstream token_ifs("data/parser/token_str_to_num.txt");
    
   // Read in token string to number converting table
   std::string err_msg = "Cannot open token_str_to_num.txt";

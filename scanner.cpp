@@ -44,7 +44,7 @@ DFAStates transition (map<DFAStates, map<char, DFAStates>> transitions,DFAStates
 map<string, TokenType> readSpecialWords() {
     map<string, TokenType> specialWordsMap;
     ifstream specialWordsFile;
-    specialWordsFile.open("special_words_to_kinds");
+    specialWordsFile.open("data/scanner/special_words_to_kinds");
     string word;
     int kind;
     while(!specialWordsFile.eof()) {
