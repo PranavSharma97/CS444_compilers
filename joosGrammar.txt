@@ -344,10 +344,10 @@ MethodHeader Modifiers Type MethodDeclarator Throws
 MethodHeader Modifiers Type MethodDeclarator
 MethodHeader Type MethodDeclarator Throws
 MethodHeader Type MethodDeclarator
-MethodHeader Modifiers T_VOID MethodDeclarator Throws
-MethodHeader Modifiers T_VOID MethodDeclarator
-MethodHeader T_VOID MethodDeclarator Throws
-MethodHeader T_VOID MethodDeclarator
+MethodHeader Modifiers VOID MethodDeclarator Throws
+MethodHeader Modifiers VOID MethodDeclarator
+MethodHeader VOID MethodDeclarator Throws
+MethodHeader VOID MethodDeclarator
 MethodDeclarator T_IDENTIFIER T_LEFT_ROUND_BRACKET FormalParameterList T_RIGHT_ROUND_BRACKET
 MethodDeclarator T_IDENTIFIER T_LEFT_ROUND_BRACKET T_RIGHT_ROUND_BRACKET
 MethodDeclarator MethodDeclarator T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
