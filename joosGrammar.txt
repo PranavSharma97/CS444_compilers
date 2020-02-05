@@ -244,7 +244,7 @@ AssignmentOperator
 Expression
 ConstantExpression
 Goal
-343
+347
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
@@ -344,6 +344,10 @@ MethodHeader Modifiers Type MethodDeclarator Throws
 MethodHeader Modifiers Type MethodDeclarator
 MethodHeader Type MethodDeclarator Throws
 MethodHeader Type MethodDeclarator
+MethodHeader Modifiers T_VOID MethodDeclarator Throws
+MethodHeader Modifiers T_VOID MethodDeclarator
+MethodHeader T_VOID MethodDeclarator Throws
+MethodHeader T_VOID MethodDeclarator
 MethodDeclarator T_IDENTIFIER T_LEFT_ROUND_BRACKET FormalParameterList T_RIGHT_ROUND_BRACKET
 MethodDeclarator T_IDENTIFIER T_LEFT_ROUND_BRACKET T_RIGHT_ROUND_BRACKET
 MethodDeclarator MethodDeclarator T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
