@@ -244,7 +244,7 @@ AssignmentOperator
 Expression
 ConstantExpression
 Goal
-339
+343
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
@@ -312,6 +312,10 @@ ClassDeclaration Modifiers T_CLASS T_IDENTIFIER Super Interfaces ClassBody
 ClassDeclaration T_CLASS T_IDENTIFIER Super Interfaces ClassBody
 ClassDeclaration T_CLASS T_IDENTIFIER Interfaces ClassBody
 ClassDeclaration Modifiers T_CLASS T_IDENTIFIER Interfaces ClassBody
+ClassDeclaration Modifiers T_CLASS T_IDENTIFIER Super ClassBody
+ClassDeclaration T_CLASS T_IDENTIFIER Super ClassBody
+ClassDeclaration T_CLASS T_IDENTIFIER ClassBody
+ClassDeclaration Modifiers T_CLASS T_IDENTIFIER ClassBody
 Super T_EXTENDS ClassType
 Interfaces T_IMPLEMENTS InterfaceTypeList
 InterfaceTypeList InterfaceType
