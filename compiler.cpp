@@ -3,8 +3,8 @@
 #include <vector>
 
 // Alphabetical order
-#include "parse_table.h"
 #include "extra_token_logic.h"
+#include "parse_table.h"
 #include "scanner.h"
 #include "token.h"
 
