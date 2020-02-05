@@ -244,7 +244,7 @@ AssignmentOperator
 Expression
 ConstantExpression
 Goal
-343
+347
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
@@ -344,6 +344,10 @@ MethodHeader Modifiers Type MethodDeclarator Throws
 MethodHeader Modifiers Type MethodDeclarator
 MethodHeader Type MethodDeclarator Throws
 MethodHeader Type MethodDeclarator
+MethodHeader Modifiers VOID MethodDeclarator Throws
+MethodHeader Modifiers VOID MethodDeclarator
+MethodHeader VOID MethodDeclarator Throws
+MethodHeader VOID MethodDeclarator
 MethodDeclarator T_IDENTIFIER T_LEFT_ROUND_BRACKET FormalParameterList T_RIGHT_ROUND_BRACKET
 MethodDeclarator T_IDENTIFIER T_LEFT_ROUND_BRACKET T_RIGHT_ROUND_BRACKET
 MethodDeclarator MethodDeclarator T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
@@ -442,8 +446,8 @@ SwitchBlockStatementGroups SwitchBlockStatementGroups SwitchBlockStatementGroup
 SwitchBlockStatementGroup SwitchLabels BlockStatements
 SwitchLabels SwitchLabel
 SwitchLabels SwitchLabels SwitchLabel
-SwitchLabel T_CASE ConstantExpression T_SEMICOLON
-SwitchLabel T_DEFAULT T_SEMICOLON
+SwitchLabel T_CASE ConstantExpression T_COLON
+SwitchLabel T_DEFAULT T_COLON
 WhileStatement T_WHILE T_LEFT_ROUND_BRACKET Expression T_RIGHT_ROUND_BRACKET Statement
 WhileStatementNoShortIf T_WHILE T_LEFT_ROUND_BRACKET Expression T_RIGHT_ROUND_BRACKET StatementNoShortIf
 DoStatement T_DO Statement T_WHILE T_LEFT_ROUND_BRACKET Expression T_RIGHT_ROUND_BRACKET T_SEMICOLON
