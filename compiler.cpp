@@ -2,9 +2,11 @@
 #include <string>
 #include <vector>
 
-#include "token.h"
-#include "scanner.h"
+// Alphabetical order
+#include "parse_table.h"
 #include "extra_token_logic.h"
+#include "scanner.h"
+#include "token.h"
 
 using namespace std;
 
@@ -18,6 +20,9 @@ int main(int argc, char *argv[]) {
     cout<<'['<<t<<","<<t.m_lex<<"] ";
   }
   cout<<endl;
+
+  ParseTable PT = ParseTable();
+  
 
   return 0;
 }
