@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <exception>
 
 // Alphabetical order
 #include "extra_token_logic.h"
@@ -21,8 +22,13 @@ int main(int argc, char *argv[]) {
   }
   cout<<endl;
 
-  ParseTable PT = ParseTable();
+  try{
+    ParseTable PT = ParseTable();
+    bool valid = PT.parse(result);
+    if(!valid) return 42;
+  } catch (std::exception& e){
+    return -1;
+  }
   
-
   return 0;
 }

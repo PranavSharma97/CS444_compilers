@@ -5,13 +5,17 @@
 #include <exception>
 #include <stdexcept>
 
+#include "color_print.h"
+
 ParseTable::ParseTable():
   m_states_count(-1)
 {
   try{
     readin("data/parser/parse_table.lr1");
   } catch (const std::exception& e){
+    RED();
     std::cerr<<"ERROR: Parse Table Readin Failed. "<<e.what()<<std::endl;
+    DEFAULT();
   }
 }
 
@@ -21,7 +25,9 @@ ParseTable::ParseTable(std::string& input_file):
   try{
     readin(input_file);
   } catch (const std::exception& e){
+    RED();
     std::cerr<<"ERROR: Parse Table Readin Failed."<<e.what()<<std::endl;
+    DEFAULT();
   }
 }
 
@@ -72,7 +78,6 @@ void ParseTable::readin(std::string input_file){
   try{
     ifs>>num;
     line ++;
-
     for(int i = 0; i<num; i++,line++){
       token_name.clear();
       ifs>>token_name;
@@ -89,9 +94,11 @@ void ParseTable::readin(std::string input_file){
       // Print Warning if the specified accepting token is differnet from
       // token_types.h defines.
       if((static_cast<int>(t) >= 1000)){
+	YELLOW();
 	std::cerr<<"WARNING: token "<<token_name<<" specified by ";
 	std::cerr<<input_file<<" is not a terminal token defined in";
 	std::cerr<<"token_types.h"<<std::endl;
+	DEFAULT();
       }
     }
     
@@ -115,9 +122,11 @@ void ParseTable::readin(std::string input_file){
       // Print Warning if the specified accepting token is differnet from
       // token_types.h defines.
       if((static_cast<int>(t) < 1000)){
+	YELLOW();
 	std::cerr<<"WARNING: token "<<token_name<<" specified by ";
 	std::cerr<<input_file<<" is not a non-terminal token defined in";
 	std::cerr<<"token_types.h"<<std::endl;
+	DEFAULT();
       }
     }
 
@@ -138,13 +147,13 @@ void ParseTable::readin(std::string input_file){
     // Read in reduce rules
     ifs>>num;
     line++;
-
+    
     // Loop for 1 more time to skip newline
     for(int i = 0; i<=num; i++,line++){
       // Read in a whole line
       char L[512];
       ifs.getline(L,512);
-      if(!i) continue;
+      if(!i) { line-- ; continue; }
       std::istringstream iss(L);
       // Get each token and make the rule in reverse order
       std::vector<TokenType> rule;
@@ -166,6 +175,9 @@ void ParseTable::readin(std::string input_file){
     // Read in parse table.
     ifs>>m_states_count;
     line++;
+    
+    PURPLE();
+    std::cout<<m_states_count<<","<<line<<","<<input_file<<std::endl;
     ifs>>num;
     line++;
 
@@ -185,7 +197,7 @@ void ParseTable::readin(std::string input_file){
       char action[10];
       int next_state = 0;
       ifs.getline(L,512);
-      if(!i) continue;
+      if(!i) { line--; continue; }
       std::istringstream iss(L);
 
       // get state number
@@ -202,7 +214,9 @@ void ParseTable::readin(std::string input_file){
 	std::string err = token_name;
 	err += " does not exist.";
 	ifs.close();
+	RED();
 	std::cerr<<"LINE "<<line<<":"<<err<<std::endl;
+	DEFAULT();
 	throw std::out_of_range(err);
       }
 
@@ -211,15 +225,19 @@ void ParseTable::readin(std::string input_file){
       // Check if state exists
       if(num >= m_states_count){
 	ifs.close();
+	RED();
 	std::cerr<<"LINE: "<<line<<":State number "<<num<<" out of range."<<std::endl;
 	std::cerr<<m_states_count<<std::endl;
+	DEFAULT();
 	throw std::out_of_range("State number out of range.");
       }
 
       // Check if entry exists
       if(m_parse_table[num].find(t) != m_parse_table[num].end()){
 	ifs.close();
+	RED();
 	std::cerr<<"LINE: "<<line<<":Parse table ambiguity."<<std::endl;
+	DEFAULT();
 	throw std::invalid_argument("Parse table ambiguity.");
       }
 
@@ -242,12 +260,131 @@ ParseTable::LR1StackLayer::LR1StackLayer(int state):
 {}
 
 
-ParseTable::LR1StackLayer::LR1StackLayer(int state, Token& token):
+ParseTable::LR1StackLayer::LR1StackLayer(int state,const Token& token):
   no_token(false),
   m_state(state),
   m_token(token)
 {}
 
 bool ParseTable::parse(std::vector<Token>& token_vec){
+  // Add eof to the end of token_vec, bof to the stack.
+  const Token Token_EOF = Token(TokenType::T_EOF,"");
+  const Token Token_BOF = Token(TokenType::T_BOF,"");
+  token_vec.emplace(token_vec.begin(),Token_BOF);
+  token_vec.emplace_back(Token_EOF);
+  LR1StackLayer initialState = LR1StackLayer(0);
+  m_stack.push(initialState);
+
+  
+  // loop to read in
+  unsigned int tv_len = token_vec.size();
+  Token token_of_interest;
+  int current_state = 0;
+  
+  for(unsigned int i = 0; i<tv_len;){
+    // If current token_of_interest is TOKEN_EMPTY
+    // Get a new token from token vector
+    if(token_of_interest.m_type == TokenType::TOKEN_EMPTY){
+      token_of_interest = token_vec[i];
+    }
+
+    // Determine the action
+
+    // Check state
+    if(current_state >= m_states_count){
+      RED();
+      std::cerr<<"PARSER ERROR: State "  <<current_state<< " does not exist. Token";
+      std::cerr<<" of interest is "<<token_of_interest<<", index i = "<<i;
+      std::cerr<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    
+    // Check if transition exists
+    std::map<TokenType, std::pair<char,int>>& entry = m_parse_table[current_state];
+    if(entry.find(token_of_interest.m_type) == entry.end()){
+      RED();
+      std::cerr<<"PARSER ERROR: State "<< current_state <<" has no transition given";
+      std::cerr<<" token "<<token_of_interest<<". Index i = "<< i;
+      std::cerr<<",top of stack is: (";
+      if(!m_stack.top().no_token){
+	std::cerr<<m_stack.top().m_token;
+      }
+      std::cerr<<","<<m_stack.top().m_state<<")"<<std::endl;
+      DEFAULT();
+      return false;
+    }
+
+    // get action and state or rule number
+    char action = entry[token_of_interest.m_type].first;
+    int state_rule = entry[token_of_interest.m_type].second;
+
+    if (action == 's') {
+      // If shift, place that on the stack
+      // change current state, create new layer with
+      // token_of_interest and the new state, increase index
+      LR1StackLayer new_layer(state_rule, token_of_interest);
+      m_stack.push(new_layer);
+      token_of_interest.clear();
+      current_state = state_rule;
+      i++;
+    } else if (action == 'r') {
+      // If reduce, reduce to a new token and try to read in again
+      // Check if rule number is correct
+      if(state_rule >= m_reduce_rules.size()){
+	RED();
+	std::cerr<<"PARSER ERROR: Reduction rule"<<state_rule<<" does not";
+	std::cerr<<" exist. Token of interest is "<<token_of_interest<<" index";
+	std::cerr<<" i = "<<i<<std::endl;
+	DEFAULT();
+	return false;						       
+      }
+      
+      std::vector<TokenType> reduce_rule = m_reduce_rules[state_rule];
+
+      // Prepare a vector for recording the tokens
+      std::vector<Token> reduced_tokens;
+      int counter = reduce_rule.size() - 1;
+      for(TokenType t:reduce_rule){
+	// Check if it's the last token, i.e. the target token to reduce to
+	if(!counter){
+	  token_of_interest.clear();
+	  token_of_interest = Token(t,state_rule,reduced_tokens);
+	  current_state = m_stack.top().m_state;
+	  break;
+	}
+	// Pop layers from stack and check if it's the same type
+	LR1StackLayer layer = m_stack.top();
+	m_stack.pop();
+	if(layer.m_token.m_type != t){
+	  RED();
+	  std::cerr<<"PARSER ERROR: Reduce "<< state_rule<<" failed.";
+	  std::cerr<<" State = "<< current_state << ", failed token = ";
+	  std::cerr<<layer.m_token<<", expected "<<Token(t,"");
+	  std::cerr<<std::endl<<"Reduce "<<state_rule<<" is: ";
+	  // Print the reduce rule
+	  std::cerr<<Token(reduce_rule[reduce_rule.size()-1],"")<<" -> ";
+	  for(int index = reduce_rule.size()-2; index >= 0; index --){
+	    std::cerr<<Token(reduce_rule[i],"")<<" ";
+	  }
+	  std::cerr<<std::endl;
+	  std::cerr<<"Currently at: "<<counter<<", read in from right to left.";
+	  std::cerr<<std::endl;
+	  DEFAULT();
+	  return false;
+	} else {
+	  // put the poped token into reduced_tokens vector
+	  reduced_tokens.emplace(reduced_tokens.begin(),layer.m_token);
+	}
+	counter --;
+      }
+    } else{
+      // Otherwise throw an exception indicate a crash.
+      PURPLE();
+      std::cerr<<"PARSER CRASHED: unknown action "<<action<<std::endl;
+      DEFAULT();
+      throw std::exception();
+    }
+  }
   return true;
 }

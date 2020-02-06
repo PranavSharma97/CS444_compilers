@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <stack>
 #include <map>
 #include <utility>
 #include <string>
@@ -36,8 +37,10 @@ class ParseTable{
     int m_state;
     Token m_token;
     LR1StackLayer(int state);
-    LR1StackLayer(int state,Token& token);
+    LR1StackLayer(int state,const Token& token);
   };
+
+  std::stack<LR1StackLayer> m_stack;
   
   // public:
   public:
