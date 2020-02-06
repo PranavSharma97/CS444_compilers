@@ -254,18 +254,6 @@ void ParseTable::readin(std::string input_file){
   
 }
 
-ParseTable::LR1StackLayer::LR1StackLayer(int state):
-  no_token(true),
-  m_state(state)
-{}
-
-
-ParseTable::LR1StackLayer::LR1StackLayer(int state,const Token& token):
-  no_token(false),
-  m_state(state),
-  m_token(token)
-{}
-
 bool ParseTable::parse(std::vector<Token>& token_vec){
   // Add eof to the end of token_vec, bof to the stack.
   const Token Token_EOF = Token(TokenType::T_EOF,"");
@@ -306,11 +294,11 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
       RED();
       std::cerr<<"PARSER ERROR: State "<< current_state <<" has no transition given";
       std::cerr<<" token "<<token_of_interest<<". Index i = "<< i;
-      std::cerr<<",top of stack is: (";
-      if(!m_stack.top().no_token){
-	std::cerr<<m_stack.top().m_token;
+      std::cerr<<",stack looks like:"<<std::endl;
+      while(!m_stack.empty()){
+	std::cerr<<m_stack.top()<<std::endl;
+	m_stack.pop();
       }
-      std::cerr<<","<<m_stack.top().m_state<<")"<<std::endl;
       DEFAULT();
       return false;
     }

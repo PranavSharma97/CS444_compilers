@@ -6,7 +6,7 @@
 #include <utility>
 #include <string>
 
-#include "token.h"
+#include "lr1_stack_layer.h"
 
 class ParseTable{
   
@@ -28,17 +28,6 @@ class ParseTable{
   TokenType m_start_token;
   
   void readin(std::string input_file);
-
-
-  // 
-  class LR1StackLayer{
-  public:
-    bool no_token;
-    int m_state;
-    Token m_token;
-    LR1StackLayer(int state);
-    LR1StackLayer(int state,const Token& token);
-  };
 
   std::stack<LR1StackLayer> m_stack;
   
