@@ -268,13 +268,14 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
   unsigned int tv_len = token_vec.size();
   Token token_of_interest;
   int current_state = 0;
-  
+  bool increase = false;
   for(unsigned int i = 0; i<tv_len;){
     // If current token_of_interest is TOKEN_EMPTY
     // Get a new token from token vector
     if(token_of_interest.m_type == TokenType::TOKEN_EMPTY){
       token_of_interest = token_vec[i];
-    }
+      increase = true;
+    }else increase = false;
 
     // Determine the action
 
@@ -308,6 +309,9 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
     int state_rule = entry[token_of_interest.m_type].second;
 
     if (action == 's') {
+      CYAN();
+      std::cout<<"Shift:"<<token_of_interest<<","<<i<<std::endl;
+      DEFAULT();
       // If shift, place that on the stack
       // change current state, create new layer with
       // token_of_interest and the new state, increase index
@@ -315,8 +319,11 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
       m_stack.push(new_layer);
       token_of_interest.clear();
       current_state = state_rule;
-      i++;
+      if(increase) i++;
     } else if (action == 'r') {
+      CYAN();
+      std::cout<<"Reduce"<<token_of_interest<<","<<i<<std::endl;
+      DEFAULT();
       // If reduce, reduce to a new token and try to read in again
       // Check if rule number is correct
       if(state_rule >= m_reduce_rules.size()){
@@ -329,7 +336,6 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
       }
       
       std::vector<TokenType> reduce_rule = m_reduce_rules[state_rule];
-
       // Prepare a vector for recording the tokens
       std::vector<Token> reduced_tokens;
       int counter = reduce_rule.size() - 1;
@@ -353,7 +359,7 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
 	  // Print the reduce rule
 	  std::cerr<<Token(reduce_rule[reduce_rule.size()-1],"")<<" -> ";
 	  for(int index = reduce_rule.size()-2; index >= 0; index --){
-	    std::cerr<<Token(reduce_rule[i],"")<<" ";
+	    std::cerr<<Token(reduce_rule[index],"")<<" ";
 	  }
 	  std::cerr<<std::endl;
 	  std::cerr<<"Currently at: "<<counter<<", read in from right to left.";

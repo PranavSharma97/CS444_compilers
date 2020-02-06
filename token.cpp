@@ -105,6 +105,12 @@ Token::Token(TokenType type, std::string lex):
   case 29:
     m_display_name = "T_PLUS";
     break;
+  case 107:
+    m_display_name = "BOF";
+    break;
+  case 108:
+    m_display_name = "EOF";
+    break;
   case 1001:
     m_display_name = "Goal";
     break;
@@ -509,6 +515,9 @@ Token::Token(TokenType type, std::string lex):
     break;
   case 1135:
     m_display_name = "ConstantExpression";
+    break;
+  case 2000:
+    m_display_name = "TOKEN_EMPTY";
     break;
   default:
     m_display_name = "TOKEN_FAILURE";
