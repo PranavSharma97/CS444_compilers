@@ -1,13 +1,13 @@
 #include "token.h"
 
 Token::Token():
-  m_type(TokenType::TOKEN_FAILURE)
+  m_type(TokenType::TOKEN_EMPTY)
 {
   m_rule = -1;
-  m_display_name = "TOKEN_FILURE";
+  m_display_name = "TOKEN_EMPTY";
 }
 
-Token::Token(TokenType type, std::string& lex):
+Token::Token(TokenType type, std::string lex):
   m_type(type),
   m_lex(lex)
 {
@@ -104,6 +104,12 @@ Token::Token(TokenType type, std::string& lex):
     break;
   case 29:
     m_display_name = "T_PLUS";
+    break;
+  case 107:
+    m_display_name = "BOF";
+    break;
+  case 108:
+    m_display_name = "EOF";
     break;
   case 1001:
     m_display_name = "Goal";
@@ -510,20 +516,28 @@ Token::Token(TokenType type, std::string& lex):
   case 1135:
     m_display_name = "ConstantExpression";
     break;
+  case 2000:
+    m_display_name = "TOKEN_EMPTY";
+    break;
   default:
     m_display_name = "TOKEN_FAILURE";
     break;
   }
 }
 
-Token::Token(TokenType type, int rule, std::vector<Token>& generated_token):
-  m_type(type),
-  m_rule(rule),
-  m_generated_tokens(generated_token)
+Token::Token(TokenType type, int rule, const std::vector<Token>& generated_token):
+  Token(type,"")
 {
-  // Need huge switch statement to determine the display name
+  m_rule = rule;
+  m_generated_tokens = generated_token;
 }
 
+void Token::clear(){
+  m_type = TokenType::TOKEN_EMPTY;
+  m_display_name = "TOKEN_EMPTY";
+  m_rule = -1;
+  m_generated_tokens.clear();
+}
 
 std::ostream& operator<<(std::ostream& os, const Token& t){
   os << t.m_display_name;

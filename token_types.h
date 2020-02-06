@@ -112,7 +112,9 @@ enum TokenType{
   T_THROWS = 106,
   T_BOF = 107,
   T_EOF = 108,
-  
+
+  // EMPTY type
+  TOKEN_EMPTY = 2000,
   // Failure type
   TOKEN_FAILURE = 1000,
   Goal = 1001,
