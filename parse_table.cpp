@@ -176,8 +176,6 @@ void ParseTable::readin(std::string input_file){
     ifs>>m_states_count;
     line++;
     
-    PURPLE();
-    std::cout<<m_states_count<<","<<line<<","<<input_file<<std::endl;
     ifs>>num;
     line++;
 
@@ -260,6 +258,8 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
   const Token Token_BOF = Token(TokenType::T_BOF,"");
   token_vec.emplace(token_vec.begin(),Token_BOF);
   token_vec.emplace_back(Token_EOF);
+  // Last bof is to make stack reduce to goal
+  token_vec.emplace_back(Token_BOF);
   LR1StackLayer initialState = LR1StackLayer(0);
   m_stack.push(initialState);
 
@@ -277,6 +277,12 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
       increase = true;
     }else increase = false;
 
+    // Check if we've reached goal state and nothing to be read in.
+    if(token_of_interest.m_type == TokenType::Goal &&
+       i == token_vec.size() - 1){
+      break;
+    }
+    
     // Determine the action
 
     // Check state
@@ -309,9 +315,6 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
     int state_rule = entry[token_of_interest.m_type].second;
 
     if (action == 's') {
-      CYAN();
-      std::cout<<"Shift:"<<token_of_interest<<","<<i<<std::endl;
-      DEFAULT();
       // If shift, place that on the stack
       // change current state, create new layer with
       // token_of_interest and the new state, increase index
@@ -321,9 +324,7 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
       current_state = state_rule;
       if(increase) i++;
     } else if (action == 'r') {
-      CYAN();
-      std::cout<<"Reduce"<<token_of_interest<<","<<i<<std::endl;
-      DEFAULT();
+      
       // If reduce, reduce to a new token and try to read in again
       // Check if rule number is correct
       if(state_rule >= m_reduce_rules.size()){
