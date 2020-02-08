@@ -1,6 +1,19 @@
 #!/bin/bash
 
-for file in /u/cs444/pub/assignment_testcases/a1/*
-do
-  ./compiler "$file" >> result.out
-done
+rm -f "positive.out"
+rm -f "negative.out"
+
+positive="positive.txt"
+while IFS= read -r file; do
+  ./compiler "$file" >> positive.out
+done < "$positive"
+
+negative="negative.txt"
+while IFS= read -r file; do
+  ./compiler "$file" >> negative.out
+done < "$negative"
+
+# for file in /u/cs444/pub/assignment_testcases/a1/*
+# do
+#   ./compiler "$file" >> result.out
+# done
