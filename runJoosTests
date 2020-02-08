@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for file in tests/JoosFeatures/*
+do
+  ./compiler "$file"
+done
