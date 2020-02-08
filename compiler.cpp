@@ -16,7 +16,14 @@ int main(int argc, char *argv[]) {
   string file(argv[1]);
   cout << file << endl;
 
-  vector<Token> result = extraTokenLogic(scanner(file));
+  vector<Token> result;
+
+  try{
+    result = extraTokenLogic(scanner(file));
+  } catch (std::exception& e){
+    cout << "Scanner failed" << endl;
+    return -1;
+  }
   
   for(Token& t: result){
     DEBUG_MSG('['<<t<<","<<t.m_lex<<"] ");
@@ -25,7 +32,10 @@ int main(int argc, char *argv[]) {
   try{
     ParseTable PT = ParseTable();
     bool valid = PT.parse(result);
-    if(!valid) return 42;
+    if(!valid) {
+      cout << "Invalid parsing" << endl;
+      return 42;
+    }
   } catch (std::exception& e){
     return -1;
   }
