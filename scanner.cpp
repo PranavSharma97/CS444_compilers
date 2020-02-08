@@ -10,6 +10,7 @@
 #include "readers.h"
 #include "dfa_states.h"
 #include "scanner.h"
+#include "debugger.h"
 
 using namespace std;
 
@@ -31,12 +32,12 @@ DFAStates transition (map<DFAStates, map<char, DFAStates>> transitions,DFAStates
        return transition_output_state->second;
     }
     else {
-      cout << "Could not find transition from " << state << " with " << c << endl;
+      DEBUG_MSG("Could not find transition from " << state << " with " << c);
       return FAILURE;
     }
   }
   else {
-    cout << "Could not find input state." << endl;
+    DEBUG_MSG("Could not find input state.");
     return FAILURE;
   }
 }
@@ -87,7 +88,7 @@ TokenType getTokenKind(string lexeme, DFAStates lastState, map<DFAStates, TokenT
 }
 
 vector<Token> scanner (string filename) {
-  cout << "Reading from file: " << filename << endl;
+  DEBUG_MSG("Reading from file: " + filename);
 
   //vector<pair<TokenType, string>> tokens;
   vector<Token> tokens;
@@ -122,24 +123,24 @@ vector<Token> scanner (string filename) {
 	   break;
 	 }
 	 else {
-	   cout << endl;
+	   DEBUG_MSG("");
 	   lastState = currentState;
 	   DFAStates transitionState = transition(transitions, currentState, c);
 
-	   cout << "Current State: " << currentState << endl;
-           cout << "Transition Character: " << c << endl;
-           cout << "Transition State: " << transitionState << endl;
+	   DEBUG_MSG("Current State: " << currentState);
+     DEBUG_MSG("Transition Character: " << c);
+     DEBUG_MSG("Transition State: " << transitionState);
 
 	   if (transitionState != FAILURE) {
              currentState = transitionState;
-	     cout << "Adding " << c << " to lexeme " << lexeme <<endl;
+	     DEBUG_MSG("Adding " << c << " to lexeme " << lexeme);
 	     lexeme += c;
 	   }
 	   else {
 	     TokenType tokenKind = getTokenKind(lexeme, lastState, acceptingStates);
 
 	     if (tokenKind != TOKEN_FAILURE) {
-	       cout << "Pushing back state: " << tokenKind << " for lexeme " << lexeme <<  endl;
+	       DEBUG_MSG("Pushing back state: " << tokenKind << " for lexeme " << lexeme);
 	       //tokens.push_back(make_pair(tokenKind, lexeme));
 	       tokens.push_back(Token(tokenKind,lexeme));
 				
@@ -153,7 +154,7 @@ vector<Token> scanner (string filename) {
 	       }
 	     }
 	     else {
-	       cout << "ERROR: could not parse Java file" << endl;
+	       DEBUG_MSG("ERROR: could not parse Java file");
 	       throw logic_error("ERROR: could not parse Java file");
 	     }
 	   }
@@ -162,14 +163,13 @@ vector<Token> scanner (string filename) {
     }
 
     if (currentState == SLASH_STAR) {
-      cout << "ERROR: no accepting state reached at end of Java file" << endl;
+      DEBUG_MSG("ERROR: no accepting state reached at end of Java file");
       throw logic_error("ERROR: no accepting state reached at end of Java file");
     }
 
     for(Token& t: tokens){
-      cout<<'['<<t<<","<<t.m_lex<<"] ";
+      DEBUG_MSG('['<<t<<","<<t.m_lex<<"] ");
     }
-    cout<<endl;
     
     javaFile.close();
   }

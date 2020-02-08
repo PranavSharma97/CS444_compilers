@@ -11,6 +11,13 @@ OBJECTS = ${OBJECTS1}
 DEPENDS = ${OBJECTS:.o=.d}
 EXECS = ${EXEC1}
 
+DEBUG ?= 1
+ifeq ($(DEBUG), 1)
+    CXXFLAGS =-DDEBUG
+else
+    CXXFLAGS=-DNDEBUG
+endif
+
 ####################################################3
 
 .PHONY : all clean
@@ -19,7 +26,7 @@ all : ${EXECS}
 
 
 ${EXEC1} : ${OBJECTS1}
-	${CXX} ${CXXFLAGS} $^ -o $@
+	${CXX} ${CXXFLAGS} $^ -o $@ $(CFLAGS)
 
 ${OBJECTS} : ${MAKEFILE_NAME}
 
