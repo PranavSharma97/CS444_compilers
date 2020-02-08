@@ -280,6 +280,7 @@ bool ParseTable::parse(std::vector<Token>& token_vec){
     // Check if we've reached goal state and nothing to be read in.
     if(token_of_interest.m_type == TokenType::Goal &&
        i == token_vec.size() - 1){
+      parse_tree = token_of_interest;
       break;
     }
     
