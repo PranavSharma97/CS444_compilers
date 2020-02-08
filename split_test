@@ -1,0 +1,10 @@
+#! /bin/bash
+
+for file in /u/cs444/pub/assignment_testcases/a1/*
+do
+    if grep -q "EXCEPTION" "$file" ; then
+	echo "$file" >> negative.txt
+    else
+	echo "$file" >> positive.txt
+    fi
+done
