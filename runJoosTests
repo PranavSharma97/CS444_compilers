@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for file in tests/JoosFeatures/*
+for file in /u/cs444/pub/assignment_testcases/a1/*
 do
   ./compiler "$file"
 done
