@@ -107,7 +107,7 @@ T_VOLATILE
 T_INTERFACE
 T_THROWS
 T_SLASH
-135
+136
 Goal
 Literal
 Type
@@ -243,6 +243,7 @@ LeftHandSide
 AssignmentOperator
 Expression
 ConstantExpression
+ModifierFinal
 Goal
 326
 Goal BOF CompilationUnit EOF
