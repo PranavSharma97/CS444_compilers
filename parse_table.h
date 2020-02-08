@@ -33,6 +33,8 @@ class ParseTable{
   
   // public:
   public:
+  Token parse_tree;
+  
   ParseTable();
   ParseTable(std::string& input_file);
 
