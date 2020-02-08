@@ -8,6 +8,7 @@
 #include "parse_table.h"
 #include "scanner.h"
 #include "token.h"
+#include "debugger.h"
 
 using namespace std;
 
@@ -18,9 +19,8 @@ int main(int argc, char *argv[]) {
   vector<Token> result = extraTokenLogic(scanner(file));
   
   for(Token& t: result){
-    cout<<'['<<t<<","<<t.m_lex<<"] ";
+    DEBUG_MSG('['<<t<<","<<t.m_lex<<"] ");
   }
-  cout<<endl;
 
   try{
     ParseTable PT = ParseTable();
