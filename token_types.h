@@ -251,5 +251,7 @@ enum TokenType{
   LeftHandSide = 1132,
   AssignmentOperator = 1133,
   Expression = 1134,
-  ConstantExpression = 1135
+  ConstantExpression = 1135,
+  ModifierFinal = 1136,
+  VariableDeclaratorFinal = 1137,
 };
