@@ -62,6 +62,44 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
   // Check before loop
   //int type_n = static_cast<int>(node.m_type);
   switch(node.m_type){
+  case TokenType::MethodDeclaration:
+    if (search(node.m_generated_tokens[0],TokenType::T_ABSTRACT) ||
+      search(node.m_generated_tokens[0],TokenType::T_NATIVE)){
+      if (search(node.m_generated_tokens[1],TokenType::Block)){
+        RED();
+        std::cerr<<"WEEDER ERROR: an abstract or native method cannot have a body!";
+        std::cerr<<std::endl;
+        DEFAULT();
+        return false;
+      }
+    }
+    if (search(node.m_generated_tokens[0],TokenType::T_ABSTRACT)){
+      std::map<TokenType,int> illegal_modifiers = {{TokenType::T_STATIC,1},{TokenType::T_FINAL,1}};
+      if (search_all(node.m_generated_tokens[0],illegal_modifiers)){
+        RED();
+        std::cerr<<"WEEDER ERROR: an abstract method cannot be static or final!";
+        std::cerr<<std::endl;
+        DEFAULT();
+        return false;
+      }
+    }
+    if (search(node.m_generated_tokens[0],TokenType::T_STATIC) &&
+      search(node.m_generated_tokens[0],TokenType::T_FINAL)){
+      RED();
+      std::cerr<<"WEEDER ERROR: a static method cannot be final!";
+      std::cerr<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    if (search(node.m_generated_tokens[0],TokenType::T_NATIVE) &&
+      !search(node.m_generated_tokens[0],TokenType::T_STATIC)){
+      RED();
+      std::cerr<<"WEEDER ERROR: a native method must be statuc!";
+      std::cerr<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    break;
   case TokenType::InterfaceDeclaration:
   case TokenType::ClassDeclaration:
     // Search for public key word in modifiers, if found check class name
