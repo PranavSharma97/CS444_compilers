@@ -312,7 +312,6 @@ ClassBody T_LEFT_CURLY_BRACKET T_RIGHT_CURLY_BRACKET
 ClassBodyDeclarations ClassBodyDeclaration
 ClassBodyDeclarations ClassBodyDeclarations ClassBodyDeclaration
 ClassBodyDeclaration ClassMemberDeclaration
-ClassBodyDeclaration StaticInitializer
 ClassBodyDeclaration ConstructorDeclaration
 ClassMemberDeclaration FieldDeclaration
 ClassMemberDeclaration MethodDeclaration
@@ -335,7 +334,6 @@ ClassTypeList ClassType
 ClassTypeList ClassTypeList T_COMMA ClassType
 MethodBody Block
 MethodBody T_SEMICOLON
-StaticInitializer T_STATIC Block
 ConstructorDeclaration Modifiers ConstructorDeclarator ConstructorBody
 ConstructorDeclarator SimpleName T_LEFT_ROUND_BRACKET FormalParameterList T_RIGHT_ROUND_BRACKET
 ConstructorDeclarator SimpleName T_LEFT_ROUND_BRACKET T_RIGHT_ROUND_BRACKET
