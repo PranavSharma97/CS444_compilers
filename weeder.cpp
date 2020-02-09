@@ -133,6 +133,17 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
     }
     break;
   case TokenType::InterfaceDeclaration:
+    // Search for public key word in modifiers, if found check class name
+    if(search(node.m_generated_tokens[0],TokenType::T_PUBLIC)){
+      if(node.m_generated_tokens[2].m_lex.compare(class_name)){
+	  RED();
+	  std::cerr<<"WEEDER ERROR: class name and file name doesn't match!";
+	  std::cerr<<std::endl;
+	  DEFAULT();
+	  return false;
+	}
+    }
+    break;
   case TokenType::ClassDeclaration:
     // Search for public key word in modifiers, if found check class name
     if(search(node.m_generated_tokens[0],TokenType::T_PUBLIC)){
@@ -144,6 +155,17 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
 	  return false;
 	}
     }
+
+    // Search for constructor
+    if(!search(node,TokenType::ConstructorDeclaration)){
+      RED();
+      std::cerr<<"WEEDER ERROR: class need a constructor.";
+      std::cerr<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    
+   
     break;
     
   case TokenType::INT_LITERAL:
