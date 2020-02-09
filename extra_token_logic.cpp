@@ -104,6 +104,7 @@ vector<Token> extraTokenLogic(vector<Token> tokens) {
         else if (it->m_lex == "class") { updateType(it, T_CLASS, "T_CLASS"); }
         else if (it->m_lex == "instanceof") { updateType(it, T_INSTANCE_OF, "T_INSTANCE_OF"); }
         else if (it->m_lex == "implements") { updateType(it, T_IMPLEMENTS, "T_IMPLEMENTS"); }
+        else if (it->m_lex == "goto") { updateType(it, T_GOTO, "T_GOTO"); }
         break;
       default:
         break;
