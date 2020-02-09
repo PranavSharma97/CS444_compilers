@@ -122,6 +122,15 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
     break;
     
   case TokenType::INT_LITERAL:
+    // Check if starts with 0
+    if(node.m_lex[0] == '0' && node.m_lex.length()>1){
+      CYAN();
+      std::cout<<node.m_lex<<std::endl;
+      RED();
+      std::cerr<<"WEEDER ERROR: int cannot start with 0"<<std::endl;
+      DEFAULT();
+      return false;
+    }
     // Check int range;
     if(node.m_lex.length() > 10){
       RED();
