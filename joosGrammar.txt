@@ -244,7 +244,7 @@ AssignmentOperator
 Expression
 ConstantExpression
 Goal
-227
+233
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
@@ -262,9 +262,12 @@ IntegralType T_SHORT
 IntegralType T_INT
 IntegralType T_CHAR
 ReferenceType ClassOrInterfaceType
+ReferenceType ArrayType
 ClassOrInterfaceType Name
 ClassType ClassOrInterfaceType
 InterfaceType ClassOrInterfaceType
+ArrayType PrimitiveType T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
+ArrayType Name T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
 Name SimpleName
 Name QualifiedName
 SimpleName T_IDENTIFIER
@@ -456,8 +459,11 @@ EqualityExpression RelationalExpression
 EqualityExpression EqualityExpression T_EQUAL_EQUAL RelationalExpression
 EqualityExpression EqualityExpression T_NOT_EQUAL RelationalExpression
 AndExpression EqualityExpression
+AndExpression AndExpression T_AND EqualityExpression
 ExclusiveOrExpression AndExpression
+ExclusiveOrExpression ExclusiveOrExpression T_EXP AndExpression
 InclusiveOrExpression ExclusiveOrExpression
+InclusiveOrExpression InclusiveOrExpression T_OR ExclusiveOrExpression
 ConditionalAndExpression InclusiveOrExpression
 ConditionalAndExpression ConditionalAndExpression T_AND_AND InclusiveOrExpression
 ConditionalOrExpression ConditionalAndExpression
