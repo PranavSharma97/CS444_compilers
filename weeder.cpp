@@ -60,6 +60,7 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
   // Check before loop
   //int type_n = static_cast<int>(node.m_type);
   switch(node.m_type){
+  case TokenType::InterfaceDeclaration:
   case TokenType::ClassDeclaration:
     // Search for public key word in modifiers, if found check class name
     if(search(node.m_generated_tokens[0],TokenType::T_PUBLIC)){
