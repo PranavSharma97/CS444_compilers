@@ -244,7 +244,7 @@ AssignmentOperator
 Expression
 ConstantExpression
 Goal
-233
+232
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
@@ -461,7 +461,6 @@ EqualityExpression EqualityExpression T_NOT_EQUAL RelationalExpression
 AndExpression EqualityExpression
 AndExpression AndExpression T_AND EqualityExpression
 ExclusiveOrExpression AndExpression
-ExclusiveOrExpression ExclusiveOrExpression T_EXP AndExpression
 InclusiveOrExpression ExclusiveOrExpression
 InclusiveOrExpression InclusiveOrExpression T_OR ExclusiveOrExpression
 ConditionalAndExpression InclusiveOrExpression
