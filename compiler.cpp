@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     result = extraTokenLogic(scanner(file));
   } catch (std::exception& e){
     cout << "Scanner failed" << endl;
-    return -1;
+    return 42;
   }
   
   for(Token& t: result){
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
     }
     parse_tree = PT.parse_tree;
   } catch (std::exception& e){
-    return -1;
+    return 42;
   }
 
   try{
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
       return 42;
     }
   } catch (std::exception& e){
-    return -1;
+    return 42;
   }
   
   cout << "Parsing successful" << endl;
