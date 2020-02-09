@@ -48,6 +48,7 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
 
   std::istringstream iss;
   std::map<TokenType,int> sub_cond = conditions;
+  std::map<TokenType,int> search_map;
   /*
   std::cout<<"-----------------------"<<std::endl;
   if(conditions.find(TokenType::T_MINUS)==conditions.end()){
@@ -138,20 +139,31 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
     }
     break;
   case TokenType::CastExpression:
-    CYAN();
-    for(Token& t: node.m_generated_tokens){
-      std::cout<<t<<" ";
-    }
-    std::cout<<std::endl;
-    DEFAULT();
-    // Check for nested casting
-    if(search(node.m_generated_tokens[1],TokenType::T_LEFT_ROUND_BRACKET)){
+    search_map.clear();
+    search_map[TokenType::Assignment] = 1;
+    search_map[TokenType::ConditionalAndExpression] = 1;
+    search_map[TokenType::ConditionalOrExpression] = 1;
+    search_map[TokenType::InclusiveOrExpression] = 1;
+    search_map[TokenType::AndExpression] = 1;
+    search_map[TokenType::EqualityExpression] = 1;
+    search_map[TokenType::RelationalExpression] = 1;
+    search_map[TokenType::AssignmentOperator] = 1;
+    search_map[TokenType::AdditiveExpression] = 1;
+    search_map[TokenType::MultiplicativeExpression] = 1;
+    search_map[TokenType::UnaryExpression] = 1;
+    search_map[TokenType::PrimaryNoNewArray] = 1;
+    search_map[TokenType::ArrayCreationExpression] = 1;
+    search_map[TokenType::ClassInstanceCreationExpression] = 1;
+    search_map[TokenType::MethodInvocation] = 1;
+    search_map[TokenType::ArrayAccess] = 1;
+
+
+    if(search_any(node.m_generated_tokens[1],search_map)){
       RED();
-      std::cerr<<"WEEDER ERROR: nested casting."<<std::endl;
+      std::cerr<<"WEEDER ERROR: cast to invalid type."<<std::endl;
       DEFAULT();
       return false;
     }
-    // Check for implicit integer constant cast
     
     break;
   default:
