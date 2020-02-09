@@ -1,7 +1,15 @@
 #!/bin/bash
 
+make clean
+make DEBUG=0
+
 rm -f "positive.out"
 rm -f "negative.out"
+rm -rf ./failed_tests
+
+mkdir ./failed_tests/
+mkdir ./failed_tests/positive
+mkdir ./failed_tests/negative
 
 let "POS_FAILED = 0"
 let "NEG_FAILED = 0"
@@ -10,6 +18,7 @@ positive="positive.txt"
 while IFS= read -r file; do
     if ! ./compiler "$file" >> positive.out;then
 	#POS_FAILED = $((POS_FAILED+1))
+	cp "$file" ./failed_tests/positive/
 	let "POS_FAILED = POS_FAILED + 1"
     fi
 done < "$positive"
@@ -19,6 +28,7 @@ while IFS= read -r file; do
     if ./compiler "$file" >> negative.out;then
 	# NEG_FAILED = $((NEG_FAILED + 1))
 	let "NEG_FAILED = NEG_FAILED + 1"
+	cp "$file" ./failed_tests/negative/
     fi
 done < "$negative"
 
