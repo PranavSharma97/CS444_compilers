@@ -246,7 +246,7 @@ ConstantExpression
 ModifierFinal
 VariableDeclaratorFinal
 Goal
-326
+325
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
@@ -305,7 +305,6 @@ Modifier T_PROTECTED
 Modifier T_PRIVATE
 Modifier T_STATIC
 Modifier T_ABSTRACT
-Modifier T_FINAL
 Modifier T_NATIVE
 Modifier T_SYNCHRONIZED
 Modifier T_TRANSIENT
