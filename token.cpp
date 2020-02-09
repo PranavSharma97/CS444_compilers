@@ -516,6 +516,12 @@ Token::Token(TokenType type, std::string lex):
   case 1135:
     m_display_name = "ConstantExpression";
     break;
+  case 1136:
+    m_display_name = "ModifierFinal";
+    break;
+  case 1137:
+    m_display_name = "VariableDeclaratorFinal";
+    break;
   case 2000:
     m_display_name = "TOKEN_EMPTY";
     break;
