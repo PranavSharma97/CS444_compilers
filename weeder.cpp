@@ -179,6 +179,20 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       }
     }
     break;
+  case TokenType::AbstractMethodDeclaration:
+    search_map.clear();
+    search_map[TokenType::T_FINAL] = 1;
+    search_map[TokenType::T_STATIC] = 1;
+    search_map[TokenType::T_NATIVE] = 1;
+    
+    if(search_any(node.m_generated_tokens[0],search_map)){
+      RED();
+      std::cerr<<"WEEDER ERROR: interface method cannot be static, final";
+      std::cerr<<", or native."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    break;
   default:
     break;
   }
