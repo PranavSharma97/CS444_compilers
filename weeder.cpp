@@ -94,7 +94,14 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
     if (search(node.m_generated_tokens[0],TokenType::T_NATIVE) &&
       !search(node.m_generated_tokens[0],TokenType::T_STATIC)){
       RED();
-      std::cerr<<"WEEDER ERROR: a native method must be statuc!";
+      std::cerr<<"WEEDER ERROR: a native method must be static!";
+      std::cerr<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    if (search(node.m_generated_tokens[0],TokenType::T_PRIVATE)){
+      RED();
+      std::cerr<<"WEEDER ERROR: private methods are not allowed in JOOS!";
       std::cerr<<std::endl;
       DEFAULT();
       return false;
