@@ -16,7 +16,7 @@ let "NEG_FAILED = 0"
 
 positive="positive.txt"
 while IFS= read -r file; do
-    if ! ./compiler "$file" >> positive.out;then
+    if ! ./joosc "$file" >> positive.out;then
 	#POS_FAILED = $((POS_FAILED+1))
 	cp "$file" ./failed_tests/positive/
 	let "POS_FAILED = POS_FAILED + 1"
@@ -25,7 +25,7 @@ done < "$positive"
 
 negative="negative.txt"
 while IFS= read -r file; do
-    if ./compiler "$file" >> negative.out;then
+    if ./joosc "$file" >> negative.out;then
 	# NEG_FAILED = $((NEG_FAILED + 1))
 	let "NEG_FAILED = NEG_FAILED + 1"
 	cp "$file" ./failed_tests/negative/
@@ -36,5 +36,5 @@ echo "Positive fails: $POS_FAILED, negative failes: $NEG_FAILED"
 
 # for file in /u/cs444/pub/assignment_testcases/a1/*
 # do
-#   ./compiler "$file" >> result.out
+#   ./joosc "$file" >> result.out
 # done
