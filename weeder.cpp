@@ -166,6 +166,19 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
     }
     
     break;
+  case TokenType::Modifiers:
+    // Check if final and abstract is used
+    if(node.m_generated_tokens.size()>1){
+      std::map<TokenType,int> illegal_modifiers = {{TokenType::T_FINAL, 1},{TokenType::T_ABSTRACT, 1}};
+      if(search_all(node.m_generated_tokens[0], illegal_modifiers)) {
+        RED();
+        std::cerr<<"WEEDER ERROR: cannot have abstract and final modifier!";
+        std::cerr<<std::endl;
+        DEFAULT();
+        return false;
+      }
+    }
+    break;
   default:
     break;
   }
