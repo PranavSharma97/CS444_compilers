@@ -4,6 +4,7 @@
 #include <exception>
 #include <sstream>
 #include <iostream>
+#include <utility> // std::pair
 
 Weeder::Weeder(const std::string& file_name, const Token& parse_tree):
   m_parse_tree(parse_tree)
@@ -136,6 +137,23 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       sub_cond[TokenType::T_MINUS] = 0;
     }
     break;
+  case TokenType::CastExpression:
+    CYAN();
+    for(Token& t: node.m_generated_tokens){
+      std::cout<<t<<" ";
+    }
+    std::cout<<std::endl;
+    DEFAULT();
+    // Check for nested casting
+    if(search(node.m_generated_tokens[1],TokenType::T_LEFT_ROUND_BRACKET)){
+      RED();
+      std::cerr<<"WEEDER ERROR: nested casting."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    // Check for implicit integer constant cast
+    
+    break;
   default:
     break;
   }
@@ -159,6 +177,42 @@ void Weeder::split(const std::string& s, const char delim, std::vector<std::stri
   while(std::getline(ss,piece,delim)){
     lst.emplace_back(piece);
   }
+}
+
+bool Weeder::search_any(Token& node, std::map<TokenType,int>& keys){
+  bool result = false;
+  if(keys.find(node.m_type)==keys.end()){
+    for(Token& t:node.m_generated_tokens){
+      result = search_any(t,keys);
+      if(result) break;
+    }
+  }else{
+    result = true;
+  }
+  return result;
+}
+
+bool Weeder::search_all(Token&node, std::map<TokenType,int>& keys){
+  bool result = true;
+  // If found the key and the entry value is larger than 0.
+  // Deduct the entry
+  if(keys.find(node.m_type)!=keys.end() && keys[node.m_type] > 0){
+    keys[node.m_type] --;
+  }
+  
+  // Check if all keys are 0.
+  for(std::pair<TokenType,int> kv_pair:keys){
+    if(kv_pair.second != 0 ) { result = false; break; }
+  }
+  // If we have not got result yet, keep searching
+  if(!result){
+    for(Token& t:node.m_generated_tokens){
+      result = search_any(t,keys);
+      if(result) break;
+    }
+  }
+  
+  return result;
 }
 
 
