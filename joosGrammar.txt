@@ -244,7 +244,7 @@ AssignmentOperator
 Expression
 ConstantExpression
 Goal
-232
+231
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
@@ -321,7 +321,6 @@ VariableDeclarators VariableDeclarator
 VariableDeclarator VariableDeclaratorId
 VariableDeclarator VariableDeclaratorId T_EQUAL VariableInitializer
 VariableDeclaratorId T_IDENTIFIER
-VariableDeclaratorId VariableDeclaratorId T_LEFT_SQUARE_BRACKET T_RIGHT_SQUARE_BRACKET
 VariableInitializer Expression
 MethodDeclaration MethodHeader MethodBody
 MethodHeader Modifiers Type MethodDeclarator
