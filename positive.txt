@@ -126,3 +126,5 @@
 /u/cs444/pub/assignment_testcases/a1/J1w_Interface.java
 /u/cs444/pub/assignment_testcases/a1/J1w_RestrictedNative.java
 /u/cs444/pub/assignment_testcases/a1/J1w_StaticField.java
+/u/cs444/pub/assignment_testcases/a1/J2_staticfielddeclaration.java
+/u/cs444/pub/assignment_testcases/a1/J2_staticFieldDecl.java

@@ -1,5 +1,3 @@
-/u/cs444/pub/assignment_testcases/a1/J2_staticfielddeclaration.java
-/u/cs444/pub/assignment_testcases/a1/J2_staticFieldDecl.java
 /u/cs444/pub/assignment_testcases/a1/Je_16_Circularity_1.java
 /u/cs444/pub/assignment_testcases/a1/Je_16_Circularity_2.java
 /u/cs444/pub/assignment_testcases/a1/Je_16_Circularity_3.java
