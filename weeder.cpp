@@ -244,6 +244,7 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
     search_map[TokenType::T_PUBLIC];
     search_map[TokenType::T_PROTECTED];
 
+    // block private field
     if(!search_any(node.m_generated_tokens[0],search_map)){
       RED();
       std::cerr<<"WEEDER ERROR: private field not allowed."<<std::endl;
@@ -251,9 +252,19 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       return false;
     }
 
+    // block final field
     if(search(node.m_generated_tokens[0],TokenType::T_FINAL)){
       RED();
       std::cerr<<"WEEDER ERROR: final field not allowed."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+
+    // block implicit int constant cast
+    if(!search(node.m_generated_tokens[1],TokenType::T_INT) &&
+       search(node.m_generated_tokens[2],TokenType::INT_LITERAL)){
+      RED();
+      std::cerr<<"WEEDER ERROR: implicit int constant cast not allowed."<<std::endl;
       DEFAULT();
       return false;
     }
