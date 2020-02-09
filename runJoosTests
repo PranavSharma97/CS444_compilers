@@ -3,15 +3,26 @@
 rm -f "positive.out"
 rm -f "negative.out"
 
+let "POS_FAILED = 0"
+let "NEG_FAILED = 0"
+
 positive="positive.txt"
 while IFS= read -r file; do
-  ./compiler "$file" >> positive.out
+    if ! ./compiler "$file" >> positive.out;then
+	#POS_FAILED = $((POS_FAILED+1))
+	let "POS_FAILED = POS_FAILED + 1"
+    fi
 done < "$positive"
 
 negative="negative.txt"
 while IFS= read -r file; do
-  ./compiler "$file" >> negative.out
+    if ./compiler "$file" >> negative.out;then
+	# NEG_FAILED = $((NEG_FAILED + 1))
+	let "NEG_FAILED = NEG_FAILED + 1"
+    fi
 done < "$negative"
+
+echo "Positive fails: $POS_FAILED, negative failes: $NEG_FAILED"
 
 # for file in /u/cs444/pub/assignment_testcases/a1/*
 # do
