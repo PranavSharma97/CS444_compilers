@@ -230,6 +230,33 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       DEFAULT();
       return false;
     }
+
+    // If not protected, it's a private method
+    if(!search(node.m_generated_tokens[0],TokenType::T_PROTECTED)){
+      RED();
+      std::cerr<<"WEEDER ERROR: interface method cannot be private."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    break;
+  case TokenType::FieldDeclaration:
+    search_map.clear();
+    search_map[TokenType::T_PUBLIC];
+    search_map[TokenType::T_PROTECTED];
+
+    if(!search_any(node.m_generated_tokens[0],search_map)){
+      RED();
+      std::cerr<<"WEEDER ERROR: private field not allowed."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+
+    if(search(node.m_generated_tokens[0],TokenType::T_FINAL)){
+      RED();
+      std::cerr<<"WEEDER ERROR: final field not allowed."<<std::endl;
+      DEFAULT();
+      return false;
+    }
     break;
   default:
     break;
