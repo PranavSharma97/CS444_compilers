@@ -73,7 +73,7 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
         return false;
       }
     }
-    if (search(node.m_generated_tokens[0],TokenType::T_ABSTRACT)){
+    if(search(node.m_generated_tokens[0],TokenType::T_ABSTRACT)){
       std::map<TokenType,int> illegal_modifiers = {{TokenType::T_STATIC,1},{TokenType::T_FINAL,1}};
       if (search_all(node.m_generated_tokens[0],illegal_modifiers)){
         RED();
@@ -83,7 +83,7 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
         return false;
       }
     }
-    if (search(node.m_generated_tokens[0],TokenType::T_STATIC) &&
+    if(search(node.m_generated_tokens[0],TokenType::T_STATIC) &&
       search(node.m_generated_tokens[0],TokenType::T_FINAL)){
       RED();
       std::cerr<<"WEEDER ERROR: a static method cannot be final!";
@@ -91,7 +91,7 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       DEFAULT();
       return false;
     }
-    if (search(node.m_generated_tokens[0],TokenType::T_NATIVE) &&
+    if(search(node.m_generated_tokens[0],TokenType::T_NATIVE) &&
       !search(node.m_generated_tokens[0],TokenType::T_STATIC)){
       RED();
       std::cerr<<"WEEDER ERROR: a native method must be static!";
@@ -99,9 +99,34 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       DEFAULT();
       return false;
     }
-    if (search(node.m_generated_tokens[0],TokenType::T_PRIVATE)){
+    if(search(node.m_generated_tokens[0],TokenType::T_PRIVATE)){
       RED();
       std::cerr<<"WEEDER ERROR: private methods are not allowed in JOOS!";
+      std::cerr<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    if(!search(node.m_generated_tokens[0],TokenType::T_PUBLIC) &&
+       !search(node.m_generated_tokens[0],TokenType::T_PROTECTED)){
+      RED();
+      std::cerr<<"WEEDER ERROR: package private methods are not allowed in JOOS!";
+      std::cerr<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    break;
+  case TokenType::ConstructorDeclaration:
+    if(!search(node.m_generated_tokens[0],TokenType::T_PUBLIC) &&
+       !search(node.m_generated_tokens[0],TokenType::T_PROTECTED)){
+      RED();
+      std::cerr<<"WEEDER ERROR: package private constructors are not allowed in JOOS!";
+      std::cerr<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    if(search(node.m_generated_tokens[0],TokenType::T_PRIVATE)){
+      RED();
+      std::cerr<<"WEEDER ERROR: private constructors are not allowed in JOOS!";
       std::cerr<<std::endl;
       DEFAULT();
       return false;
