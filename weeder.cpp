@@ -238,11 +238,11 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
     search_map[TokenType::T_FINAL] = 1;
     search_map[TokenType::T_STATIC] = 1;
     search_map[TokenType::T_NATIVE] = 1;
-    
+    search_map[TokenType::T_PRIVATE] = 1;
     if(search_any(node.m_generated_tokens[0],search_map)){
       RED();
       std::cerr<<"WEEDER ERROR: interface method cannot be static, final";
-      std::cerr<<", or native."<<std::endl;
+      std::cerr<<",native or private."<<std::endl;
       DEFAULT();
       return false;
     }
@@ -267,18 +267,21 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       DEFAULT();
       return false;
     }
-
+    search_map.clear();
+    search_map[TokenType::T_PRIVATE]  = 1;
+    search_map[TokenType::T_FINAL] = 1;
     // block final field
-    if(search(node.m_generated_tokens[0],TokenType::T_FINAL)){
+    if(search_any(node.m_generated_tokens[0],search_map)){
       RED();
-      std::cerr<<"WEEDER ERROR: final field not allowed."<<std::endl;
+      std::cerr<<"WEEDER ERROR: final or private field not allowed."<<std::endl;
       DEFAULT();
       return false;
     }
 
     // block implicit int constant cast
     if(!search(node.m_generated_tokens[1],TokenType::T_INT) &&
-       search(node.m_generated_tokens[2],TokenType::INT_LITERAL)){
+       search(node.m_generated_tokens[2],TokenType::INT_LITERAL)&&
+       !search(node.m_generated_tokens[2],TokenType::CastExpression)){
       RED();
       std::cerr<<"WEEDER ERROR: implicit int constant cast not allowed."<<std::endl;
       DEFAULT();
