@@ -1,39 +1,35 @@
-class Literal {
-// Contains type indicator (0,1,2,3,4,5), and value
-};
-
-class IntLiteralNode {
+class IntLiteralNode: public PrimaryNoNewArrayNode {
   int value;
-  IntLiteral(int value): value(value) {}
+  IntLiteralNode(int value): value(value) {}
 };
 
-class FloatLiteralNode {
+class FloatLiteralNode: public PrimaryNoNewArrayNode {
     float value;
-    FloatLiteral(float value): value(value) {}
+    FloatLiteralNode(float value): value(value) {}
 };
 
-class BoolLiteralNode {
+class BoolLiteralNode: public PrimaryNoNewArrayNode {
     bool value;
-    BoolLiteral(bool value): value(value) {}
+    BoolLiteralNode(bool value): value(value) {}
 };
 
-class CharLiteralNode {
+class CharLiteralNode: public PrimaryNoNewArrayNode {
     char value;
-    CharLiteral(char value): value(value) {}
+    CharLiteralNode(char value): value(value) {}
 };
 
-class StringLiteralNode {
+class StringLiteralNode: public PrimaryNoNewArrayNode {
     string value;
-    StringLiteral(string value): value(value) {}
+    StringLiteralNode(string value): value(value) {}
 };
 
-class NullLiteralNode {
-    NullLiteral() {}
+class NullLiteralNode: public PrimaryNoNewArrayNode {
+    NullLiteralNode() {}
 };
 
 class IdentifierNode {
     string identifier;
-    Identifier(string identifier): identifier(identifier) {}
+    IdentifierNode(string identifier): identifier(identifier) {}
 };
 
 class TypeNode {
@@ -41,7 +37,7 @@ class TypeNode {
     TypeNode(string type): type(type) {}
 };
 
-class PrimitiveTypeNode: public ArrayType {
+class PrimitiveTypeNode: public ArrayTypeNode {
     
 };
 
@@ -49,11 +45,11 @@ class ReferenceTypeNode: public TypeNode {
     
 };
 
-class ClassOrInterfaceType: public ReferenceTypeNode {
+class ClassOrInterfaceTypeNode: public ReferenceTypeNode {
 
 };
 
-class ArrayType: public ReferenceTypeNode {
+class ArrayTypeNode: public ReferenceTypeNode {
 
 };
 
@@ -61,9 +57,9 @@ class IntegralTypeNode {
     string type;
 };
 
-class NameNode: public ArrayType, public ClassOrInterfaceType, public PostfixExpression, public LeftHandSide {
-    string identifier;
-    Name(string identifier): identifier(identifier) {}
+class NameNode: public ArrayType, public ClassOrInterfaceType, public PostfixExpression, public LeftHandSideNode {
+    IdentifierNode* identifierNode
+    NameNode(string identifier): identifierNode(new IdentifierNode(identifier)) {}
 };
 
 class QualifiedNameNode: public NameNode {
@@ -75,9 +71,9 @@ class CompilationUnitNode {
     
 };
 
-class ImportDeclNode {
+class ImportDeclarationNode {
     string name;
-    ImportDeclNode(string name): name(name) {}
+    ImportDeclarationNode(string name): name(name) {}
 };
 
 class SingleTypeImportNode: public ImportDeclNode {
@@ -90,13 +86,13 @@ class TypeImportOnDemandNode: public ImportDeclNode {
     TypeImportOnDemandNode(string name): super(name) {}
 };
 
-class ClassDeclNode {
+class ClassDeclarationNode {
     string identifier;
-    ClassDeclNode(string identifier): super(identifier) {}
+    ClassDeclarationNode(string identifier): identifier(identifier) {}
     // Contains Superclass, 
 };
 
-class Modifiers {
+class ModifierNode {
 
 };
 
@@ -104,255 +100,251 @@ class InterfacesNode {
 // Contains list of Name pointers (Interfaces implemented)
 };
 
-class ClassBodyDeclarations {
-// Contains list of ClassBodyDeclaration pointers
-};
-
-class ClassBodyDeclaration {
+class ClassBodyDeclarationNode {
 
 };
 
-class ClassMemberDeclaration: public ClassBodyDeclaration {
+class ClassMemberDeclarationNode: public ClassBodyDeclarationNode {
 
 };
 
-class ConstructorDeclaration: public ClassBodyDeclaration {
+class ConstructorDeclarationNode: public ClassBodyDeclarationNode {
 
 };
 
-class FieldDeclaration: public ClassMemberDeclaration {
-
+class FieldDeclarationNode: public ClassMemberDeclarationNode {
+// Contains Modifiers, Type, and VariableDeclarator pointer
 };
 
-class VariableDeclarator {
+class VariableDeclaratorNode {
 //Id
 // and Expression Node
 };
 
-class MethodDeclaration: public ClassMemberDeclaration {
+class MethodDeclarationNode: public ClassMemberDeclarationNode {
 
 };
 
-class MethodHeader {
+class MethodHeaderNode {
 
 };
 
-class MethodDeclarator {
+class MethodDeclaratorNode {
 
 };
 
-class FormalParameterList {
+class FormalParameterListNode {
 // Flatten
 };
 
-class FormalParameter {
+class FormalParameterNode {
     
 };
 
-class ConstructorDeclaration: public ClassBodyDeclaration {
+class ConstructorDeclarationNode: public ClassBodyDeclarationNode {
 
 };
 
-class ConstructorDeclarator {
+class ConstructorDeclaratorNode {
     // Name and  Formal Parameter list
 };
 
-class InterfaceDeclaration {
+class InterfaceDeclarationNode {
     // InterfaceMemberDeclarations pointer
 };
 
-class ExtendsInterfaces {
+class ExtendsInterfacesNode {
     // Flatten
 };
 
-class InterfaceMemberDeclarations {
+class InterfaceMemberDeclarationsNode {
     // Flatten
 };
 
-class Block: public StatementWithoutTrailingSubstatement{
+class BlockNode: public StatementWithoutTrailingSubstatement{
 };
 
-class BlockStatements {
+class BlockStatementsNode {
     // Flatten
 };
 
-class BlockStatement {
+class BlockStatementNode {
 
 };
 
-class LocalVariableDeclaration {
+class LocalVariableDeclarationNode {
 
 };
 
-class Statement {
+class StatementNode {
 
 };
 
-class StatementWithoutTrailingSubstatement: public Statement {
+class StatementWithoutTrailingSubstatementNode: public StatementNode {
 
 };
 
-class IfThenStatement: public Statement {
+class IfThenStatementNode: public StatementNode {
 
 };
 
-class IfThenElseStatement: public Statement {
+class IfThenElseStatementNode: public StatementNode {
 
 };
 
-class WhileStatement: public Statement {
+class WhileStatementNode: public StatementNode {
 
 };
 
-class ForStatement: public Statement {
+class ForStatementNode: public StatementNode {
 
 };
 
-class StatementNoShortIf {
+class StatementNoShortIfNode {
 
 };
 
-class StatementWithoutTrailingSubstatement: public StatementNoShortIf {
+class StatementWithoutTrailingSubstatementNode: public StatementNoShortIfNode {
 
 };
 
-class IfThenElseStatementNoShortIf: public StatementNoShortIf {
+class IfThenElseStatementNoShortIfNode: public StatementNoShortIfNode {
 
 };
 
-class WhileStatementNoShortIf: public StatementNoShortIf {
+class WhileStatementNoShortIfNode: public StatementNoShortIfNode {
 
 };
 
-class ForStatementNoShortIf: public StatementNoShortIf {
+class ForStatementNoShortIfNode: public StatementNoShortIfNode {
 
 };
 
-class StatementWithoutTrailingSubstatement {
+class StatementWithoutTrailingSubstatementNode {
 
 };
 
-class ReturnStatement: public StatementWithoutTrailingSubstatement {
+class ReturnStatementNode: public StatementWithoutTrailingSubstatementNode {
 
 };
 
-class StatementExpression: public StatementWithoutTrailingSubstatement {
+class StatementExpressionNode: public StatementWithoutTrailingSubstatementNode {
 
 };
 
-class Assignment: public StatementExpression {
+class AssignmentNode: public StatementExpressionNode {
 
 };
 
-class MethodInvocation: public StatementExpression, public PrimaryNoNewArray {
+class MethodInvocationNode: public StatementExpression, public PrimaryNoNewArrayNode {
 
 };
 
-class ClassInstanceCreationExpression: public StatementExpression, public PrimaryNoNewArray {
+class ClassInstanceCreationExpressionNode: public StatementExpression, public PrimaryNoNewArrayNode {
 
 };
 
-class Primary: public PostfixExpression {
+class PrimaryNode: public PostfixExpressionNode {
 
 };
 
-class PrimaryNoNewArray: public Primary {
+class PrimaryNoNewArrayNode: public PrimaryNode {
 
 };
 
-class ArrayCreationExpression: public Primary {
+class ArrayCreationExpressionNode: public PrimaryNode {
 
 };
 
-class Literal: public PrimaryNoNewArray {
+class LiteralNode: public PrimaryNoNewArrayNode {
 
 };
 
-class ThisKeyword: public PrimaryNoNewArray {
+class ThisKeywordNode: public PrimaryNoNewArrayNode {
 
 };
 
-class Literal: public PrimaryNoNewArray {
+class LiteralNode: public PrimaryNoNewArrayNode {
 
 };
 
-class FieldAccess: public PrimaryNoNewArray, public LeftHandSide {
+class FieldAccessNode: public PrimaryNoNewArray, public LeftHandSideNode {
 
 };
 
-class ArrayAccess: public PrimaryNoNewArray, public LeftHandSide {
+class ArrayAccessNode: public PrimaryNoNewArray, public LeftHandSideNode {
 
 };
 
-class ArgumentList {
+class ArgumentListNode {
     // Flatten
 };
 
-class ArrayCreationExpression {
+class ArrayCreationExpressionNode {
     // ReferenceType pointer 
 };
 
-class PostfixExpression: public UnaryExpression {
+class PostfixExpressionNode: public UnaryExpressionNode {
 
 };
 
-class UnaryExpression: public MultiplicativeExpression {
+class UnaryExpressionNode: public MultiplicativeExpressionNode {
     // Indicate minus, tilde, exclaimation or none
 };
 
-class CastExpression: public UnaryExpression {
+class CastExpressionNode: public UnaryExpressionNode {
 
 };
 
-class Expression {
+class ExpressionNode {
 
 };
 
-class AssignmentExpression: public Expression {
+class AssignmentExpressionNode: public ExpressionNode {
 // Contains Assignment, ConditionalOrExpression pointers 
 };
 
-class Assignment: public AssignmentExpression {
+class AssignmentNode: public AssignmentExpressionNode {
 // Contains LeftHandSide, =, and AssignmentExpression pointer
 };
 
-class LeftHandSide {
+class LeftHandSideNode {
 
 };
 
-class ConditionalOrExpression: public AssignmentExpression {
+class ConditionalOrExpressionNode: public AssignmentExpressionNode {
 // Contains ConditionalOrExpression and ConditionalAndExpression pointers
 };
 
-class ConditionalAndExpression: public ConditionalOrExpression {
+class ConditionalAndExpressionNode: public ConditionalOrExpressionNode {
 // Contains InclusiveOrExpression and ConditionalAndExpression pointers
 };
 
-class InclusiveOrExpression: public ConditionalAndExpression {
+class InclusiveOrExpressionNode: public ConditionalAndExpressionNode {
 // Contains InclusiveOrExpression and ExclusiveOrExpression pointers
 };
 
-class ExclusiveOrExpression: public InclusiveOrExpression {
+class ExclusiveOrExpressionNode: public InclusiveOrExpressionNode {
 
 };
 
-class AndExpression: public ExclusiveOrExpression {
+class AndExpressionNode: public ExclusiveOrExpressionNode {
 
 };
 
-class EqualityExpression: public AndExpression {
+class EqualityExpressionNode: public AndExpressionNode {
 
 };
 
-class RelationalExpression: public EqualityExpression {
+class RelationalExpressionNode: public EqualityExpressionNode {
 // Contains RelationalExpression, AdditiveExpression, and ReferenceType pointers and operator
 };
 
-class AdditiveExpression: public RelationalExpression {
+class AdditiveExpressionNode: public RelationalExpressionNode {
 // Contains MultiplicativeExpression and AdditiveExpression pointers and operator 
 };
 
-class MultiplicativeExpression: public AdditiveExpression {
+class MultiplicativeExpressionNode: public AdditiveExpressionNode {
 // Contains MultiplicativeExpression, UnaryExpression pointers and operator
 };
 
