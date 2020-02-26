@@ -44,7 +44,7 @@ environment* Package::Search(std::vector<std::string> path){
   if(path.size() > 1){
     if(m_sub_packs.find(key) != m_sub_packs.end()){
       path.erase(path.begin());
-      m_sub_packs[key].find(path);
+      return m_sub_packs[key].Search(path);
     }
   }else{
     if(m_env.classes.find(key) != m_env.classes.end()){
