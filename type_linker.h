@@ -10,7 +10,7 @@ class TypeLinker{
   // Need to be freed
   Package*  m_packages;
   std::vector<ASTNode*> m_asts;
-
+  
   ASTNode* SearchNodeType(ASTNode* root, TokenType type);
   bool MergeEnvironment(environment* src, environment* std);
   bool ConstructPackage();

@@ -22,7 +22,7 @@ bool Package::AddToPackage(std::vector<std::string> path, environment* src){
     if(m_env == nullptr) m_env = new environment();
     return m_env.merge(src);
   }else{
-    Package* new_pack = new Package();
+    Package* new_pack = new Package(v_path[0]);
     m_sub_packs[v_path[0]] = new_pack;
     path.erase(path.begin());
     return new_pack.AddToPackage(path,src);
@@ -66,7 +66,8 @@ environment* Package::Serach(std::string path){
 // import *
 void Package::MergeAll(environment* dst){
   dst->overwrite_merge(m_env);
-  for(std::pair<std::string, Package*> kv_pair: m_sub_packs){
+
+  for(std::pair<std::string, Package*> &kv_pair: m_sub_packs){
     kv_pair.MergeAll(dst);
   }
 }
@@ -77,9 +78,10 @@ bool Package::GetAll(std::vector<std::string> path, environment* dst){
   std::string key = path;
   if(path[0] == "*"){
     dst->overwrite_merge(m_env);
-    for(std::pair<std::string, Package*> kv_pair: m_sub_packs){
-      kv_pair.MergeAll(dst);
-    }
+    //for(std::pair<std::string, Package*> &kv_pair: m_sub_packs){
+      //kv_pair.MergeAll(dst);
+      
+    //}
     return true;
   } else {
     // Check key
@@ -87,6 +89,7 @@ bool Package::GetAll(std::vector<std::string> path, environment* dst){
       path.erase(path.begin());
       return m_sub_packs[key].GetAll(path,dst);
     }
+    return false;
   }
 }
 
@@ -103,26 +106,50 @@ environment* Package::GetAll(std::string path){
   return new_env;
 }
 
+bool Package::CheckNames(environment* env){
+  if( env->classes.find(package_name) == env.classes.end() &&
+      env->interfaces.find(package_name) == env.classes.end()){
+    for(std::pair<std::string,Package*> &kv_pair: m_sub_packs){
+      if(!kv_pair.second->CheckNames(env)) return false;
+    }
+    return true;
+  }else {
+    RED();
+    std::cerr<<"ERROR: Package "<<package_name<<" clashes with a class";
+    std::cerr<<" or an interface name"<<std::endl;
+    DEFAULT();
+    return false;
+  }
+}
+
 /* Ctor Dtor */
 
 Package::Package():
-  m_env(nullptr)
+  m_env(nullptr),
+  package_name("")
+{}
+
+Package::Package(const std::string& pack_name):
+  m_env(nullptr),
+  package_name(pack_name)
 {}
 
 Package::Package(std::string path, environment* src):
-  m_env(nullptr)
+  m_env(nullptr),
+  package_name("")
 {
   std::vector<std::string> v_path;
   string_split(path,'.',v_path);
 
-  Package* new_pack = new Package();
+  
+  Package* new_pack = new Package(v_path[0]);
   m_sub_packs[v_path[0]] = new_pack;
   v_path.erase(v_path.begin());
   new_pack.AddToPackage(path,src);
 }
 
 Package::~Package(){
-  for(std::pair<std::string, Package*> kv_pair: m_sub_packs){
+  for(std::pair<std::string, Package*> &kv_pair: m_sub_packs){
     delete kv_pair->second;
   }
   if(m_env != nullptr) delete m_env;

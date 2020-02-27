@@ -29,95 +29,17 @@ ASTNode* TypeLinker::SearchNodeType(ASTNode* root, TokenType type){
   return nullptr;
 }
 
-bool TypeLinker::MergeEnvironment(environment* src, environment* dst){
-  // Merge classes
-  for(std::pair<std::string, ClassDeclarationNode*> kv_pair: dst->classes){
-    if(src->classes.find(kv_pair.first) == src->classes.end()){
-      src->classes[kv_pair.first] = kv_pair.second;
-    }else{
-      RED();
-      std::cerr<<"TYPE LINKER ERROR: Class: "<<kv_pair.first;
-      std::cerr<<" already defined"<<std::endl;
-      DEFAULT();
-      return false;
-    }
-  }
-  // Merge interfaces
-  for(std::pair<std::string, InterfaceDeclarationNode*> kv_pair: dst->interfaces){
-    if(src->interfaces.find(kv_pair.first) == src->interfaces.end()){
-      src->interfaces[kv_pair.first] = kv_pair.second;
-    }else{
-      RED();
-      std::cerr<<"TYPE LINKER ERROR: Interface: "<<kv_pair.first;
-      std::cerr<<" already defined"<<std::endl;
-      DEFAULT();
-      return false;
-    }
-  }
-  // Merge fields
-  for(std::pair<std::string, FieldDeclarationNode*> kv_pair: dst->fields){
-    if(src->fields.find(kv_pair.first) == src->fields.end()){
-      src->fields[kv_pair.first] = kv_pair.second;
-    }else{
-      RED();
-      std::cerr<<"TYPE LINKER ERROR: field: "<<kv_pair.first;
-      std::cerr<<" already declared"<<std::endl;
-      DEFAULT();
-      return false;
-    }
-  }
-  // Merge methods, current doesn't check the methods with same parameters
-  for(std::pair<std::string, FieldDeclarationNode*> kv_pair: dst->fields){
-    if(true){
-      for(MethodDeclarationNode* n: kv_pair.second){
-	src->fields[kv_pair.first].emplace_back(n);
-      }
-    }else{
-      RED();
-      std::cerr<<"TYPE LINKER ERROR: method: "<<kv_pair.first;
-      std::cerr<<" already declared"<<std::endl;
-      DEFAULT();
-      return false;
-    }
-  }
-  
-  // Merge localVariables
-  for(std::pair<std::string, LocalVariableDeclarationNode*> kv_pair: dst->localVariables){
-    if(src->localVariables.find(kv_pair.first) == src->localVariables.end()){
-      src->localVariables[kv_pair.first] = kv_pair.second;
-    }else{
-      RED();
-      std::cerr<<"TYPE LINKER ERROR: variable: "<<kv_pair.first;
-      std::cerr<<" already declared"<<std::endl;
-      DEFAULT();
-      return false;
-    }
-  }
-  // Merge formal Parameters
-  for(std::pair<std::string, FieldDeclarationNode*> kv_pair: dst->formalParameters){
-    if(src->formalParameters.find(kv_pair.first) == src->formalParameters.end()){
-      src->formalParameters[kv_pair.first] = kv_pair.second;
-    }else{
-      RED();
-      std::cerr<<"TYPE LINKER ERROR: parameter: "<<kv_pair.first;
-      std::cerr<<" duplicated."<<std::endl;
-      DEFAULT();
-      return false;
-    }
-  }
-}
-
 // If ast implements a package, bind it to a package.
 
 bool TypeLinker::ConstructPackage(){
   for(ASTNode* n: m_asts){
     // search for PackageDeclaration nodes and add to package
     ASTNode* p = SearchNodeType(n,TokenType::PackageDeclaration);
+    CompilationUnitNode* CUN = (CompilationUnitNode*) n;
     if(p!=nullptr){
       PackageDeclarationNode* pkg_dcl = (PackgeDeclarationNode*) p;
       // add this package to all of the packages
       
-      CompilationUnitNode* CUN = (CompilationUnitNode*) n;
       if(!m_packages->Add(pkg_dcl->package_name,CUN->scope)){
 	RED();
 	std::cerr<<"PACKAGE ERROR: Cannot add environment to package ";
@@ -125,6 +47,16 @@ bool TypeLinker::ConstructPackage(){
 	DEFAULT();
 	return false;
       }
+    } else {
+      // else add to default package
+      std::string default_package_name = "The greates default package name";
+      if(!m_packages->Add(default_package_name,CUN->scope)){
+	RED();
+	std::cerr<<"PACKAGE ERROR: Cannot add environment to default package."<<std::endl;
+	DEFAULT();
+	return false;
+      }
+    }
       /*
       if(m_packages.find(pkg_dcl->package_name) != m_packages.end()){
 	// get the package node
@@ -143,7 +75,7 @@ bool TypeLinker::ConstructPackage(){
 	}
       }
       */
-    }
+ 
   }
   return true;
 }
@@ -155,7 +87,8 @@ bool TypeLinker::ConstructPackage(){
 TypeLinker::TypeLinker(const std::vector<ASTNode*>& asts):
   m_asts(asts)
 {
-  m_packages = new m_packages();
+  std::string root_pack_name = "THIS IS THE ROOT PACK";
+  m_packages = new m_packages(root_pack_name);
 }
 
 bool TypeLinker::Link(){
@@ -212,6 +145,9 @@ bool TypeLinker::Link(){
 	  DEFAULT();
 	  return false;
       }
+
+      // check if any package name is a class name
+      if(!m_packages.CheckNames(&local_env)) return false;
       // resolve types
     }
   }
