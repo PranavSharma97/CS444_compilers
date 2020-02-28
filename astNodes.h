@@ -10,7 +10,7 @@ class ASTNode {
     ASTNode(const std::vector<ASTNode*>& ): children(children){}
 };
 
-class ExpressionNode: public ASTNode {
+class ExpressionNode: public virtual ASTNode {
   public:
     TokenType type() { return Expression; }
     //std::vector<ASTNode*> children;
@@ -75,7 +75,8 @@ class EqualityExpressionNode: public AndExpressionNode {
     TokenType type() { return EqualityExpression; }
     std::vector<ASTNode*> children;
     EqualityExpressionNode() = default;
-    EqualityExpressionNode(std::vector<ASTNode*> children): AndExpressionNode(children) {}
+    int op;
+    EqualityExpressionNode(int op, std::vector<ASTNode*> children): op(op), AndExpressionNode(children) {}
 };
 
 class RelationalExpressionNode: public EqualityExpressionNode {
@@ -84,7 +85,8 @@ class RelationalExpressionNode: public EqualityExpressionNode {
     TokenType type() { return RelationalExpression; }
     std::vector<ASTNode*> children;
     RelationalExpressionNode() = default;
-    RelationalExpressionNode(std::vector<ASTNode*> children): EqualityExpressionNode(children) {}
+    int op;
+    RelationalExpressionNode(int op, std::vector<ASTNode*> children): op(op), EqualityExpressionNode(op, children) {}
 };
 
 class AdditiveExpressionNode: public RelationalExpressionNode {
@@ -187,7 +189,7 @@ class IdentifierNode: public ASTNode {
     IdentifierNode(std::vector<std::string> identifier): identifier(identifier) {}
 };
 
-class TypeNode: public ASTNode {
+class TypeNode: public virtual ASTNode {
   public:
     TokenType type() { return Type; }
     std::string type_name;
@@ -205,7 +207,7 @@ class ReferenceTypeNode: public TypeNode {
 
 };
 
-class ClassOrInterfaceTypeNode: public ReferenceTypeNode {
+class ClassOrInterfaceTypeNode: public virtual ReferenceTypeNode {
   public:
     TokenType type() { return ClassOrInterfaceType; }
     std::vector<ASTNode*> children;
@@ -213,7 +215,7 @@ class ClassOrInterfaceTypeNode: public ReferenceTypeNode {
     ClassOrInterfaceTypeNode(std::vector<ASTNode*> children): children(children) {}
 };
 
-class ArrayTypeNode: public ReferenceTypeNode {
+class ArrayTypeNode: public virtual ReferenceTypeNode {
   public:
     TokenType type() { return ArrayType; }
     std::vector<ASTNode*> children;
@@ -236,7 +238,7 @@ class IntegralTypeNode: ASTNode {
     IntegralTypeNode(std::string type_name): type_name(type_name) {}
 };
 
-class LeftHandSideNode: public ASTNode {
+class LeftHandSideNode: public virtual ASTNode {
   public:
     TokenType type() { return LeftHandSide; }
     std::vector<ASTNode*> children;
@@ -251,14 +253,14 @@ class NameNode: public ArrayTypeNode, public ClassOrInterfaceTypeNode, public Po
     NameNode(std::vector<std::string> identifiers): identifierNode(new IdentifierNode(identifiers)) {}
 };
 
-class CompilationUnitNode: ASTNode {
+class CompilationUnitNode: public ASTNode {
   public:
     TokenType type() { return ArrayType; }
     std::vector<ASTNode*> children;
     CompilationUnitNode(std::vector<ASTNode*> children): ASTNode(children) {}
 };
 
-class ImportDeclarationNode: ASTNode {
+class ImportDeclarationNode: public ASTNode {
   public:
     TokenType type() { return ImportDeclaration; }
     int importType;
@@ -402,7 +404,7 @@ class InterfaceMemberDeclarationsNode: public ASTNode {
     InterfaceMemberDeclarationsNode(std::vector<ASTNode*> children): ASTNode(children) {}
 };
 
-class BlockStatementNode: public ASTNode {
+class BlockStatementNode: public virtual ASTNode {
   public:
     TokenType type() { return BlockStatement; }
     std::vector<ASTNode*> children;
@@ -423,7 +425,7 @@ class StatementNode: public BlockStatementNode {
     StatementNode(std::vector<ASTNode*> children): BlockStatementNode(children) {}
 };
 
-class StatementNoShortIfNode: public ASTNode {
+class StatementNoShortIfNode: public virtual ASTNode {
   public:
     TokenType type() { return ForStatementNoShortIf; }
     std::vector<ASTNode*> children;
@@ -554,7 +556,8 @@ class FieldAccessNode: public PrimaryNoNewArrayNode, public LeftHandSideNode {
   public:
     TokenType type() { return FieldAccess; }
     std::vector<ASTNode*> children;
-    FieldAccessNode(std::vector<ASTNode*> children): children(children) {}
+    std::string identifier;
+    FieldAccessNode(std::string identifier, std::vector<ASTNode*> children): identifier(identifier), children(children) {}
 };
 
 class ArrayAccessNode: public PrimaryNoNewArrayNode, public LeftHandSideNode {

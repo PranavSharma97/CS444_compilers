@@ -1,10 +1,9 @@
-#include "astNodes.h"
-#include "token.h"
 #include "astProcedures.h"
+#include<algorithm>
 
 using namespace std;
 
-TypeNode* TypeCreate(const Token& node) {
+TypeNode* TypeCreate(Token node) {
     if (node.m_generated_tokens[0].m_type == TokenType::PrimitiveType) {
         return PrimitiveTypeCreate(node.m_generated_tokens[0]);
     }
@@ -13,7 +12,7 @@ TypeNode* TypeCreate(const Token& node) {
     }
 }
 
-PrimitiveTypeNode* PrimitiveTypeCreate(const Token& node) {
+PrimitiveTypeNode* PrimitiveTypeCreate(Token node) {
     if (node.m_generated_tokens[0].m_type == TokenType::NumericType) {
         return new PrimitiveTypeNode(node.m_generated_tokens[0].m_generated_tokens[0].m_lex);
     }
@@ -21,7 +20,7 @@ PrimitiveTypeNode* PrimitiveTypeCreate(const Token& node) {
     return new PrimitiveTypeNode(node.m_generated_tokens[0].m_lex);
 }
 
-ReferenceTypeNode* ReferenceTypeCreate(const Token& node) {
+ReferenceTypeNode* ReferenceTypeCreate(Token node) {
     if (node.m_generated_tokens[0].m_type == TokenType::ClassOrInterfaceType) {
         return ClassOrInterfaceTypeCreate(node.m_generated_tokens[0]);
     }
@@ -30,11 +29,11 @@ ReferenceTypeNode* ReferenceTypeCreate(const Token& node) {
     }    
 }
 
-NameNode* ClassOrInterfaceTypeCreate(const Token& node) {
+NameNode* ClassOrInterfaceTypeCreate(Token node) {
     return NameCreate(node.m_generated_tokens[0]);
 }
 
-ArrayTypeNode* ArrayTypeCreate(const Token& node) {
+ArrayTypeNode* ArrayTypeCreate(Token node) {
    PrimitiveTypeNode* primitiveTypeNode = nullptr;
    NameNode* nameNode = nullptr;
    if (node.m_generated_tokens[0].m_type == TokenType::PrimitiveType) {
@@ -48,8 +47,8 @@ ArrayTypeNode* ArrayTypeCreate(const Token& node) {
     }
 }
 
-NameNode* NameCreate(const Token& node) {
-    Token& child = node.m_generated_tokens[0];
+NameNode* NameCreate(Token node) {
+    Token child = node.m_generated_tokens[0];
     vector<string> identifiers;
     while (child.m_generated_tokens[0].m_type == TokenType::QualifiedName) {
         identifiers.push_back(child.m_generated_tokens[0].m_generated_tokens[2].m_lex);
@@ -62,13 +61,13 @@ NameNode* NameCreate(const Token& node) {
     return new NameNode(identifiers);
 }
 
-CompilationUnitNode* CompilationUnitNode(const Token& node) {
+CompilationUnitNode* CompilationUnitCreate(Token node) {
     NameNode* name = nullptr;
-    vector<ImportDeclNode*> importDeclarations;
+    vector<ImportDeclarationNode*> importDeclarations;
     ClassDeclarationNode* classDeclarationNode = nullptr;
     InterfaceDeclarationNode* interfaceDeclarationNode = nullptr;
     vector<ASTNode*> children;
-    for (Token& child: node.m_generated_tokens) {
+    for (Token child: node.m_generated_tokens) {
         if (child.m_type == TokenType::PackageDeclaration) {
             name = NameCreate(child.m_generated_tokens[1]);
             children.push_back(name);
@@ -94,8 +93,8 @@ CompilationUnitNode* CompilationUnitNode(const Token& node) {
     return new CompilationUnitNode(children);
 }
 
-vector<ImportDeclarationNode*> ImportDeclarationsCreate(const Token& node) {
-    Token& child = node.m_generated_tokens[0];
+vector<ImportDeclarationNode*> ImportDeclarationsCreate(Token node) {
+    Token child = node.m_generated_tokens[0];
     vector<ImportDeclarationNode*> importDeclarations;
     while (child.m_generated_tokens.size() > 1) {
         importDeclarations.push_back(ImportDeclarationCreate(child.m_generated_tokens[1]));
@@ -108,7 +107,7 @@ vector<ImportDeclarationNode*> ImportDeclarationsCreate(const Token& node) {
     return importDeclarations;
 }
 
-ImportDeclarationNode* ImportDeclarationCreate(const Token& node) {
+ImportDeclarationNode* ImportDeclarationCreate(Token node) {
     if (node.m_generated_tokens[0].m_type == TokenType::SingleTypeImportDeclaration) {
         vector<ASTNode*> children = {NameCreate(node.m_generated_tokens[0].m_generated_tokens[1])};
         return new ImportDeclarationNode(0, children);
@@ -119,7 +118,7 @@ ImportDeclarationNode* ImportDeclarationCreate(const Token& node) {
     }
 }
 
-ClassDeclarationNode* ClassDeclarationCreate(const Token& node) {
+ClassDeclarationNode* ClassDeclarationCreate(Token node) {
     vector<ModifierNode*> modifiers;
     string identifier;
     NameNode* name = nullptr;
@@ -128,7 +127,7 @@ ClassDeclarationNode* ClassDeclarationCreate(const Token& node) {
     vector<MethodDeclarationNode*> methodDeclarations;
     vector<ClassBodyDeclarationNode*> classBodyDeclarations; 
     vector<ASTNode*> children;
-    for (Token& child: node.m_generated_tokens) {
+    for (Token child: node.m_generated_tokens) {
         if (child.m_type == TokenType::Modifiers) {
             modifiers = ModifiersCreate(child);
             for (int i=0; i<modifiers.size(); i++) {
@@ -139,7 +138,7 @@ ClassDeclarationNode* ClassDeclarationCreate(const Token& node) {
             identifier = child.m_lex;
         }
         else if (child.m_type == TokenType::Super) {
-            name = ClassOrInterfaceTypeCreate(Classchild.m_generated_tokens[1].m_generated_tokens[0]);
+            name = ClassOrInterfaceTypeCreate(child.m_generated_tokens[1].m_generated_tokens[0]);
             children.push_back(name);
         }
         else if (child.m_type == TokenType::Interfaces) {
@@ -149,7 +148,7 @@ ClassDeclarationNode* ClassDeclarationCreate(const Token& node) {
             }
         }
         else if (child.m_type == TokenType::ClassBody) {
-            if (child.m_generated_tokens[1] == TokenType::ClassBodyDeclarations) {
+            if (child.m_generated_tokens[1].m_type == TokenType::ClassBodyDeclarations) {
                 classBodyDeclarations = ClassBodyDeclarationsCreate(child.m_generated_tokens[1]);
                 for (int i=0; i<classBodyDeclarations.size(); i++) {
                     children.push_back(classBodyDeclarations[i]); 
@@ -161,14 +160,14 @@ ClassDeclarationNode* ClassDeclarationCreate(const Token& node) {
     return new ClassDeclarationNode(identifier, children);
 }
 
-InterfaceDeclarationNode* InterfaceDeclarationCreate(const Token& node) {
+InterfaceDeclarationNode* InterfaceDeclarationCreate(Token node) {
     vector<ModifierNode*> modifiers;
     string identifier;
     NameNode* name = nullptr;
     vector<InterfaceNode*> interfaces;
-    vector<MethodHeaderNode*> methodHeaders;
+    vector<MethodDeclarationNode*> methodHeaders;
     vector<ASTNode*> children;
-    for (Token& child: node.m_generated_tokens) {
+    for (Token child: node.m_generated_tokens) {
         if (child.m_type == TokenType::Modifiers) {
             modifiers = ModifiersCreate(child);
             for (int i=0; i<modifiers.size(); i++) {
@@ -184,11 +183,11 @@ InterfaceDeclarationNode* InterfaceDeclarationCreate(const Token& node) {
                 children.push_back(interfaces[i]);
             }
         }
-        else if (child.m_type == TokenType::ClassBody) {
-            if (child.m_generated_tokens[1] == TokenType::InterfaceMemberDeclarations) {
-                interfaceMemberDeclarations = InterfaceMemberDeclarationsCreate(child.m_generated_tokens[1]);
-                for (int i=0; i<interfaceMemberDeclarations.size(); i++) {
-                    children.push_back(interfaceMemberDeclarations[i]);
+        else if (child.m_type == TokenType::InterfaceBody) {
+            if (child.m_generated_tokens[1].m_type == TokenType::InterfaceMemberDeclarations) {
+                methodHeaders = InterfaceMemberDeclarationsCreate(child.m_generated_tokens[1]);
+                for (int i=0; i<methodHeaders.size(); i++) {
+                    children.push_back(methodHeaders[i]);
                 }
             }
         }
@@ -198,11 +197,11 @@ InterfaceDeclarationNode* InterfaceDeclarationCreate(const Token& node) {
 
 }
 
-vector<MethodHeaderNode*> InterfaceMemberDeclarationsCreate(const Token& node) {
-    vector<MethodHeaderNode*> methodHeaders;
-    Token& child = node.m_generated_tokens[0];
+vector<MethodDeclarationNode*> InterfaceMemberDeclarationsCreate(Token node) {
+    vector<MethodDeclarationNode*> methodHeaders;
+    Token child = node.m_generated_tokens[0];
     while (child.m_generated_tokens.size() > 1) {
-        methodHeaders.push_back(MethodHeaderCreate(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]));
+        methodHeaders.push_back(MethodDeclarationCreate(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]));
         child = child.m_generated_tokens[0];
     }
 
@@ -212,34 +211,34 @@ vector<MethodHeaderNode*> InterfaceMemberDeclarationsCreate(const Token& node) {
     return methodHeaders;
 }
 
-vector<ClassBodyDeclarationNode*> ClassBodyDeclarationsCreate(const Token& node) {
-    Token& child = node.m_generated_tokens[0];
+vector<ClassBodyDeclarationNode*> ClassBodyDeclarationsCreate(Token node) {
+    Token child = node.m_generated_tokens[0];
     vector<ClassBodyDeclarationNode*> classBodyDeclarations;
     while (child.m_generated_tokens.size() > 1) {
         if (child.m_generated_tokens[1].m_generated_tokens[0].m_type == TokenType::ClassMemberDeclaration) {
             if (child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::FieldDeclaration) {
-                classBodyDeclarations.push_back(FieldDeclarationCreate(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]);
+                classBodyDeclarations.push_back(FieldDeclarationCreate(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]));
             }
             else if (child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::MethodDeclaration) {
-                classBodyDeclarations.push_back(MethodDeclarationCreate(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]);
+                classBodyDeclarations.push_back(MethodDeclarationCreate(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]));
             }
         }
         else if (child.m_generated_tokens[1].m_generated_tokens[0].m_type == TokenType::ConstructorDeclaration) {
-            classBodyDeclarations.push_back(ConstructorDeclarationCreate(child.m_generated_tokens[1].m_generated_tokens[0]);
+            classBodyDeclarations.push_back(ConstructorDeclarationCreate(child.m_generated_tokens[1].m_generated_tokens[0]));
         }
         child = child.m_generated_tokens[0];
     }
 
     if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::ClassMemberDeclaration) {
         if (child.m_generated_tokens[0].m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::FieldDeclaration) {
-            classBodyDeclarations.push_back(FieldDeclarationCreate(child.m_generated_tokens[0].m_generated_tokens[0].m_generated_tokens[0]);
+            classBodyDeclarations.push_back(FieldDeclarationCreate(child.m_generated_tokens[0].m_generated_tokens[0].m_generated_tokens[0]));
         }
         else if (child.m_generated_tokens[0].m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::MethodDeclaration) {
-            classBodyDeclarations.push_back(MethodDeclarationCreate(child.m_generated_tokens[0].m_generated_tokens[0].m_generated_tokens[0]);
+            classBodyDeclarations.push_back(MethodDeclarationCreate(child.m_generated_tokens[0].m_generated_tokens[0].m_generated_tokens[0]));
         }
     }
     else if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::ConstructorDeclaration) {
-        classBodyDeclarations.push_back(ConstructorDeclarationCreate(child.m_generated_tokens[0].m_generated_tokens[0]);
+        classBodyDeclarations.push_back(ConstructorDeclarationCreate(child.m_generated_tokens[0].m_generated_tokens[0]));
     }
 
     reverse(classBodyDeclarations.begin(), classBodyDeclarations.end());
@@ -247,7 +246,7 @@ vector<ClassBodyDeclarationNode*> ClassBodyDeclarationsCreate(const Token& node)
     return classBodyDeclarations;
 }
 
-ConstructorDeclarationNode* ConstructorDeclarationCreate(const Token& node) {
+ConstructorDeclarationNode* ConstructorDeclarationCreate(Token node) {
     vector<ASTNode*> children;
     vector<ModifierNode*> modifiers = ModifiersCreate(node.m_generated_tokens[0]);
     for (int i=0; i<modifiers.size(); i++) {
@@ -266,7 +265,7 @@ ConstructorDeclarationNode* ConstructorDeclarationCreate(const Token& node) {
     return new ConstructorDeclarationNode(children);
 }
 
-ConstructorDeclaratorNode* ConstructorDeclaratorCreate(const Token& node) {
+ConstructorDeclaratorNode* ConstructorDeclaratorCreate(Token node) {
     string simpleName = node.m_generated_tokens[0].m_generated_tokens[0].m_lex;
     vector<FormalParameterNode*> formalParameters;
     vector<ASTNode*> children;
@@ -280,8 +279,8 @@ ConstructorDeclaratorNode* ConstructorDeclaratorCreate(const Token& node) {
     return new ConstructorDeclaratorNode(simpleName, children);
 }
 
-vector<FormalParameterNode*> FormalParameterListCreate(const Token& node) {
-    Token& child = node.m_generated_tokens[0];
+vector<FormalParameterNode*> FormalParameterListCreate(Token node) {
+    Token child = node.m_generated_tokens[0];
     vector<FormalParameterNode*> formalParameters;
     while (child.m_generated_tokens.size() > 1) {
         formalParameters.push_back(FormalParameterCreate(child.m_generated_tokens[1]));
@@ -294,7 +293,7 @@ vector<FormalParameterNode*> FormalParameterListCreate(const Token& node) {
     return formalParameters;
 }
 
-FormalParameterNode* FormalParameterCreate(const Token& node) {
+FormalParameterNode* FormalParameterCreate(Token node) {
     TypeNode* type = TypeCreate(node.m_generated_tokens[0]);
     string identifier = node.m_generated_tokens[1].m_generated_tokens[0].m_lex;
     vector<ASTNode*> children = {type};
@@ -302,24 +301,24 @@ FormalParameterNode* FormalParameterCreate(const Token& node) {
     return new FormalParameterNode(identifier, children);
 }
 
-vector<BlockStatementNode*> BlockStatementsCreate(const Token& node) {
-    Token& child = node.m_generated_tokens[0];
+vector<BlockStatementNode*> BlockStatementsCreate(Token node) {
+    Token child = node.m_generated_tokens[0];
     vector<BlockStatementNode*> blockStatements;
     while (child.m_generated_tokens.size() > 1) {
         if (child.m_generated_tokens[1].m_generated_tokens[0].m_type == TokenType::LocalVariableDeclarationStatement) {
-            blockStatements.push_back(LocalVariableDeclarationCreate(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]);
+            blockStatements.push_back(LocalVariableDeclarationCreate(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]));
         }
         else if (child.m_generated_tokens[1].m_generated_tokens[0].m_type == TokenType::Statement) {
-            blockStatements.push_back(StatementCreate(child.m_generated_tokens[1].m_generated_tokens[0]);
+            blockStatements.push_back(StatementCreate(child.m_generated_tokens[1].m_generated_tokens[0]));
         }
         child = child.m_generated_tokens[0];
     }
 
     if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::LocalVariableDeclarationStatement) {
-        blockStatements.push_back(LocalVariableDeclarationCreate(child.m_generated_tokens[0].m_generated_tokens[0].m_generated_tokens[0]);
+        blockStatements.push_back(LocalVariableDeclarationCreate(child.m_generated_tokens[0].m_generated_tokens[0].m_generated_tokens[0]));
     }
     else if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::Statement) {
-        blockStatements.push_back(StatementCreate(child.m_generated_tokens[0].m_generated_tokens[0]);
+        blockStatements.push_back(StatementCreate(child.m_generated_tokens[0].m_generated_tokens[0]));
     }
 
     reverse(blockStatements.begin(), blockStatements.end());
@@ -328,7 +327,7 @@ vector<BlockStatementNode*> BlockStatementsCreate(const Token& node) {
 
 }
 
-LocalVariableDeclarationNode* LocalVariableDeclarationCreate(const Token& node) {
+LocalVariableDeclarationNode* LocalVariableDeclarationCreate(Token node) {
     TypeNode* type = TypeCreate(node.m_generated_tokens[0]);
     VariableDeclaratorNode* variableDeclarator = VariableDeclaratorCreate(node.m_generated_tokens[1]);
     vector<ASTNode*> children = {type, variableDeclarator};
@@ -336,8 +335,8 @@ LocalVariableDeclarationNode* LocalVariableDeclarationCreate(const Token& node) 
     return new LocalVariableDeclarationNode(children);
 }
 
-VariableDeclaratorNode* VariableDeclaratorCreate(const Token& node) {
-    string identifier = node.m_generated_tokens[0];
+VariableDeclaratorNode* VariableDeclaratorCreate(Token node) {
+    string identifier = node.m_generated_tokens[0].m_generated_tokens[0].m_lex;
     ExpressionNode* expression = nullptr;
     vector<ASTNode*> children;
     if (node.m_generated_tokens.size() > 1) {
@@ -348,7 +347,7 @@ VariableDeclaratorNode* VariableDeclaratorCreate(const Token& node) {
     return new VariableDeclaratorNode(identifier, children);
 }
 
-StatementNode* StatementCreate(const Token& node) {
+StatementNode* StatementCreate(Token node) {
     StatementNode* statementNode = nullptr;
     if (node.m_generated_tokens[0].m_type == TokenType::StatementWithoutTrailingSubstatement) {
         statementNode = StatementWithoutTrailingSubstatementCreate(node.m_generated_tokens[0]); 
@@ -369,7 +368,7 @@ StatementNode* StatementCreate(const Token& node) {
     return statementNode;
 }
 
-StatementNoShortIfNode* StatementNoShortIfCreate(const Token& node) {
+StatementNoShortIfNode* StatementNoShortIfCreate(Token node) {
     StatementNoShortIfNode* statementNoShortIfNode = nullptr;
     if (node.m_generated_tokens[0].m_type == TokenType::StatementWithoutTrailingSubstatement) {
         statementNoShortIfNode = StatementWithoutTrailingSubstatementCreate(node.m_generated_tokens[0]);
@@ -387,11 +386,16 @@ StatementNoShortIfNode* StatementNoShortIfCreate(const Token& node) {
     return statementNoShortIfNode;
 }
 
-StatementWithoutTrailingSubstatementNode* StatementWithoutTrailingSubstatementCreate(const Token& node) {
+StatementWithoutTrailingSubstatementNode* StatementWithoutTrailingSubstatementCreate(Token node) {
     StatementWithoutTrailingSubstatementNode* statementWithoutTrailingSubstatementNode = nullptr;
     if (node.m_generated_tokens[0].m_type == TokenType::Block) {
         if (node.m_generated_tokens[0].m_generated_tokens[1].m_type == TokenType::BlockStatements) {
-            statementWithoutTrailingSubstatementNode = new BlockNode(BlockStatementsCreate(node.m_generated_tokens[0].m_generated_tokens[1]));
+            vector<ASTNode*> children;
+            vector<BlockStatementNode*> blockStatements = BlockStatementsCreate(node.m_generated_tokens[0].m_generated_tokens[1]);
+            for (int i=0; i<blockStatements.size(); i++) {
+                children.push_back(blockStatements[i]);
+            }
+            statementWithoutTrailingSubstatementNode = new BlockNode(children);
         }
     }
     else if (node.m_generated_tokens[0].m_type == TokenType::ExpressionStatement) {
@@ -404,7 +408,7 @@ StatementWithoutTrailingSubstatementNode* StatementWithoutTrailingSubstatementCr
     return statementWithoutTrailingSubstatementNode;
 }
 
-ReturnStatementNode* ReturnStatementCreate(const Token& node) {
+ReturnStatementNode* ReturnStatementCreate(Token node) {
     ExpressionNode* expression = nullptr;
     vector<ASTNode*> children;
     if (node.m_generated_tokens[1].m_type == TokenType::Expression) {
@@ -415,13 +419,14 @@ ReturnStatementNode* ReturnStatementCreate(const Token& node) {
     return new ReturnStatementNode(children);
 }
 
-StatementExpressionNode* StatementExpressionCreate(const Token& node) {
+StatementExpressionNode* StatementExpressionCreate(Token node) {
     StatementExpressionNode* statementExpressionNode = nullptr;
     if (node.m_generated_tokens[0].m_type == TokenType::Assignment) {
         statementExpressionNode = AssignmentCreate(node.m_generated_tokens[0]);
     }
     else if (node.m_generated_tokens[0].m_type == TokenType::MethodInvocation) {
-        statementExpressionNode = MethodInvocation(node.m_generated_tokens[0]);
+        //statementExpressionNode = MethodInvocation(node.m_generated_tokens[0]);
+
     }
     else if (node.m_generated_tokens[0].m_type == TokenType::ClassInstanceCreationExpression) {
         statementExpressionNode = ClassInstanceCreationExpressionCreate(node.m_generated_tokens[0]);
@@ -430,7 +435,7 @@ StatementExpressionNode* StatementExpressionCreate(const Token& node) {
     return statementExpressionNode;
 }
 
-IfThenStatementNode* IfThenStatementCreate(const Token& node) {
+IfThenStatementNode* IfThenStatementCreate(Token node) {
     ExpressionNode* expression = ExpressionCreate(node.m_generated_tokens[2]);
     StatementNode* statement = StatementCreate(node.m_generated_tokens[4]);
 
@@ -439,27 +444,27 @@ IfThenStatementNode* IfThenStatementCreate(const Token& node) {
     return new IfThenStatementNode(children);
 }
 
-IfThenElseStatementNode* IfThenElseStatementCreate(const Token& node) {
+IfThenElseStatementNode* IfThenElseStatementCreate(Token node) {
     ExpressionNode* expression = ExpressionCreate(node.m_generated_tokens[2]);
     StatementNoShortIfNode* statementNoShortIf = StatementNoShortIfCreate(node.m_generated_tokens[4]);
     StatementNode* statement = StatementCreate(node.m_generated_tokens[6]);
 
     vector<ASTNode*> children = {expression, statementNoShortIf, statement};
     
-    return IfThenElseStatementNode(children);
+    return new IfThenElseStatementNode(children);
 }
 
-IfThenElseStatementNoShortIfNode* IfThenElseStatementNoShortIfCreate(const Token& node) {
+IfThenElseStatementNoShortIfNode* IfThenElseStatementNoShortIfCreate(Token node) {
     ExpressionNode* expression = ExpressionCreate(node.m_generated_tokens[2]);
     StatementNoShortIfNode* statementNoShortIf1 = StatementNoShortIfCreate(node.m_generated_tokens[4]);
     StatementNoShortIfNode* statementNoShortIf2 = StatementNoShortIfCreate(node.m_generated_tokens[6]);
 
     vector<ASTNode*> children = {expression, statementNoShortIf1, statementNoShortIf2};
 
-    return IfThenElseStatementNode(children);
+    return new IfThenElseStatementNoShortIfNode(children);
 }
 
-WhileStatementNode* WhileStatementCreate(const Token& node) {
+WhileStatementNode* WhileStatementCreate(Token node) {
     ExpressionNode* expression = ExpressionCreate(node.m_generated_tokens[2]);
     StatementNode* statement = StatementCreate(node.m_generated_tokens[4]);
 
@@ -469,16 +474,16 @@ WhileStatementNode* WhileStatementCreate(const Token& node) {
 
 }
 
-WhileStatementNoShortIfNode* WhileStatementNoShortIfCreate(const Token& node) {
+WhileStatementNoShortIfNode* WhileStatementNoShortIfCreate(Token node) {
     ExpressionNode* expression = ExpressionCreate(node.m_generated_tokens[2]);
     StatementNoShortIfNode* statementNoShortIf = StatementNoShortIfCreate(node.m_generated_tokens[4]);
 
     vector<ASTNode*> children = {expression, statementNoShortIf};
 
-    return WhileStatementNoShortIfNode(children);
+    return new WhileStatementNoShortIfNode(children);
 }
 
-ForStatementNode* ForStatementCreate(const Token& node) {
+ForStatementNode* ForStatementCreate(Token node) {
     LocalVariableDeclarationNode* localVariableDeclaration = nullptr;
     StatementExpressionNode* statementExpressionForInit = nullptr;
     StatementExpressionNode* statementExpressionForUpdate = nullptr;
@@ -487,7 +492,7 @@ ForStatementNode* ForStatementCreate(const Token& node) {
 
     vector<ASTNode*> children;
 
-    for (Token& child: node.m_generated_tokens) {
+    for (Token child: node.m_generated_tokens) {
         if (child.m_type == TokenType::ForInit) {
             if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::StatementExpression) {
                 statementExpressionForInit = StatementExpressionCreate(child.m_generated_tokens[0].m_generated_tokens[0]);
@@ -515,7 +520,7 @@ ForStatementNode* ForStatementCreate(const Token& node) {
     return new ForStatementNode(children);
 }
 
-ForStatementNoShortIfNode* ForStatementNoShortIfCreate(const Token& node) {
+ForStatementNoShortIfNode* ForStatementNoShortIfCreate(Token node) {
     LocalVariableDeclarationNode* localVariableDeclaration = nullptr;
     StatementExpressionNode* statementExpressionForInit = nullptr;
     StatementExpressionNode* statementExpressionForUpdate = nullptr;
@@ -524,7 +529,7 @@ ForStatementNoShortIfNode* ForStatementNoShortIfCreate(const Token& node) {
    
     vector<ASTNode*> children;
 
-    for (Token& child: node.m_generated_tokens) {
+    for (Token child: node.m_generated_tokens) {
         if (child.m_type == TokenType::ForInit) {
             if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::StatementExpression) {
                 statementExpressionForInit = StatementExpressionCreate(child.m_generated_tokens[0].m_generated_tokens[0]);
@@ -552,36 +557,45 @@ ForStatementNoShortIfNode* ForStatementNoShortIfCreate(const Token& node) {
     return new ForStatementNoShortIfNode(children);
 }
 
-vector<InterfaceNode*> ExtendsInterfacesCreate(const Token& node) {
-    Token& child = node.m_generated_tokens[1];
+vector<InterfaceNode*> ExtendsInterfacesCreate(Token node) {
+    Token child = node.m_generated_tokens[1];
     vector<InterfaceNode*> interfaces;
     while (child.m_generated_tokens.size() > 2) {
-        interfaces.push_back(new InterfaceNode(ClassOrInterfaceTypeCreate(child.m_generated_tokens[2].m_generated_tokens[0])));
+        vector<ASTNode*> children;
+        children.push_back(ClassOrInterfaceTypeCreate(child.m_generated_tokens[2].m_generated_tokens[0]));
+        interfaces.push_back(new InterfaceNode(children));
         child = child.m_generated_tokens[0];
     }
 
-    interfaces.push_back(new InterfaceNode(ClassOrInterfaceTypeCreate(child.m_generated_tokens[1].m_generated_tokens[0])));
+    vector<ASTNode*> children;
+    children.push_back(ClassOrInterfaceTypeCreate(child.m_generated_tokens[1].m_generated_tokens[0]));
+    interfaces.push_back(new InterfaceNode(children));
+
     reverse(interfaces.begin(), interfaces.end());
 
     return interfaces;
 }
 
-vector<InterfaceNode*> InterfacesCreate(const Token& node) {
-    Token& child = node.m_generated_tokens[0];
+vector<InterfaceNode*> InterfacesCreate(Token node) {
+    Token child = node.m_generated_tokens[0];
     vector<InterfaceNode*> interfaces;
     while (child.m_generated_tokens.size() > 1) {
-        interfaces.push_back(new InterfaceNode(ClassOrInterfaceTypeCreate(child.m_generated_tokens[1].m_generated_tokens[0])));
+        vector<ASTNode*> children;
+        children.push_back(ClassOrInterfaceTypeCreate(child.m_generated_tokens[2].m_generated_tokens[0]));
+        interfaces.push_back(new InterfaceNode(children));
         child = child.m_generated_tokens[0];
     }
 
-    interfaces.push_back(new InterfaceNode(ClassOrInterfaceTypeCreate(child.m_generated_tokens[0].m_generated_tokens[0])));
+    vector<ASTNode*> children;
+    children.push_back(ClassOrInterfaceTypeCreate(child.m_generated_tokens[0].m_generated_tokens[0]));
+    interfaces.push_back(new InterfaceNode(children));
     reverse(interfaces.begin(), interfaces.end());
 
     return interfaces;
 }
 
-vector<ModifierNode*> ModifiersCreate(const Token& node) {
-    Token& child = node.m_generated_tokens[0];
+vector<ModifierNode*> ModifiersCreate(Token node) {
+    Token child = node.m_generated_tokens[0];
     vector<ModifierNode*> modifiers;
     while (child.m_generated_tokens.size() > 1) {
         modifiers.push_back(new ModifierNode(child.m_generated_tokens[1].m_lex));
@@ -594,7 +608,7 @@ vector<ModifierNode*> ModifiersCreate(const Token& node) {
     return modifiers;
 }
 
-FieldDeclarationNode* FieldDeclarationCreate(const Token& node) {
+FieldDeclarationNode* FieldDeclarationCreate(Token node) {
     vector<ModifierNode*> modifiers = ModifiersCreate(node.m_generated_tokens[0]);
     TypeNode* type = TypeCreate(node.m_generated_tokens[1]);
     VariableDeclaratorNode* variableDeclarator = VariableDeclaratorCreate(node.m_generated_tokens[2].m_generated_tokens[0]);
@@ -605,28 +619,50 @@ FieldDeclarationNode* FieldDeclarationCreate(const Token& node) {
         children.push_back(modifiers[i]);
     }
 
-    children.push_back(type, variableDeclarator);
+    children.push_back(type);
+    children.push_back(variableDeclarator);
 
     return new FieldDeclarationNode(children);
 }
 
-MethodDeclarationNode* MethodDeclarationCreate(const Token& node) {
-    MethodHeaderNode* methodHeader = MethodHeaderCreate(node.m_generated_tokens[0]);
+MethodDeclarationNode* MethodDeclarationCreate(Token node) {
+    
+    MethodHeaderNode* methodHeader = nullptr;
+    if (node.m_type == TokenType::MethodHeader) {
+        methodHeader = MethodHeaderCreate(node);
+    }
+    else {
+        methodHeader = MethodHeaderCreate(node.m_generated_tokens[0]);
+    }
     BlockNode* block = nullptr;
+
+    vector<BlockStatementNode*> blockStatements;
 
     vector<ASTNode*> children;
     children.push_back(methodHeader);
 
+    if (node.m_generated_tokens.size() == 1) {
+        return new MethodDeclarationNode(children);
+    }
+
+    vector<ASTNode*> childrenOfBlock;
+
     if (node.m_generated_tokens[1].m_generated_tokens[0].m_type == TokenType::Block) {
-        block = Block(node.m_generated_tokens[1].m_generated_tokens[0]);
-        children.push_back(block);
+        if (node.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[1].m_type == TokenType::BlockStatements) {
+            blockStatements = BlockStatementsCreate(node.m_generated_tokens[1].m_generated_tokens[0]);
+            for (int i=0; i<blockStatements.size(); i++) {
+                childrenOfBlock.push_back(blockStatements[i]);
+            }
+            block = new BlockNode(childrenOfBlock);
+            children.push_back(block);        
+        }
     }
      
     return new MethodDeclarationNode(children);
 }
 
-MethodHeaderNode* MethodHeaderCreate(const Token& node) {
-    ModifiersNode* modifiers = ModifiersCreate(node.m_generated_tokens[0]);
+MethodHeaderNode* MethodHeaderCreate(Token node) {
+    vector<ModifierNode*> modifiers = ModifiersCreate(node.m_generated_tokens[0]);
     TypeNode* type = nullptr;
     vector<ASTNode*> children;
 
@@ -646,7 +682,7 @@ MethodHeaderNode* MethodHeaderCreate(const Token& node) {
 
 }
 
-MethodDeclaratorNode* MethodDeclaratorCreate(const Token& node) {
+MethodDeclaratorNode* MethodDeclaratorCreate(Token node) {
     string identifier = node.m_generated_tokens[0].m_lex;
     vector<FormalParameterNode*> formalParameters;
 
@@ -662,13 +698,13 @@ MethodDeclaratorNode* MethodDeclaratorCreate(const Token& node) {
     return new MethodDeclaratorNode(identifier, children);
 }
 
-PrimaryNoNewArrayNode* PrimaryNoNewArrayCreate(const Token& node) {
+PrimaryNoNewArrayNode* PrimaryNoNewArrayCreate(Token node) {
     vector<ASTNode*> children;
 
     return new PrimaryNoNewArrayNode(children);
 }
 
-ArrayCreationExpressionNode* ArrayCreationExpressionCreate(const Token& node) {
+ArrayCreationExpressionNode* ArrayCreationExpressionCreate(Token node) {
     PrimitiveTypeNode* primitiveType = nullptr;
     NameNode* name = nullptr;
 
@@ -687,8 +723,8 @@ ArrayCreationExpressionNode* ArrayCreationExpressionCreate(const Token& node) {
     return new ArrayCreationExpressionNode(children);
 }
 
-vector<ExpressionNode*> ArgumentListCreate(const Token& node) {
-    Token& child = node.m_generated_tokens[0];
+vector<ExpressionNode*> ArgumentListCreate(Token node) {
+    Token child = node.m_generated_tokens[0];
     vector<ExpressionNode*> expressions;
     while (child.m_generated_tokens.size() > 1) {
         expressions.push_back(ExpressionCreate(child.m_generated_tokens[2]));
@@ -701,11 +737,11 @@ vector<ExpressionNode*> ArgumentListCreate(const Token& node) {
     return expressions;
 }
 
-ClassInstanceCreationExpressionNode* ClassInstanceCreationExpressionCreate(const Token& node) {
+ClassInstanceCreationExpressionNode* ClassInstanceCreationExpressionCreate(Token node) {
     ClassOrInterfaceTypeNode* classOrInterfaceType = ClassOrInterfaceTypeCreate(node.m_generated_tokens[1]);
-    vector<ExpressionNode*> argumentsList;
+    vector<ExpressionNode*> argumentList;
     vector<ASTNode*> children;
-    childen.push_back(classOrInterfaceType);
+    children.push_back(classOrInterfaceType);
     if (node.m_generated_tokens[3].m_type == TokenType::ArgumentList) {
         argumentList = ArgumentListCreate(node.m_generated_tokens[3]);
         for (int i=0; i<argumentList.size(); i++) {
@@ -716,11 +752,11 @@ ClassInstanceCreationExpressionNode* ClassInstanceCreationExpressionCreate(const
     return new ClassInstanceCreationExpressionNode(children);
 }
 
-ExpressionNode* ExpressionCreate(const Token& node) {
-    return AssignmentExpression(node.m_generated_tokens[0]);
+ExpressionNode* ExpressionCreate(Token node) {
+    return AssignmentExpressionCreate(node.m_generated_tokens[0]);
 }
 
-AssignmentExpressionNode* AssignmentExpression(const Token& node) {
+AssignmentExpressionNode* AssignmentExpressionCreate(Token node) {
     if (node.m_generated_tokens[0].m_type == TokenType::Assignment) {
         return AssignmentCreate(node.m_generated_tokens[0]);
     }
@@ -729,38 +765,45 @@ AssignmentExpressionNode* AssignmentExpression(const Token& node) {
     }  
 }
 
-AssignmentNode* AssignmentCreate(const Token& node) {
+AssignmentNode* AssignmentCreate(Token node) {
     LeftHandSideNode* leftHandSide = LeftHandSideCreate(node.m_generated_tokens[0]);
-    AssignmentExpressionNode* assignmentExpression = AssignmentExpression(node.m_generated_tokens[2]);
+    AssignmentExpressionNode* assignmentExpression = AssignmentExpressionCreate(node.m_generated_tokens[2]);
 
     vector<ASTNode*> children = {leftHandSide, assignmentExpression};
 
     return new AssignmentNode(children);
 }
 
-LeftHandSideNode* LeftHandSideCreate(const Token& node) {
+LeftHandSideNode* LeftHandSideCreate(Token node) {
     LeftHandSideNode* leftHandSideNode = nullptr;
     if (node.m_generated_tokens[0].m_type == TokenType::Name) {
-        statementExpressionNode = NameCreate(node.m_generated_tokens[0]);
+        leftHandSideNode = NameCreate(node.m_generated_tokens[0]);
     }
     else if (node.m_generated_tokens[0].m_type == TokenType::FieldAccess) {
-        statementExpressionNode = FieldAccessCreate(node.m_generated_tokens[0]);
+        leftHandSideNode = FieldAccessCreate(node.m_generated_tokens[0]);
     }
     else if (node.m_generated_tokens[0].m_type == TokenType::ArrayAccess) {
-        statementExpressionNode = ArrayAccess(node.m_generated_tokens[0]);
+        leftHandSideNode = ArrayAccessCreate(node.m_generated_tokens[0]);
     }
     
-    if (leftHandSideNode == nullptr) {
-        throw std::invalid_argument( "Left hand side" );
-    }
-    else {
-        return leftHandSideNode; 
-    }
+    return leftHandSideNode;
 }
 
-ConditionalOrExpressionNode* ConditionalOrExpressionCreate(const Token& node) {
-    vector<ConditionalAndExpressionNode*> conditionalAndExpressions;
-    Token& child = node.m_generated_tokens[0];
+ArrayAccessNode* ArrayAccessCreate(Token node) {
+    vector<ASTNode*> children;
+    if (node.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::ArrayCreationExpression) {
+        children.push_back(ArrayCreationExpressionCreate(node.m_generated_tokens[0].m_generated_tokens[0]);
+    }
+    else {
+        children.push_back(PrimaryNoNewArray(node.m_generated_tokens[0].m_generated_tokens[0]);
+    }
+
+    return new ArrayAccessNode(children);
+}
+
+ConditionalOrExpressionNode* ConditionalOrExpressionCreate(Token node) {
+    vector<ASTNode*> conditionalAndExpressions;
+    Token child = node.m_generated_tokens[0];
     vector<ASTNode*> children;
     while (child.m_generated_tokens.size() > 1) {
         conditionalAndExpressions.push_back(ConditionalAndExpressionCreate(child.m_generated_tokens[2]));
@@ -773,9 +816,9 @@ ConditionalOrExpressionNode* ConditionalOrExpressionCreate(const Token& node) {
     return new ConditionalOrExpressionNode(conditionalAndExpressions);
 }
 
-ConditionalAndExpressionNode* ConditionalAndExpressionCreate(const Token& node) {
-    vector<InclusiveOrExpressionNode*> inclusiveOrExpressions;
-    Token& child = node.m_generated_tokens[0];
+ConditionalAndExpressionNode* ConditionalAndExpressionCreate(Token node) {
+    vector<ASTNode*> inclusiveOrExpressions;
+    Token child = node.m_generated_tokens[0];
     while (child.m_generated_tokens.size() > 1) {
         inclusiveOrExpressions.push_back(InclusiveOrExpressionCreate(child.m_generated_tokens[2]));
         child = child.m_generated_tokens[0];
@@ -787,9 +830,9 @@ ConditionalAndExpressionNode* ConditionalAndExpressionCreate(const Token& node) 
     return new ConditionalAndExpressionNode(inclusiveOrExpressions);
 }
 
-InclusiveOrExpressionNode* InclusiveOrExpressionCreate(const Token& node) {
-    vector<ExclusiveOrExpressionNode*> exclusiveOrExpressions;
-    Token& child = node.m_generated_tokens[0];
+InclusiveOrExpressionNode* InclusiveOrExpressionCreate(Token node) {
+    vector<ASTNode*> exclusiveOrExpressions;
+    Token child = node.m_generated_tokens[0];
     while (child.m_generated_tokens.size() > 1) {
         exclusiveOrExpressions.push_back(ExclusiveOrExpressionCreate(child.m_generated_tokens[2]));
         child = child.m_generated_tokens[0];
@@ -801,13 +844,13 @@ InclusiveOrExpressionNode* InclusiveOrExpressionCreate(const Token& node) {
     return new InclusiveOrExpressionNode(exclusiveOrExpressions);
 }
 
-ExclusiveOrExpressionNode* ExclusiveOrExpressionCreate(const Token& node) {
+ExclusiveOrExpressionNode* ExclusiveOrExpressionCreate(Token node) {
     return AndExpressionCreate(node.m_generated_tokens[0]);
 }
 
-AndExpressionNode* AndExpressionCreate(const Token& node) {
-    vector<EqualityExpressionNode*> equalityExpressions;
-    Token& child = node.m_generated_tokens[0];
+AndExpressionNode* AndExpressionCreate(Token node) {
+    vector<ASTNode*> equalityExpressions;
+    Token child = node.m_generated_tokens[0];
     while (child.m_generated_tokens.size() > 1) {
         equalityExpressions.push_back(EqualityExpressionCreate(child.m_generated_tokens[2]));
         child = child.m_generated_tokens[0];
@@ -819,7 +862,7 @@ AndExpressionNode* AndExpressionCreate(const Token& node) {
     return new AndExpressionNode(equalityExpressions);
 }
 
-EqualityExpressionNode* EqualityExpressionCreate(const Token& node) {
+EqualityExpressionNode* EqualityExpressionCreate(Token node) {
     RelationalExpressionNode* relationalExpression = nullptr;
     EqualityExpressionNode* equalityExpression = nullptr;
     int op = -1;
@@ -828,7 +871,7 @@ EqualityExpressionNode* EqualityExpressionCreate(const Token& node) {
 
     if (node.m_generated_tokens.size() == 1) {
         children.push_back(RelationalExpressionCreate(node.m_generated_tokens[0]));
-        return new EqualityExpressionNode((op, children);
+        return new EqualityExpressionNode(op, children);
     }
 
     if (node.m_generated_tokens[1].m_type == TokenType::T_EQUAL_EQUAL) {
@@ -845,9 +888,8 @@ EqualityExpressionNode* EqualityExpressionCreate(const Token& node) {
     }
 }
 
-RelationalExpressionNode* RelationalExpressionCreate(const Token& node) {
+RelationalExpressionNode* RelationalExpressionCreate(Token node) {
     RelationalExpressionNode* relationalExpression = nullptr;
-    ShiftExpressionNode* shiftExpression = nullptr;
     ReferenceTypeNode* referenceType = nullptr;
 
     int op = -1;
@@ -888,11 +930,11 @@ RelationalExpressionNode* RelationalExpressionCreate(const Token& node) {
     }
 }
 
-AdditiveExpressionNode* ShiftExpressionCreate(const Token& node) {
+AdditiveExpressionNode* ShiftExpressionCreate(Token node) {
     return AdditiveExpressionCreate(node.m_generated_tokens[0]); 
 }
 
-AdditiveExpressionNode* AdditiveExpressionCreate(const Token& node) {
+AdditiveExpressionNode* AdditiveExpressionCreate(Token node) {
     MultiplicativeExpressionNode* multiplicativeExpression = nullptr;
     AdditiveExpressionNode* additiveExpression = nullptr;
     int op = -1;
@@ -918,7 +960,7 @@ AdditiveExpressionNode* AdditiveExpressionCreate(const Token& node) {
 
 }
 
-MultiplicativeExpressionNode* MultiplicativeExpressionCreate(const Token& node) {
+MultiplicativeExpressionNode* MultiplicativeExpressionCreate(Token node) {
     UnaryExpressionNode* unaryExpression = nullptr;
     MultiplicativeExpressionNode* multiplicativeExpression = nullptr;
     int op = -1;
@@ -926,7 +968,7 @@ MultiplicativeExpressionNode* MultiplicativeExpressionCreate(const Token& node) 
     return new MultiplicativeExpressionNode(children);
 }
 
-FieldAccessNode* FieldAccessCreate(const Token& node) {
+FieldAccessNode* FieldAccessCreate(Token node) {
     PrimaryNode* primaryNode = nullptr;
     string identifier = node.m_generated_tokens[2].m_lex;
 
