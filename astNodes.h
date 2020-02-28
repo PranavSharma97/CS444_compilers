@@ -71,12 +71,12 @@ class ImportDeclarationNode {
     ImportDeclarationNode(string name): name(name) {}
 };
 
-class SingleTypeImportNode: public ImportDeclNode {
+class SingleTypeImportNode: public ImportDeclarationNode {
     string name;
     SingleTypeImportNode(string name): super(name) {}    
 };
 
-class TypeImportOnDemandNode: public ImportDeclNode {
+class TypeImportOnDemandNode: public ImportDeclarationNode {
     string name;
     TypeImportOnDemandNode(string name): super(name) {}
 };
@@ -152,7 +152,7 @@ class InterfaceMemberDeclarationsNode {
     // Flatten
 };
 
-class BlockNode: public StatementWithoutTrailingSubstatement{
+class BlockNode: public StatementWithoutTrailingSubstatementNode {
 };
 
 class BlockStatementNode {
