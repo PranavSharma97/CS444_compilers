@@ -98,8 +98,7 @@ bool environment::merge(environment* src){
   // Merge formal Parameters
   for(std::pair<std::string, FormalParameterNode*> kv_pair: src->formalParameters){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
-       localVariables.find(kv_pair.first) == localVariables.end() &&
-       fields.find(kv_pair.first) == fields.end()){
+       localVariables.find(kv_pair.first) == localVariables.end()){
       formalParameters[kv_pair.first] = kv_pair.second;
     }else{
       RED();
@@ -112,9 +111,7 @@ bool environment::merge(environment* src){
 
   // Merge fields
   for(std::pair<std::string, FieldDeclarationNode*> kv_pair: src->fields){
-    if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
-       localVariables.find(kv_pair.first) == localVariables.end() &&
-       fields.find(kv_pair.first) == fields.end()){
+    if(fields.find(kv_pair.first) == fields.end()){
       fields[kv_pair.first] = kv_pair.second;
     }else{
       RED();
@@ -128,8 +125,7 @@ bool environment::merge(environment* src){
   // Merge localVariables
   for(std::pair<std::string, LocalVariableDeclarationNode*> kv_pair: src->localVariables){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
-       localVariables.find(kv_pair.first) == localVariables.end() &&
-       fields.find(kv_pair.first) == fields.end()){
+       localVariables.find(kv_pair.first) == localVariables.end()){
       localVariables[kv_pair.first] = kv_pair.second;
     }else{
       RED();
@@ -189,8 +185,7 @@ void environment::overwrite_merge(environment* src){
   // Merge formal Parameters
   for(std::pair<std::string, FormalParameterNode*> kv_pair: src->formalParameters){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
-       localVariables.find(kv_pair.first) == localVariables.end() &&
-       fields.find(kv_pair.first) == fields.end()){
+       localVariables.find(kv_pair.first) == localVariables.end()){
       formalParameters[kv_pair.first] = kv_pair.second;
     }else{
       formalParameters[kv_pair.first] = nullptr;
@@ -199,9 +194,7 @@ void environment::overwrite_merge(environment* src){
 
   // Merge fields
   for(std::pair<std::string, FieldDeclarationNode*> kv_pair: src->fields){
-    if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
-       localVariables.find(kv_pair.first) == localVariables.end() &&
-       fields.find(kv_pair.first) == fields.end()){
+    if(fields.find(kv_pair.first) == fields.end()){
       fields[kv_pair.first] = kv_pair.second;
     }else{
       fields[kv_pair.first] = nullptr;
@@ -211,8 +204,7 @@ void environment::overwrite_merge(environment* src){
   // Merge localVariables
   for(std::pair<std::string, LocalVariableDeclarationNode*> kv_pair: src->localVariables){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
-       localVariables.find(kv_pair.first) == localVariables.end() &&
-       fields.find(kv_pair.first) == fields.end()){
+       localVariables.find(kv_pair.first) == localVariables.end()){
       localVariables[kv_pair.first] = kv_pair.second;
     }else{
       localVariables[kv_pair.first] = nullptr;
