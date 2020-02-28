@@ -205,7 +205,7 @@ vector<MethodDeclarationNode*> InterfaceMemberDeclarationsCreate(Token node) {
         child = child.m_generated_tokens[0];
     }
 
-    methodHeaders.push_back(MethodHeaderCreate(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]));
+    methodHeaders.push_back(MethodDeclarationCreate(child.m_generated_tokens[0].m_generated_tokens[0].m_generated_tokens[0]));
     reverse(methodHeaders.begin(), methodHeaders.end());
 
     return methodHeaders;
@@ -792,10 +792,10 @@ LeftHandSideNode* LeftHandSideCreate(Token node) {
 ArrayAccessNode* ArrayAccessCreate(Token node) {
     vector<ASTNode*> children;
     if (node.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::ArrayCreationExpression) {
-        children.push_back(ArrayCreationExpressionCreate(node.m_generated_tokens[0].m_generated_tokens[0]);
+        children.push_back(ArrayCreationExpressionCreate(node.m_generated_tokens[0].m_generated_tokens[0]));
     }
     else {
-        children.push_back(PrimaryNoNewArray(node.m_generated_tokens[0].m_generated_tokens[0]);
+        children.push_back(PrimaryNoNewArrayCreate(node.m_generated_tokens[0].m_generated_tokens[0]));
     }
 
     return new ArrayAccessNode(children);

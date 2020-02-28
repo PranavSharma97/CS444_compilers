@@ -10,7 +10,7 @@
 #include "scanner.h"
 #include "token.h"
 #include "weeder.h"
-//#include "astProcedures.cpp"
+#include "astProcedures.h"
 
 using namespace std;
 
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
       return 42;
     }
     parse_tree = PT.parse_tree;
-    //ASTNode* astNode = CompilationUnitNode(parse_tree); 
+    ASTNode* astNode = CompilationUnitCreate(parse_tree); 
   } catch (std::exception& e){
     return 42;
   }
