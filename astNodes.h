@@ -62,11 +62,6 @@ class NameNode: public ArrayType, public ClassOrInterfaceType, public PostfixExp
     NameNode(string identifier): identifierNode(new IdentifierNode(identifier)) {}
 };
 
-class QualifiedNameNode: public NameNode {
-    NameNode *nameNode;
-    QualifiedNameNode(string identifier, NameNode *nameNode): super(identifier), nameNode(nameNode) {}
-};
-
 class CompilationUnitNode {
     
 };
@@ -96,7 +91,7 @@ class ModifierNode {
 
 };
 
-class InterfacesNode {
+class InterfaceNode {
 // Contains list of Name pointers (Interfaces implemented)
 };
 
@@ -105,10 +100,6 @@ class ClassBodyDeclarationNode {
 };
 
 class ClassMemberDeclarationNode: public ClassBodyDeclarationNode {
-
-};
-
-class ConstructorDeclarationNode: public ClassBodyDeclarationNode {
 
 };
 
@@ -164,19 +155,15 @@ class InterfaceMemberDeclarationsNode {
 class BlockNode: public StatementWithoutTrailingSubstatement{
 };
 
-class BlockStatementsNode {
-    // Flatten
-};
-
 class BlockStatementNode {
 
 };
 
-class LocalVariableDeclarationNode {
+class LocalVariableDeclarationNode: public BlockStatementNode {
 
 };
 
-class StatementNode {
+class StatementNode: public BlockStatementNode {
 
 };
 
@@ -217,10 +204,6 @@ class WhileStatementNoShortIfNode: public StatementNoShortIfNode {
 };
 
 class ForStatementNoShortIfNode: public StatementNoShortIfNode {
-
-};
-
-class StatementWithoutTrailingSubstatementNode {
 
 };
 
