@@ -14,13 +14,12 @@ class TypeLinker{
   std::vector<ASTNode*> m_asts;
   
   ASTNode* SearchNodeType(ASTNode* root, TokenType type);
-  bool MergeEnvironment(environment* src, environment* std);
   bool ConstructPackage();
   bool HasEnv(ASTNode* root);
   bool HasEnv(TokenType t);
-  bool ResolveAST(ASTNode* root, environment* env);
-  bool ResolveType(ASTNode* root, environment* env);
-  bool DoLinkClass(IdentifierNode* id, environment* env);
+  bool ResolveAST(ASTNode* root, environment** envs);
+  //bool ResolveType(ASTNode* root, environment* env);
+  bool DoLinkClass(IdentifierNode* id, environment** envs);
   environment* GetCurrentPackage(CompilationUnitNode* CUN);
  public:
   TypeLinker(const std::vector<ASTNode*>& asts);

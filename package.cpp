@@ -111,9 +111,13 @@ environment* Package::GetAll(std::string& path){
   return new_env;
 }
 
-bool Package::CheckNames(environment* env){
-  if( env->classes.find(package_name) == env.classes.end() &&
-      env->interfaces.find(package_name) == env.classes.end()){
+bool Package::CheckNames(environment** envs){
+  if( envs[0]->classes.find(package_name) == env.classes.end() &&
+      envs[0]->interfaces.find(package_name) == env.classes.end() &&
+      envs[1]->classes.find(package_name) == env.classes.end() &&
+      envs[1]->interfaces.find(package_name) == env.classes.end()&&
+      envs[3]->classes.find(package_name) == env.classes.end() &&
+      envs[3]->interfaces.find(package_name) == env.classes.end() &&){
     for(std::pair<std::string,Package*> &kv_pair: m_sub_packs){
       if(!kv_pair.second->CheckNames(env)) return false;
     }

@@ -27,7 +27,7 @@ class Package{
   environment* GetAll(std::string& path);
   // Check if any of the package name clashes with a class or interface
   // in the given environment.
-  bool CheckNames(environment* env);
+  bool CheckNames(environment** envs);
 
   ASTNode* GetQualified(std::string & name);
   environment* GetPack(std::string& pack_name);

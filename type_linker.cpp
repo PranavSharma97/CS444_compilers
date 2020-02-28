@@ -121,12 +121,16 @@ bool TypeLinker::Link(){
   if(!ConstructPackage()) return false;
   // Link for each
   for(ASTNode* n: m_asts){
-    environment local_env;
+    environment* envs[4];
+    environment local_env,single_type,on_demand;
     CompilationUnitNode* CUN = (CompilationUnitNode*) n;
     // Get the package environment first
-    environment* pack_env = GetCurrentPackage(CUN);
-    if(pack_env == nullptr || !local_env.merge(pack_env)) return false;
-    
+    environment* p_env = GetCurrentPackage(CUN);
+    if(p_env == nullptr) return false;
+    envs[0] = &local_env;
+    envs[1] = &single_type;
+    envs[2] = p_env;
+    envs[3] = &on_demand;
     for(ASTNode* c: CUN->children){
       TokenType node_type = c->type();
       // Search for all import declarations, try to import them to local env
@@ -151,9 +155,9 @@ bool TypeLinker::Link(){
 	// Merge the environment with local_env
 	bool result;
 	if(on_demand){
-	  result = local_env.overwrite_merge(pack_env);
+	  result = on_demand.overwrite_merge(pack_env);
 	}else{
-	  result = local_env.merge(pack_env);
+	  result = single_type.merge(pack_env);
 	}
 	// since both get all and search creates a newenvironment on stack
 	// delete it
@@ -179,9 +183,9 @@ bool TypeLinker::Link(){
       }
 
       // check if any package name is a class name
-      if(!m_packages.CheckNames(&local_env)) return false;
+      if(!m_packages.CheckNames(envs)) return false;
       // resolve types out side of env in the ast
-      if(!ResolveAST(CUN,&local_env)) return false;
+      if(!ResolveAST(CUN,envs)) return false;
       //if(!ResolveType(CUN,&local_env)) return false;
     }
   }  
@@ -210,65 +214,56 @@ bool TypeLinker::HasEnv(ASTNode* root){
   return HaasEnv(root->type());
 }
 
-bool DoLinkClass(IdentifierNode* id, environment* env){
+bool DoLinkClass(IdentifierNode* id, environment** envs){
   ASTNode* dec = nullptr;
   // Handles qualified name
   size_t found = id->identifier.find('.');
   if(found != std::string::npos){
-    ASTNode* dec = m_packages->GetQualified(id->identifier);
-  } else if(env->classes.find(id->identifier) != env->classes.end()){
-    ASTNode* dec = env->classes[id->identifier];
+    dec = m_packages->GetQualified(id->identifier);
   } else {
-    // We didn't find it in the current environment
-    RED();
-    std::cerr<<"ERROR: "<<(ID->identifier)<<" undefined."<<std::endl;
-    DEFAULT();
-    return false;
-  }
-
-  
-    // Null pointer means ambiguous. may be a collision in
-    // import package.*
-  if(dec == nullptr){
-    RED();
-    std::cerr<<"ERROR: "<<(id->identifier)<<" is ambiguous or undefined."<<std::endl;
-    DEFAULT();
-    return false;
+    dec = envs[0]->GetType(id->identifier);
+    if(dec == nullptr){
+      dec = envs[1]->GetType(id->identifier);
+      if(dec == nullptr){
+	dec = envs[2]->GetType(id->identifier);
+	if(dec == nullptr){
+	  dec = envs[3]->GetType(id->identifier);
+	  if(dec == nullptr){
+	    RED();
+	    std::cerr<<"ERROR: "<<(id->identifier)<<" is ambiguous or undefined."<<std::endl;
+	    DEFAULT();
+	    return false;
+	  }
+	}
+      }
+    }
   }
   id->class_declare = env->classes[id->identifier];
-  
   return true;
 }
 
-bool TypeLinker::ResolveAST(ASTNode* root, environment* env){
+bool TypeLinker::ResolveAST(ASTNode* root, environment** envs){
   TokenType t = root->type();
-  if(!HasEnv(t)){
-    for(ASTNode* n: root->children){
-      if(!ResolveAST(n,env)) return false;
-    }
-    return true;
-  } else {
+  if(HasEnv(t)){
     switch(t){
-    case TokenType::CompilationUnit:{
-      if(!env->merge(((CompilationUnitNode*)root)->scope)){
-	return false;
-      }
+    case TokenType::CompilationUnit:
+      if(!envs[0]->merge(((CompilationUnitNode*)root)->scope)) return false;
       break;
     case TokenType::ClassDeclaration:
       // Copy the class environment into the env
       
-	// get this scope into then env stack
-      if(!env->merge(((ClassDeclarationNode*)root)->scope)){
+      // get this scope into then env stack
+      if(!envs[0]->merge(((ClassDeclarationNode*)root)->scope)){
 	return false;
       }
       break;
       // The follwoing nodes has a scope and does declaration
-      case TokenType::ConsturctorDeclaration:
-	break;
-	case TokenType::InterfaceDeclaration:
-	  case TokenType::BlockStatement:
-	    
-	  case TokenType::FieldDeclaration:
+    case TokenType::ConsturctorDeclaration:
+      break;
+    case TokenType::InterfaceDeclaration:
+    case TokenType::BlockStatement:
+      
+    case TokenType::FieldDeclaration:
     case TokenType::MethodDeclaration:
     case TokenType::LocalVariableDeclaration:
     case TokenType::FormalParameter:
@@ -278,9 +273,9 @@ bool TypeLinker::ResolveAST(ASTNode* root, environment* env){
       if(root->children.size() > 0 &&
 	 root->children[0]->type() == TokenType::T_IDENTIFIER){
 	IdentifierNode* ID = (IdentifierNode*) root->children[0];
-	if(!DoLinkClass(ID,env)) return false;
+	if(!DoLinkClass(ID,envs)) return false;
       }
-
+      
       // add the environment defined here into the environment
       {
 	environment* this_env;
@@ -316,7 +311,7 @@ bool TypeLinker::ResolveAST(ASTNode* root, environment* env){
 	}
 	
 	// get this scope into then env stack
-	if(!env->merge(this_env)){
+	if(!envs[0]->merge(this_env)){
 	  return false;
 	}
       }
@@ -326,26 +321,25 @@ bool TypeLinker::ResolveAST(ASTNode* root, environment* env){
       if(root->children.size() > 0 &&
 	 root->children[1]->type() == TokenType::T_IDENTIFIER){
 	IdentifierNode* ID = (IdentifierNode*) root->children[0];
-	if(!DoLinkClass(ID,env)) return false;
+	if(!DoLinkClass(ID,envs)) return false;
       }
       break;
-    
-  default:
-    return false;
+      
+    default:
+      return false;
+    }
   }
+  // Copy the environment to stack
+  environment next_local_env;
+  next_local_env.merge(envs[0]);
+  environment* new_envs[4];
+  new_envs[0] = &next_local_env;
+  new_envs[1] = envs[1];
+  new_envs[2] = envs[2];
+  new_envs[3] = envs[3];
+  for(ASTNode* n: root->children){
+    if(!ResolveAST(n,new_envs)) return false;
   }
-}
-
-bool TypeLinker::ResolveType(ASTNode* root, envrionment* env){
-  /*
-  TokenType t_type = root->type();
-  switch(t_type){
-  case TokenType::MethodInvocation:{
-    MethodInvocationNode* MIN = (MethodInvocationNode*) root;
-    
-  }
-  }
-  */
   return true;
 }
 

@@ -12,7 +12,7 @@ class environment {
   environment() = default;
   bool merge(environment* src);
   void overwrite_merge(environment* src);
-  ASTNode* get_class_or_interface(std::string & name);
+  ASTNode* GetType(std::string & name);
   std::map<std::string,ClassDeclarationNode*> classes;
   std::map<std::string,InterfaceDeclarationNode*> interfaces;
   std::map<std::string,FieldDeclarationNode*> fields;

@@ -227,7 +227,7 @@ void environment::overwrite_merge(environment* src){
   }
 }
 
-ASTNode* environment::get_class_or_interface(std::string & name){
+ASTNode* environment::GetType(std::string & name){
   if(classes.find(name) == classes.end()){
     if(interfaces.find(name) == interfaces.end()){
       return nullptr;
