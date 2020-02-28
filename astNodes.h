@@ -74,9 +74,8 @@ class EqualityExpressionNode: public AndExpressionNode {
   public:
     TokenType type() { return EqualityExpression; }
     std::vector<ASTNode*> children;
-    int op;
     EqualityExpressionNode() = default;
-    EqualityExpressionNode(int op, std::vector<ASTNode*> children): op(op), children(children) {}
+    EqualityExpressionNode(std::vector<ASTNode*> children): AndExpressionNode(children) {}
 };
 
 class RelationalExpressionNode: public EqualityExpressionNode {
@@ -84,9 +83,8 @@ class RelationalExpressionNode: public EqualityExpressionNode {
   public:
     TokenType type() { return RelationalExpression; }
     std::vector<ASTNode*> children;
-    int op;
     RelationalExpressionNode() = default;
-    RelationalExpressionNode(int op, std::vector<ASTNode*> children): op(op), children(children) {}
+    RelationalExpressionNode(std::vector<ASTNode*> children): EqualityExpressionNode(children) {}
 };
 
 class AdditiveExpressionNode: public RelationalExpressionNode {
@@ -94,8 +92,8 @@ class AdditiveExpressionNode: public RelationalExpressionNode {
   public:
     TokenType type() { return AdditiveExpression; }
     std::vector<ASTNode*> children;
-    int op;
     AdditiveExpressionNode() = default;
+    int op;
     AdditiveExpressionNode(int op, std::vector<ASTNode*> children): op(op), children(children) {}
 };
 
@@ -555,9 +553,8 @@ class ThisKeywordNode: public PrimaryNoNewArrayNode {
 class FieldAccessNode: public PrimaryNoNewArrayNode, public LeftHandSideNode {
   public:
     TokenType type() { return FieldAccess; }
-    std::string identifier;
     std::vector<ASTNode*> children;
-    FieldAccessNode(std::string identifier, std::vector<ASTNode*> children): identifier(identifier), children(children) {}
+    FieldAccessNode(std::vector<ASTNode*> children): children(children) {}
 };
 
 class ArrayAccessNode: public PrimaryNoNewArrayNode, public LeftHandSideNode {
