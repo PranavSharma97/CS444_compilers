@@ -1,5 +1,6 @@
 #include "astProcedures.h"
 #include<algorithm>
+#include<iostream>
 
 using namespace std;
 
@@ -62,6 +63,10 @@ NameNode* NameCreate(Token node) {
 }
 
 CompilationUnitNode* CompilationUnitCreate(Token node) {
+
+
+    cout<<"\n\n"<<"IN COMPILATION UNIT\n\n";
+
     NameNode* name = nullptr;
     vector<ImportDeclarationNode*> importDeclarations;
     ClassDeclarationNode* classDeclarationNode = nullptr;
@@ -69,10 +74,12 @@ CompilationUnitNode* CompilationUnitCreate(Token node) {
     vector<ASTNode*> children;
     for (Token child: node.m_generated_tokens) {
         if (child.m_type == TokenType::PackageDeclaration) {
+            cout<<"Package Declaration"<<endl;
             name = NameCreate(child.m_generated_tokens[1]);
             children.push_back(name);
         }
         else if (child.m_type == TokenType::ImportDeclarations) {
+            cout<<"Import Declarations"<<endl;
             importDeclarations = ImportDeclarationsCreate(child);
             for (int i=0; i<importDeclarations.size(); i++) {
                 children.push_back(importDeclarations[i]);
@@ -91,6 +98,19 @@ CompilationUnitNode* CompilationUnitCreate(Token node) {
     }
 
     return new CompilationUnitNode(children);
+}
+
+void printChildrenOfNodes(ASTNode* astNode) {
+    cout<<"Node: ";
+    cout<<astNode->type();
+    cout<<"Children: "<<endl;
+    vector<ASTNode*> children = astNode->children;
+
+    for (int i=0; i<children.size(); i++) {
+        cout<<children[i]->type()<<" ";
+    }
+
+
 }
 
 vector<ImportDeclarationNode*> ImportDeclarationsCreate(Token node) {

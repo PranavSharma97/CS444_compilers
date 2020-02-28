@@ -3,6 +3,8 @@
 
 ArrayAccessNode* ArrayAccessCreate(Token node); 
 
+void printChildrenOfNodes(ASTNode* astNode);
+
 TypeNode* TypeCreate(Token node);
 
 

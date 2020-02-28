@@ -226,7 +226,7 @@ class ArrayTypeNode: public virtual ReferenceTypeNode {
 
 class PrimitiveTypeNode: public ArrayTypeNode {
   public:
-    TokenType type() { return ArrayType; }
+    TokenType type() { return PrimitiveType; }
     std::string lexeme;
     PrimitiveTypeNode() = default;
     PrimitiveTypeNode(std::string lexeme): lexeme(lexeme) {}
@@ -257,7 +257,7 @@ class NameNode: public ArrayTypeNode, public ClassOrInterfaceTypeNode, public Po
 class CompilationUnitNode: public ASTNode {
   public:
     environment scope;
-    TokenType type() { return ArrayType; }
+    TokenType type() { return CompilationUnit; }
     std::vector<ASTNode*> children;
     CompilationUnitNode(std::vector<ASTNode*> children): ASTNode(children) {}
 };
@@ -282,7 +282,7 @@ class ClassDeclarationNode: public ASTNode {
 
 class ModifierNode: public ASTNode {
   public:
-    TokenType type() { return MODIFIER; }
+    TokenType type() { return Modifier; }
     std::string lexeme;
     ModifierNode(std::string lexeme): lexeme(lexeme) {}
 };
@@ -435,7 +435,7 @@ class StatementNode: public BlockStatementNode {
 
 class StatementNoShortIfNode: public virtual ASTNode {
   public:
-    TokenType type() { return ForStatementNoShortIf; }
+    TokenType type() { return StatementNoShortIf; }
     std::vector<ASTNode*> children;
     StatementNoShortIfNode() = default;
     StatementNoShortIfNode(std::vector<ASTNode*> children): ASTNode(children) {}
