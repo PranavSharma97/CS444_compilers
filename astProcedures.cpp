@@ -38,11 +38,12 @@ ArrayTypeNode* ArrayType() {
    NameNode* nameNode = nullptr;
    if (node.m_generated_tokens[0].m_type == TokenType::PrimitiveType) {
         primitiveTypeNode = PrimitiveType(node.m_generated_tokens[0]);
-        return new ArrayTypeNode(primitiveTypeNode, nameNode);
+        vector<ASTNode*> children = {primitiveTypeNode};
+        return new ArrayTypeNode(children);
     }
     else {
-        nameNode = Name(node.m_generated_tokens[0]);
-        return new ArrayTypeNode(primitiveTypeNode, nameNode);
+        vector<ASTNode*> children = {nameNode};
+        return new ArrayTypeNode(children);
     }
 }
 
@@ -65,24 +66,31 @@ CompilationUnitNode* CompilationUnitNode() {
     vector<ImportDeclNode*> importDeclarations;
     ClassDeclarationNode* classDeclarationNode = nullptr;
     InterfaceDeclarationNode* interfaceDeclarationNode = nullptr;
+    vector<ASTNode*> children;
     for (Token& child: node.m_generated_tokens) {
         if (child.m_type == TokenType::PackageDeclaration) {
             name = Name(child.m_generated_tokens[1]);
+            children.push_back(name);
         }
         else if (child.m_type == TokenType::ImportDeclarations) {
             importDeclarations = ImportDeclarations(child);
+            for (int i=0; i<importDeclarations.size(); i++) {
+                children.push_back(importDeclarations[i]);
+            }
         }
         else if (child.m_type == TokenType::TypeDeclarations) {
             if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::ClassDeclaration) {
                 classDeclarationNode = ClassDeclaration(child.m_generated_tokens[0].m_generated_tokens[0]);
+                children.push_back(classDeclarationNode);
             }
             else if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::InterfaceDeclaration) {
                 interfaceDeclarationNode = InterfaceDeclaration(child.m_generated_tokens[0].m_generated_tokens[0]);
+                children.push_back(interfaceDeclarationNode);
             }
         }
     }
 
-    return new CompilationUnitNode(name, importDeclarations, classDeclarationNode, interfaceDeclarationNode);
+    return new CompilationUnitNode(children);
 }
 
 vector<ImportDeclarationNode*> ImportDeclarations() {
@@ -101,10 +109,12 @@ vector<ImportDeclarationNode*> ImportDeclarations() {
 
 ImportDeclarationNode* ImportDeclaration() {
     if (node.m_generated_tokens[0].m_type == TokenType::SingleTypeImportDeclaration) {
-        return new ImportDeclarationNode(0, Name(node.m_generated_tokens[0].m_generated_tokens[1]));
+        vector<ASTNode*> children = {Name(node.m_generated_tokens[0].m_generated_tokens[1])};
+        return new ImportDeclarationNode(0, children);
     }
     else if (node.m_generated_tokens[0].m_type == TokenType::TypeImportOnDemandDeclaration) {
-        return new ImportDeclarationNode(1, Name(node.m_generated_tokens[0].m_generated_tokens[1]));    
+        vector<ASTNode*> children = {Name(node.m_generated_tokens[0].m_generated_tokens[1])};
+        return new ImportDeclarationNode(1, children);
     }
 }
 
@@ -115,22 +125,39 @@ ClassDeclarationNode* ClassDeclaration() {
     vector<InterfaceNode*> interfaces;
     vector<FieldDeclarationNode*> fieldDeclarations;
     vector<MethodDeclarationNode*> methodDeclarations;
+    vector<ClassBodyDeclarationNode*> classBodyDeclarations; 
+    vector<ASTNode*> children;
     for (Token& child: node.m_generated_tokens) {
         if (child.m_type == TokenType::Modifiers) {
             modifiers = Modifiers(child);
+            for (int i=0; i<modifiers.size(); i++) {
+                children.push_back(modifiers[i]);
+            }
         }
         else if (child.m_type == TokenType::T_IDENTIFIER) {
             identifier = child.m_lex;
         }
         else if (child.m_type == TokenType::Super) {
             name = ClassOrInterfaceType(Classchild.m_generated_tokens[1].m_generated_tokens[0]);
+            children.push_back(name);
+        }
+        else if (child.m_type == TokenType::Interfaces) {
+            interfaces = Interfaces(child);
+            for (int i=0; i<interfaces.size(); i++) {
+                children.push_back(interfaces[i]);
+            }
         }
         else if (child.m_type == TokenType::ClassBody) {
             if (child.m_generated_tokens[1] == TokenType::ClassBodyDeclarations) {
-                
+                classBodyDeclarations = ClassBodyDeclarations(child.m_generated_tokens[1]);
+                for (int i=0; i<classBodyDeclarations.size(); i++) {
+                    children.push_back(classBodyDeclarations[i]); 
+                }
             }
         }
     }
+
+    return new ClassDeclarationNode(identifier, children);
 }
 
 vector<ClassBodyDeclarationNode*> ClassBodyDeclarations() {
@@ -169,24 +196,36 @@ vector<ClassBodyDeclarationNode*> ClassBodyDeclarations() {
 }
 
 ConstructorDeclarationNode* ConstructorDeclaration() {
+    vector<ASTNode*> children;
     vector<ModifierNode*> modifiers = Modifiers(node.m_generated_tokens[0]);
+    for (int i=0; i<modifiers.size(); i++) {
+        children.push_back(modifiers[i]);
+    }
     ConstructorDeclaratorNode* constructorDeclaratorNode = ConstructorDeclarator(node.m_generated_tokens[1]);
+    children.push_back(constructorDeclaratorNode);
     vector<BlockStatementNode*> blockStatements;
     if (node.m_generated_tokens[2].m_generated_tokens[1].m_type == TokenType::BlockStatements) {
-        blockStatements = BlockStatements(node.m_generated_tokens[2].m_generated_tokens[1]);      
+        blockStatements = BlockStatements(node.m_generated_tokens[2].m_generated_tokens[1]);
+        for (int i=0; i<blockStatements.size(); i++) {
+            children.push_back(blockStatements[i]);
+        }  
     }
 
-    return new ConstructorDeclarationNode(modifiers, constructorDeclaratorNode, blockStatements);
+    return new ConstructorDeclarationNode(children);
 }
 
 ConstructorDeclaratorNode* ConstructorDeclarator() {
     string simpleName = node.m_generated_tokens[0].m_generated_tokens[0].m_lex;
     vector<FormalParameterNode*> formalParameters;
+    vector<ASTNode*> children;
     if (node.m_generated_tokens[0].m_generated_tokens[2].m_type == TokenType::FormalParameterList) {
         formalParameters = FormalParameterList(node.m_generated_tokens[0].m_generated_tokens[2]);
+        for (int i=0; i<formalParameters.size(); i++) {
+            children.push_back(formalParameters[i]);
+        }
     }
 
-    return new ConstructorDeclaratorNode(simpleName, formalParameters);
+    return new ConstructorDeclaratorNode(simpleName, children);
 }
 
 vector<FormalParameterNode*> FormalParameterList() {
@@ -206,8 +245,9 @@ vector<FormalParameterNode*> FormalParameterList() {
 FormalParameterNode* FormalParameter() {
     TypeNode* type = Type(node.m_generated_tokens[0]);
     string identifier = node.m_generated_tokens[1].m_generated_tokens[0].m_lex;
+    vector<ASTNode*> children = {type};
 
-    return new FormalParameterNode(type, identifier);
+    return new FormalParameterNode(identifier, children);
 }
 
 vector<BlockStatementNode*> BlockStatements() {
@@ -239,18 +279,21 @@ vector<BlockStatementNode*> BlockStatements() {
 LocalVariableDeclarationNode* LocalVariableDeclaration() {
     Type* type = Type(node.m_generated_tokens[0]);
     VariableDeclaratorNode* variableDeclarator = VariableDeclarator(node.m_generated_tokens[1]);
+    vector<ASTNode*> children = {type, variableDeclarator};
 
-    return new LocalVariableDeclarationNode(type, variableDeclarator);
+    return new LocalVariableDeclarationNode(children);
 }
 
 VariableDeclaratorNode* VariableDeclarator() {
     string identifier = node.m_generated_tokens[0];
     ExpressionNode* expression = nullptr;
+    vector<ASTNode*> children;
     if (node.m_generated_tokens.size() > 1) {
         expression = Expression(node.m_generated_tokens[2].m_generated_tokens[0]);
+        children.push_back(expression);
     }
 
-    return new VariableDeclaratorNode(identifier, expression);
+    return new VariableDeclaratorNode(identifier, children);
 }
 
 StatementNode* Statement() {
@@ -311,11 +354,13 @@ StatementWithoutTrailingSubstatementNode* StatementWithoutTrailingSubstatement()
 
 ReturnStatementNode* ReturnStatement() {
     ExpressionNode* expression = nullptr;
+    vector<ASTNode*> children;
     if (node.m_generated_tokens[1].m_type == TokenType::Expression) {
         expression = Expression(node.m_generated_tokens[1]);
+        children.push_back(expression);
     }
 
-    return new ReturnStatementNode(expression);
+    return new ReturnStatementNode(children);
 }
 
 StatementExpressionNode* StatementExpression() {
@@ -337,7 +382,9 @@ IfThenStatementNode* IfThenStatement() {
     ExpressionNode* expression = Expression(node.m_generated_tokens[2]);
     StatementNode* statement = Statement(node.m_generated_tokens[4]);
 
-    return new IfThenStatementNode(expression, statement);
+    vector<ASTNode*> children = {expression, statement};
+
+    return new IfThenStatementNode(children);
 }
 
 IfThenElseStatementNode* IfThenElseStatement() {
@@ -345,7 +392,9 @@ IfThenElseStatementNode* IfThenElseStatement() {
     StatementNoShortIfNode* statementNoShortIf = StatementNoShortIf(node.m_generated_tokens[4]);
     StatementNode* statement = Statement(node.m_generated_tokens[6]);
 
-    return IfThenElseStatementNode(expression, statementNoShortIf, statement);
+    vector<ASTNode*> children = {expression, statementNoShortIf, statement};
+    
+    return IfThenElseStatementNode(children);
 }
 
 IfThenElseStatementNoShortIfNode* IfThenElseStatementNoShortIf() {
@@ -353,14 +402,18 @@ IfThenElseStatementNoShortIfNode* IfThenElseStatementNoShortIf() {
     StatementNoShortIfNode* statementNoShortIf1 = StatementNoShortIf(node.m_generated_tokens[4]);
     StatementNoShortIfNode* statementNoShortIf2 = StatementNoShortIf(node.m_generated_tokens[6]);
 
-    return IfThenElseStatementNode(expression, statementNoShortIf1, statementNoShortIf2);
+    vector<ASTNode*> children = {expression, statementNoShortIf1, statementNoShortIf2};
+
+    return IfThenElseStatementNode(children);
 }
 
 WhileStatementNode* WhileStatement() {
     ExpressionNode* expression = Expression(node.m_generated_tokens[2]);
     StatementNode* statement = Statement(node.m_generated_tokens[4]);
 
-    return new WhileStatementNode(expression, statement);
+    vector<ASTNode*> children = {expression, statement};
+
+    return new WhileStatementNode(children);
 
 }
 
@@ -368,7 +421,9 @@ WhileStatementNoShortIfNode* WhileStatementNoShortIf() {
     ExpressionNode* expression = Expression(node.m_generated_tokens[2]);
     StatementNoShortIfNode* statementNoShortIf = StatementNoShortIf(node.m_generated_tokens[4]);
 
-    return WhileStatementNoShortIfNode(expression, statementNoShortIf);
+    vector<ASTNode*> children = {expression, statementNoShortIf};
+
+    return WhileStatementNoShortIfNode(children);
 }
 
 ForStatementNode* ForStatement() {
@@ -378,27 +433,34 @@ ForStatementNode* ForStatement() {
     ExpressionNode* expression = nullptr;
     StatementNode* statement = nullptr;
 
+    vector<ASTNode*> children;
+
     for (Token& child: node.m_generated_tokens) {
         if (child.m_type == TokenType::ForInit) {
             if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::StatementExpression) {
                 statementExpressionForInit = StatementExpression(child.m_generated_tokens[0].m_generated_tokens[0]);
+                children.push_back(statementExpressionForInit);
             }
             else if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::LocalVariableDeclaration) {
                 localVariableDeclaration = LocalVariableDeclaration(child.m_generated_tokens[0].m_generated_tokens[0]);
+                children.push_back(localVariableDeclaration);
             }
         }
         else if (child.m_type == TokenType::Expression) {
             expression = Expression(child);
+            children.push_back(expression);
         }
         else if (child.m_type == TokenType::ForUpdate) {
             statementExpressionForUpdate = StatementExpression(child.m_generated_tokens[0]);
+            children.push_back(statementExpressionForUpdate);
         }
         else if (child.m_type == TokenType::Statement) {
              statement= Statement(child);
+             children.push_back(statement);
         }
     }
 
-    return new ForStatementNode(localVariableDeclaration, statementExpressionForInit, statementExpressionForUpdate, expression, statement);
+    return new ForStatementNode(children);
 }
 
 ForStatementNoShortIfNode* ForStatementNoShortIf() {
@@ -407,28 +469,35 @@ ForStatementNoShortIfNode* ForStatementNoShortIf() {
     StatementExpressionNode* statementExpressionForUpdate = nullptr;
     ExpressionNode* expression = nullptr;
     StatementNoShortIfNode* statementNoShortIf = nullptr;
-    
+   
+    vector<ASTNode*> children;
+
     for (Token& child: node.m_generated_tokens) {
         if (child.m_type == TokenType::ForInit) {
             if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::StatementExpression) {
                 statementExpressionForInit = StatementExpression(child.m_generated_tokens[0].m_generated_tokens[0]);
+                children.push_back(statementExpressionForInit);
             }
             else if (child.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::LocalVariableDeclaration) {
                 localVariableDeclaration = LocalVariableDeclaration(child.m_generated_tokens[0].m_generated_tokens[0]);
+                children.push_back(localVariableDeclaration);
             }
         }
         else if (child.m_type == TokenType::Expression) {
             expression = Expression(child);
+            children.push_back(expression);
         }
         else if (child.m_type == TokenType::ForUpdate) {
             statementExpressionForUpdate = StatementExpression(child.m_generated_tokens[0]);
+            children.push_back(statementExpressionForUpdate);
         }
         else if (child.m_type == TokenType::StatementNoShortIf) {
              statementNoShortIf = StatementNoShortIf(child);
+             children.push_back(statementNoShortIf);
         }
     }
-      
-    return new ForStatementNode(localVariableDeclaration, statementExpressionForInit, statementExpressionForUpdate, expression, statementNoShortIf);
+
+    return new ForStatementNoShortIfNode(children);
 }
 
 vector<InterfaceNode*> Interfaces() {
@@ -464,12 +533,24 @@ FieldDeclarationNode* FieldDeclaration() {
     TypeNode* type = Type(node.m_generated_tokens[1]);
     VariableDeclaratorNode* variableDeclarator = VariableDeclarator(node.m_generated_tokens[2].m_generated_tokens[0]);
 
-    return new FieldDeclarationNode(modifiers, type, variableDeclarator)
+    vector<ASTNode*> children;
+
+    for (int i=0; i<modifiers.size(); i++) {
+        children.push_back(modifiers[i]);
+    }
+
+    children.push_back(type, variableDeclarator);
+
+    return new FieldDeclarationNode(children);
 }
 
 MethodDeclarationNode* MethodDeclaration() {
     MethodHeaderNode* methodHeader = MethodHeader(node.m_generated_tokens[0]);
     BlockNode* block = nullptr;
+
+    vector<ASTNode*> children;
+    children.push_back(methodHeader);
+
     if (node.m_generated_tokens[1].m_generated_tokens[0].m_type == TokenType::Block) {
         block = Block(node.m_generated_tokens[1].m_generated_tokens[0]);
     }
@@ -703,6 +784,10 @@ AdditiveExpressionNode* AdditiveExpression() {
     MultiplicativeExpressionNode* multiplicativeExpression = nullptr;
     int op = -1;
 
+    if (node.m_generated_tokens.size() == 1) {
+        return new MultiplicativeExpression(ShiftExpression(node.m_generated_tokens[0]), op, relationalExpression, referenceType);
+    }
+
     if (node.m_generated_tokens[1].m_type == TokenType::T_STAR) {
         op = 0;
         return new EqualityExpressionNode(ShiftExpression(node.m_generated_tokens[2]), op, RelationalExpression(node.m_generated_tokens[0]), referenceType);
@@ -711,13 +796,11 @@ AdditiveExpressionNode* AdditiveExpression() {
         op = 1;
         return new EqualityExpressionNode(ShiftExpression(node.m_generated_tokens[2]), op, RelationalExpression(node.m_generated_tokens[0]), referenceType);
     }
-    else if (node.m_generated_tokens[1].m_type == TokenType::T_PERCENT) {
-        op = 2;
-        return new EqualityExpressionNode(ShiftExpression(node.m_generated_tokens[2]), op, RelationalExpression(node.m_generated_tokens[0]), referenceType);
-    }
 
 }
 
 MultiplicativeExpressionNode* MultiplicativeExpression() {
-
+            
 }
+
+

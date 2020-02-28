@@ -58,8 +58,8 @@ class IntegralTypeNode {
 };
 
 class NameNode: public ArrayType, public ClassOrInterfaceType, public PostfixExpression, public LeftHandSideNode {
-    IdentifierNode* identifierNode
-    NameNode(string identifier): identifierNode(new IdentifierNode(identifier)) {}
+    vector<string> identifiers;
+    NameNode(vector<string> identifiers): identifiers(identifiers) {}
 };
 
 class CompilationUnitNode {
