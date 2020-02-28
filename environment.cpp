@@ -236,3 +236,13 @@ ASTNode* environment::GetType(std::string & name){
   }
   return ((ASTNode*) classes[name]);
 }
+
+ASTNode* environment::GetClass(std::string & name){
+  if(classes.find(name) == classes.end()) return nullptr;
+  return classes[name];
+}
+
+ASTNode* environment::GetInterface(std::string& name){
+  if(interfaces.find(name) == interfaces.end()) return nullptr;
+  return interfaces[name];
+}

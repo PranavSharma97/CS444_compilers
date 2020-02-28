@@ -1,5 +1,67 @@
-
+#include <iostream>
 #include "type_linker.h"
+
+/*
+ * Local Helper Functions
+ */
+
+ASTNode* GetClassFromEnv(std::string& name,environments ** envs){
+  ASTNode *dec = envs[0]->GetClass(name);
+  if(dec == nullptr){
+    dec = envs[1]->GetClass(name);
+    if(dec == nullptr){
+      dec = envs[2]->GetClass(name);
+      if(dec == nullptr){
+	dec = envs[3]->GetClass(name);
+	if(dec == nullptr){
+	  RED();
+	  std::cerr<<"ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
+	  DEFAULT();
+	}
+      }
+    }
+  }
+  return ASTNode;
+}
+
+ASTNode* GetInterfaceFromEnv(std::string& name,environments ** envs){
+  ASTNode *dec = envs[0]->GetInterface(name);
+  if(dec == nullptr){
+    dec = envs[1]->GetInterface(name);
+    if(dec == nullptr){
+      dec = envs[2]->GetInterface(name);
+      if(dec == nullptr){
+	dec = envs[3]->GetInterface(name);
+	if(dec == nullptr){
+	  RED();
+	  std::cerr<<"ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
+	  DEFAULT();
+	}
+      }
+    }
+  }
+  return ASTNode;
+}
+
+bool CheckDupInterface(std::vector<ASTNode*>& src,std::vector<ASTNode*>& dst){
+  std::map<std::string,bool> dup;
+  for(ASTNode* n: src){
+    if(n->type() == TokenType::Name){
+      // if it's not in it, record it and put into dst
+      if(dup.find(n->name) == dup.end()){
+	dst.emplace_back(n);
+	dup[n->name] = true;
+      }else{
+	RED();
+	std::cerr<<"ERROR: Interface "<<n->name<<" is duplicated in inheritance";
+	std::cerr<<std::endl;
+	DEFAULT();
+	return true;
+      }
+    }
+  }
+  return true;
+}
 
 /*
 class TypeLinker{
@@ -214,31 +276,297 @@ bool TypeLinker::HasEnv(ASTNode* root){
   return HaasEnv(root->type());
 }
 
-bool DoLinkClass(IdentifierNode* id, environment** envs){
+
+
+ASTNode* Typelinker::GetTypeFromEnv(std::string& name, environments ** envs){
+  ASTNode *dec = envs[0]->GetType(name);
+  if(dec == nullptr){
+    dec = envs[1]->GetType(name);
+    if(dec == nullptr){
+      dec = envs[2]->GetType(name);
+      if(dec == nullptr){
+	dec = envs[3]->GetType(name);
+	if(dec == nullptr){
+	  RED();
+	  std::cerr<<"ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
+	  DEFAULT();
+	}
+      }
+    }
+  }
+  return ASTNode;
+}
+
+
+ASTNode* TypeLinker::GetByType(std::vector<ASTNode*>& nodes, TokenType type){
+  for(ASTNode* node:nodes){
+    if(nodes->type() == type) return nodes;
+  }
+  return nullptr;
+}
+
+
+bool TypeLinker::DoLinkClass(IdentifierNode* id, environment** envs){
   ASTNode* dec = nullptr;
   // Handles qualified name
   size_t found = id->identifier.find('.');
   if(found != std::string::npos){
     dec = m_packages->GetQualified(id->identifier);
   } else {
-    dec = envs[0]->GetType(id->identifier);
-    if(dec == nullptr){
-      dec = envs[1]->GetType(id->identifier);
-      if(dec == nullptr){
-	dec = envs[2]->GetType(id->identifier);
-	if(dec == nullptr){
-	  dec = envs[3]->GetType(id->identifier);
-	  if(dec == nullptr){
-	    RED();
-	    std::cerr<<"ERROR: "<<(id->identifier)<<" is ambiguous or undefined."<<std::endl;
-	    DEFAULT();
-	    return false;
-	  }
-	}
+    dec = GetTypeFromEnv(id->identifier,envs);
+    if(dec == nullptr) return false;
+  }
+  
+  id->class_declare = env->classes[id->identifier];
+  return true;
+}
+
+bool TypeLinker::ResolveInheritance(ASTNode* sub,ASTNode* super,std::map<ASTNode*,bool>& duplicate, environment** envs){
+  // check for cycle
+  if(duplicate.find(super) != duplicate.end()){
+    RED();
+    std::cerr<<"ERROR: inheritance is not acyclic"<<std::endl;
+    DEFAULT();
+    return false;
+  }
+
+  // check for final class
+  if(super.type() == TokenType::ClassDeclaration){
+    ASTNode* final_node = GetByType(super->children,TokenType::T_FINAL);
+    if(final_node == nullptr){
+      RED();
+      std::cerr<<"ERROR: final class cannot be inherited"<<std::endl;
+      DEFAUT();
+      return false;
+    }
+  }
+
+  // Inherit or declare the default java.lang.object;
+  
+  ASTNode *extend, *implement;
+  extend = GetByType(super->children,TokenType::NameNode);
+  implement = GetByType(super->children,TokenType::T_INTERFACE); 
+
+  //  handle class implements interfaces
+  if(super->type() == TokenType::ClassDeclaration && implement != nullptr){
+    // get all interfaces name nodes 
+    std::vector<ASTNode*> all_interface;
+    if(!CheckDupInterface(super->children,all_interface)) return false;
+    for(ASTNode* name: all_interface){
+      NameNode* name_node = (NameNode*) name;
+      ASTNode* super_interface = GetInterfaceFromEnv(name_node->name,envs);
+
+      // if didn't find declaration, return false.
+      if(super_interface == nullptr){
+	RED();
+	std::cerr<<"ERROR:"<<name_node->name<<" is not defined or ambiguous."<<std::endl;
+	DEFAULT();
+	return false;
+      }
+
+      // if the name is binded
+      if(name_node->declartion != nullptr){
+	
+	ClassDeclarationNode* cls = (ClassDeclarationNode*) super;
+	InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
+	if(!cls->scope->replace_merge(sup_cls->scope)) return false;
+      }else {
+	// prepare for recursive check
+	std::map<ASTNode*,bool> dup;
+	dup[super] = true;
+	if(!ResolveInheritance(super,super_class,dup,envs)) return false;
+	// bind it with name 
+	name_node->declaration = super_class;
+	return true;
       }
     }
   }
-  id->class_declare = env->classes[id->identifier];
+
+ 
+  // resolve for extend class
+  if(super->type() == TokenType::ClassDeclaration && extend != nullptr){
+    NameNode* name_node = (NameNode*) extend;
+    // try to get super class
+    ASTNode* super_class = GetClassFromEnv(name_node->name, envs);
+    
+    // if didn't find the declaration, return false
+    if(super_class == nullptr){
+      RED();
+      std::cerr<<"ERROR:"<<name_node->name<<" is not defined or ambiguous."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+
+    // if the name is binded
+    if(name_node->declartion != nullptr){
+      
+      ClassDeclarationNode* cls = (ClassDeclarationNode*) super;
+      ClassDeclarationNode* sup_cls = (ClassDeclarationNode*) super_class;
+      if(!cls->scope->replace_merge(sup_cls->scope)) return false;
+    }else {
+      // prepare for recursive check
+      std::map<ASTNode*,bool> dup;
+      dup[super] = true;
+      if(!ResolveInheritance(super,super_class,dup,envs)) return false;
+      // bind it with name 
+      name_node->declaration = super_class;
+      return true;
+    }
+  }
+
+  
+  // if interfaces extends interfaces
+  if(super->type() == TokenType::InterfaceDeclarations &&
+     i_extend != nullptr){
+    // get all interfaces name nodes 
+    std::vector<ASTNode*> all_interface;
+    if(!CheckDupInterface(super->children,all_interface)) return false;
+    for(ASTNode* name: all_interface){
+      NameNode* name_node = (NameNode*) name;
+      ASTNode* super_interface = GetInterfaceFromEnv(name_node->name,envs);
+
+      // if didn't find declaration, return false.
+      if(super_interface == nullptr){
+	RED();
+	std::cerr<<"ERROR:"<<name_node->name<<" is not defined or ambiguous."<<std::endl;
+	DEFAULT();
+	return false;
+      }
+
+      // if the name is binded
+      if(name_node->declartion != nullptr){
+	
+	InterfaceDeclarationNode* cls = (InterfaceDeclarationNode*) super;
+	InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
+	if(!cls->scope->replace_merge(sup_cls->scope)) return false;
+      }else {
+	// prepare for recursive check
+	std::map<ASTNode*,bool> dup;
+	dup[super] = true;
+	if(!ResolveInheritance(super,super_class,dup,envs)) return false;
+	// bind it with name 
+	name_node->declaration = super_class;
+	return true;
+      }
+    }
+  }
+
+  return true;
+}
+
+
+bool TypeLinker::ResolveInheritance(ASTNode* node, environment** envs){
+  ASTNode *extend,*implement,*i_extend;
+  extend = GetByType(node->children, TokenType::Name);
+  implement = GetByType(node->children, TokenType::T_INTERFACE);
+  i_extend = GetByType(node->children,TokenType::ExtendInterfaces);
+
+  
+  // Inherite or declare the default java.lang.object;
+  
+  // Resolve the extend interfaces first
+  if(node->type() == TokenType::ClassDeclaration && implement != nullptr){
+    // get all interfaces name nodes 
+    std::vector<ASTNode*> all_interface;
+    if(!CheckDupInterface(node->children,all_interface)) return false;
+    for(ASTNode* name: all_interface){
+      NameNode* name_node = (NameNode*) name;
+      ASTNode* super_interface = GetInterfaceFromEnv(name_node->name,envs);
+
+      // if didn't find declaration, return false.
+      if(super_interface == nullptr){
+	RED();
+	std::cerr<<"ERROR:"<<name_node->name<<" is not defined or ambiguous."<<std::endl;
+	DEFAULT();
+	return false;
+      }
+
+      // if the name is binded
+      if(name_node->declartion != nullptr){
+	
+	ClassDeclarationNode* cls = (ClassDeclarationNode*) node;
+	InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
+	if(!cls->scope->replace_merge(sup_cls->scope)) return false;
+      }else {
+	// prepare for recursive check
+	std::map<ASTNode*,bool> dup;
+	dup[node] = true;
+	if(!ResolveInheritance(node,super_class,dup,envs)) return false;
+	// bind it with name 
+	name_node->declaration = super_class;
+	return true;
+      }
+    }
+  }
+
+  
+  // resolve for extend class
+  if(node->type() == TokenType::ClassDeclaration && extend != nullptr){
+    NameNode* name_node = (NameNode*) extend;
+    // try to get super class
+    ASTNode* super_class = GetClassFromEnv(name_node->name, envs);
+    
+    // if didn't find the declaration, return false
+    if(super_class == nullptr){
+      RED();
+      std::cerr<<"ERROR:"<<name_node->name<<" is not defined or ambiguous."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+
+    // if the name is binded
+    if(name_node->declartion != nullptr){
+      
+      ClassDeclarationNode* cls = (ClassDeclarationNode*) node;
+      ClassDeclarationNode* sup_cls = (ClassDeclarationNode*) super_class;
+      if(!cls->scope->replace_merge(sup_cls->scope)) return false;
+    }else {
+      // prepare for recursive check
+      std::map<ASTNode*,bool> dup;
+      dup[node] = true;
+      if(!ResolveInheritance(node,super_class,dup,envs)) return false;
+      // bind it with name 
+      name_node->declaration = super_class;
+      return true;
+    }
+  }
+ 
+  // if interfaces extends interfaces
+  if(node->type() == TokenType::InterfaceDeclarations &&
+     i_extend != nullptr){
+    // get all interfaces name nodes 
+    std::vector<ASTNode*> all_interface;
+    if(!CheckDupInterface(node->children,all_interface)) return false;
+    for(ASTNode* name: all_interface){
+      NameNode* name_node = (NameNode*) name;
+      ASTNode* super_interface = GetInterfaceFromEnv(name_node->name,envs);
+
+      // if didn't find declaration, return false.
+      if(super_interface == nullptr){
+	RED();
+	std::cerr<<"ERROR:"<<name_node->name<<" is not defined or ambiguous."<<std::endl;
+	DEFAULT();
+	return false;
+      }
+
+      // if the name is binded
+      if(name_node->declartion != nullptr){
+	
+	InterfaceDeclarationNode* cls = (InterfaceDeclarationNode*) node;
+	InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
+	if(!cls->scope->replace_merge(sup_cls->scope)) return false;
+      }else {
+	// prepare for recursive check
+	std::map<ASTNode*,bool> dup;
+	dup[node] = true;
+	if(!ResolveInheritance(node,super_class,dup,envs)) return false;
+	// bind it with name 
+	name_node->declaration = super_class;
+	return true;
+      }
+    }
+  }
+
   return true;
 }
 
@@ -250,7 +578,10 @@ bool TypeLinker::ResolveAST(ASTNode* root, environment** envs){
       if(!envs[0]->merge(((CompilationUnitNode*)root)->scope)) return false;
       break;
     case TokenType::ClassDeclaration:
-      // Copy the class environment into the env
+      // Resolve inheritance
+      if(!ResolveInheritance(root,envs)){
+	return false;
+      }
       
       // get this scope into then env stack
       if(!envs[0]->merge(((ClassDeclarationNode*)root)->scope)){
