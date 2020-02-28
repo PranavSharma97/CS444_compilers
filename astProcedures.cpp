@@ -553,19 +553,23 @@ MethodDeclarationNode* MethodDeclaration() {
 
     if (node.m_generated_tokens[1].m_generated_tokens[0].m_type == TokenType::Block) {
         block = Block(node.m_generated_tokens[1].m_generated_tokens[0]);
+        children.push_back(block);
     }
      
-    return new MethodDeclarationNode(methodHeader, block);
+    return new MethodDeclarationNode(children);
 }
 
 MethodHeaderNode* MethodHeader() {
     ModifiersNode* modifiers = Modifiers(node.m_generated_tokens[0]);
     TypeNode* type = nullptr;
+    vector<ASTNode*> children;
     if (node.m_generated_tokens[1].m_type == TokenType::Type) {
         type = Type(node.m_generated_tokens[1]);
+        children.push_back(type);
     }
     
     MethodDeclaratorNode* methodDeclarator = MethodDeclarator(node.m_generated_tokens[2]);
+    children.push_back(methodDeclarator);
 
     return new MethodHeaderNode(modifiers, type, methodDeclarator);
 
