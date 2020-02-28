@@ -1,27 +1,7 @@
-/*
-#pragma once
-#include <map>
-#include <string>
-#include <vector>
-
-class environment {
- public:
-  environment() = default;
-  bool merge(environment* src);
-  bool overwrite_merge(environment* src);
-  std::map<std::string,classDeclarationNode*> classes;
-  std::map<std::string,interfaceDeclarationNode*> interfaces;
-  std::map<std::string,FieldDeclarationNode*> fields;
-  std::map<std::string,std::vector<MethodDeclarationNode*>> methods;
-  std::map<std::string,LocalVariableDeclarationNode*> localVariables;
-  std::map<std::string,FormalParameterNode*> formalParameters;
-  std::map<std::string,std::vector<ConstructorDeclarationNode*>> constructors;
-};
-*/
-
 #include "environment.h"
 #include "astNodes.h"
 #include <utility>
+#include <iostream>
 
 ASTNode* GetNodeByType(std::vector<ASTNode*>& nodes, TokenType type){
   for(ASTNode* node: nodes){
@@ -37,6 +17,7 @@ bool environment::valid_method(std::pair<std::string,std::vector<MethodDeclarati
   } else {
     
     // check for method with different parameters
+    return true;
   }
   return false;
 }
@@ -47,10 +28,14 @@ bool environment::valid_ctor(std::pair<std::string,std::vector<ConsturctorDeclar
     return true;
   } else {
     // check for ctors with different parameters
+    return true;
   }
   return false;
 }
-  
+
+bool environment::replace_merge(environment* src){
+  return true;
+}
 
 bool environment::merge(environment* src){
   // Merge classes
