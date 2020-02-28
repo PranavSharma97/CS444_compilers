@@ -23,11 +23,19 @@ class environment {
 #include "astNodes.h"
 #include <utility>
 
+ASTNode* GetNodeByType(std::vector<ASTNode*>& nodes, TokenType type){
+  for(ASTNode* node: nodes){
+    if(nodes->type() == type) return nodes;
+  }
+  return nullptr;
+}
+
 bool environment::valid_method(std::pair<std::string,std::vector<MethodDeclarationNode* >>& kv){
   if(methods.find(kv.first) == methods.end() ||
      constructors.find(kv.first) == constructors.end()){
     return true;
   } else {
+    
     // check for method with different parameters
   }
   return false;
