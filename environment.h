@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+class ASTNode;
+
 class environment {
   bool valid_method(std::pair<std::string,std::vector<MethodDeclarationNode*>>& kv);
   bool valid_ctor(std::pair<std::string,std::vector<ConstructorDeclarationNode*>>& kv);
@@ -10,6 +12,7 @@ class environment {
   environment() = default;
   bool merge(environment* src);
   void overwrite_merge(environment* src);
+  ASTNode* get_class_or_interface(std::string & name);
   std::map<std::string,ClassDeclarationNode*> classes;
   std::map<std::string,InterfaceDeclarationNode*> interfaces;
   std::map<std::string,FieldDeclarationNode*> fields;

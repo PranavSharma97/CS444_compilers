@@ -19,6 +19,10 @@ class environment {
 };
 */
 
+#include "environment.h"
+#include "astNodes.h"
+#include <utility>
+
 bool environment::valid_method(std::pair<std::string,std::vector<MethodDeclarationNode* >>& kv){
   if(methods.find(kv.first) == methods.end() ||
      constructors.find(kv.first) == constructors.end()){
@@ -221,4 +225,14 @@ void environment::overwrite_merge(environment* src){
       localVariables[kv_pair.first] = nullptr;
     }
   }
+}
+
+ASTNode* environment::get_class_or_interface(std::string & name){
+  if(classes.find(name) == classes.end()){
+    if(interfaces.find(name) == interfaces.end()){
+      return nullptr;
+    }
+    return ((ASTNode*) interfaces[name]);
+  }
+  return ((ASTNode*) classes[name]);
 }

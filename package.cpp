@@ -17,10 +17,10 @@ class Package{
 */
 
 
-bool Package::AddToPackage(std::vector<std::string> path, environment* src){
+bool Package::AddToPackage(std::vector<std::string>& path, environment* src){
   if(path.size() == 1){
     if(m_env == nullptr) m_env = new environment();
-    return m_env.merge(src);
+    return m_env->merge(src);
   }else{
     Package* new_pack = new Package(v_path[0]);
     m_sub_packs[v_path[0]] = new_pack;
@@ -30,7 +30,7 @@ bool Package::AddToPackage(std::vector<std::string> path, environment* src){
 }
 
 
-bool Package::AddToPackage(std::string path, environment* src){
+bool Package::AddToPackage(std::string& path, environment* src){
   std::vector<std::string> v_path;
   string_split(path,'.',v_path);
 
@@ -39,23 +39,28 @@ bool Package::AddToPackage(std::string path, environment* src){
 
 // import pack.pack.class
 // adding things to package
-environment* Package::Search(std::vector<std::string> path){
+environment* Package::Search(std::vector<std::string>& path){
   std::string key = path[0];
+  environment* pack = nullptr;
   if(path.size() > 1){
     if(m_sub_packs.find(key) != m_sub_packs.end()){
       path.erase(path.begin());
-      return m_sub_packs[key].Search(path);
+      pack = m_sub_packs[key].Search(path);
     }
   }else{
-    if(m_env.classes.find(key) != m_env.classes.end()){
-      return m_env.classes[key];
+    if(m_env->classes.find(key) != m_env->classes.end()){
+      pack = new environment();
+      pack->classes[key] = m_env->classes[key];
+    }else if(m_env->interfaces.find(key) != m_env->interfaces.end()){
+      pack = new environment();
+      pack->interfaces[key] = m_env->interfaces[key];
     }
   }
-  return nullptr;
+  return pack;
 }
 
 // import pack.pack.class;
-environment* Package::Serach(std::string path){
+environment* Package::Serach(std::string& path){
   std::vector<std::string> v_path;
   string_split(path,'.',v_path);
 
@@ -73,7 +78,7 @@ void Package::MergeAll(environment* dst){
 }
 
 // import pack.pack.*;
-bool Package::GetAll(std::vector<std::string> path, environment* dst){
+bool Package::GetAll(std::vector<std::string>& path, environment* dst){
   // verifys the last is * or I'm a package (I have sub packs)
   std::string key = path;
   if(path[0] == "*"){
@@ -94,7 +99,7 @@ bool Package::GetAll(std::vector<std::string> path, environment* dst){
 }
 
 // import pack.pack.*;
-environment* Package::GetAll(std::string path){
+environment* Package::GetAll(std::string& path){
   environment* new_env = new environment();
   std::vector<std::string> v_path;
   string_split(path,'.',v_path);
@@ -122,6 +127,53 @@ bool Package::CheckNames(environment* env){
   }
 }
 
+ASTNode* Package::GetQualified(std::vector<std::string>& path){
+  std::string key = path[0];
+  if(path.size() > 1){
+    if(m_sub_packs.find(key) != m_sub_packs.end()){
+      path.erase(path.begin());
+      return m_sub_packs[key].GetQualified(path);
+    }
+  }else{
+    if(m_env->classes.find(key) != m_env->classes.end()){
+      return m_env->classes[key];
+    }else if(m_env->interfaces.find(key) != m_env->interfaces.end()){
+      return m_env->interfaces[key];
+    }
+  }
+  return nullptr;
+}
+
+ASTNode* Package::GetQualified(std::string& name){
+  std::vector<std::string> v_path;
+  string_split(path,'.',v_path);
+
+  return GetQualified(v_path);
+  
+}
+
+environment* Package::GetPack(std::vector<std::string>* path){
+  std::string key = path[0];
+  if(path.size() > 1){
+    if(m_sub_packs.find(key) != m_sub_packs.end()){
+      path.erase(path.begin());
+      return m_sub_packs[key].GetPack(path);
+    }
+  }else{
+    if(m_sub_packs.find(key) != m_sub_packs.end()){
+      return m_sub_packs[key];
+    }
+  }
+  return nullptr;
+}
+
+environment* Package::GetPack(std::string& pack_name){
+  std::vector<std::string> v_path;
+  string_split(path,'.',v_path);
+
+  return Getpack(v_path);
+}
+
 /* Ctor Dtor */
 
 Package::Package():
@@ -134,7 +186,7 @@ Package::Package(const std::string& pack_name):
   package_name(pack_name)
 {}
 
-Package::Package(std::string path, environment* src):
+Package::Package(std::string& path, environment* src):
   m_env(nullptr),
   package_name("")
 {
@@ -154,3 +206,4 @@ Package::~Package(){
   }
   if(m_env != nullptr) delete m_env;
 }
+

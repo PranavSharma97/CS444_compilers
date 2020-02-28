@@ -49,7 +49,6 @@ bool TypeLinker::ConstructPackage(){
       }
     } else {
       // else add to default package
-      std::string default_package_name = "The greates default package name";
       if(!m_packages->Add(default_package_name,CUN->scope)){
 	RED();
 	std::cerr<<"PACKAGE ERROR: Cannot add environment to default package."<<std::endl;
@@ -80,15 +79,41 @@ bool TypeLinker::ConstructPackage(){
   return true;
 }
 
-/*
- * Ctor and Dtor
- */
+environment* TypeLinker::GetCurrentPackage(CompilationUnitNode* CUN){
+  environment* pack_env = nullptr;
+  char pack_count = 0;
+  std::string pack_name;
+  for(ASTNode* c: CUN->children){
+    if(c->type() == TokenType::PackageDeclaration){
+      pack_count ++;
+      if(duplicate_package){
+	RED();
+	std::cerr<<"ERROR: a file cannot be in two packages.";
+	std::cerr<<endl;
+	DEFAULT();
+	break;
+      }
+      pack_name = c->package_name;
+    }
+  }
 
-TypeLinker::TypeLinker(const std::vector<ASTNode*>& asts):
-  m_asts(asts)
-{
-  std::string root_pack_name = "THIS IS THE ROOT PACK";
-  m_packages = new m_packages(root_pack_name);
+  // IF no package is declared, use the default package name
+  if(pack_count == 0){
+    pack_name = default_package_name;
+  }
+  // If duplicated packages.
+  if(pack_count > 1) return nullptr;
+
+  // Otherwise try to get package environment.
+  pack_env = m_packages->GetPack(c->package_name);
+  if(pack_env == nullptr){
+    RED();
+    std::cerr<<"ERROR: Packge "<<c->package_name<<" is not constructed.";
+    std::cerr<<endl;
+    DEFAULT();
+  }
+  
+  return pack_env;
 }
 
 bool TypeLinker::Link(){
@@ -98,6 +123,10 @@ bool TypeLinker::Link(){
   for(ASTNode* n: m_asts){
     environment local_env;
     CompilationUnitNode* CUN = (CompilationUnitNode*) n;
+    // Get the package environment first
+    environment* pack_env = GetCurrentPackage(CUN);
+    if(pack_env == nullptr || !local_env.merge(pack_env)) return false;
+    
     for(ASTNode* c: CUN->children){
       TokenType node_type = c->type();
       // Search for all import declarations, try to import them to local env
@@ -126,6 +155,9 @@ bool TypeLinker::Link(){
 	}else{
 	  result = local_env.merge(pack_env);
 	}
+	// since both get all and search creates a newenvironment on stack
+	// delete it
+	delete pack_env;
 
 	// If error occurs when merging environment
 	if(!result){
@@ -148,11 +180,190 @@ bool TypeLinker::Link(){
 
       // check if any package name is a class name
       if(!m_packages.CheckNames(&local_env)) return false;
-      // resolve types
+      // resolve types out side of env in the ast
+      if(!ResolveAST(CUN,&local_env)) return false;
+      //if(!ResolveType(CUN,&local_env)) return false;
     }
-  }
-  
+  }  
 }
+
+bool TypeLinker::HasEnv(TokenType t){
+  switch(t){
+  case TokenType::CompilationUnit:
+  case TokenType::ClassDeclaration:
+  case TokenType::FieldDeclaration:
+  case TokenType::MethodDeclaration:
+  case TokenType::ConsturctorDeclaration:
+  case TokenType::FormalParameter:
+  case TokenType::InterfaceDeclaration:
+  case TokenType::BlockStatement:
+  case TokenType::LocalVariableDeclaration:
+  case TokenType::ForInit:
+    return true;
+  default:
+    return false;
+  }
+  return false;
+}
+
+bool TypeLinker::HasEnv(ASTNode* root){
+  return HaasEnv(root->type());
+}
+
+bool DoLinkClass(IdentifierNode* id, environment* env){
+  ASTNode* dec = nullptr;
+  // Handles qualified name
+  size_t found = id->identifier.find('.');
+  if(found != std::string::npos){
+    ASTNode* dec = m_packages->GetQualified(id->identifier);
+  } else if(env->classes.find(id->identifier) != env->classes.end()){
+    ASTNode* dec = env->classes[id->identifier];
+  } else {
+    // We didn't find it in the current environment
+    RED();
+    std::cerr<<"ERROR: "<<(ID->identifier)<<" undefined."<<std::endl;
+    DEFAULT();
+    return false;
+  }
+
+  
+    // Null pointer means ambiguous. may be a collision in
+    // import package.*
+  if(dec == nullptr){
+    RED();
+    std::cerr<<"ERROR: "<<(id->identifier)<<" is ambiguous or undefined."<<std::endl;
+    DEFAULT();
+    return false;
+  }
+  id->class_declare = env->classes[id->identifier];
+  
+  return true;
+}
+
+bool TypeLinker::ResolveAST(ASTNode* root, environment* env){
+  TokenType t = root->type();
+  if(!HasEnv(t)){
+    for(ASTNode* n: root->children){
+      if(!ResolveAST(n,env)) return false;
+    }
+    return true;
+  } else {
+    switch(t){
+    case TokenType::CompilationUnit:{
+      if(!env->merge(((CompilationUnitNode*)root)->scope)){
+	return false;
+      }
+      break;
+    case TokenType::ClassDeclaration:
+      // Copy the class environment into the env
+      
+	// get this scope into then env stack
+      if(!env->merge(((ClassDeclarationNode*)root)->scope)){
+	return false;
+      }
+      break;
+      // The follwoing nodes has a scope and does declaration
+      case TokenType::ConsturctorDeclaration:
+	break;
+	case TokenType::InterfaceDeclaration:
+	  case TokenType::BlockStatement:
+	    
+	  case TokenType::FieldDeclaration:
+    case TokenType::MethodDeclaration:
+    case TokenType::LocalVariableDeclaration:
+    case TokenType::FormalParameter:
+    case TokenType::ForInit:
+      // for these types, if the first child is id, then it's a class name
+      // need to be resolved.
+      if(root->children.size() > 0 &&
+	 root->children[0]->type() == TokenType::T_IDENTIFIER){
+	IdentifierNode* ID = (IdentifierNode*) root->children[0];
+	if(!DoLinkClass(ID,env)) return false;
+      }
+
+      // add the environment defined here into the environment
+      {
+	environment* this_env;
+	
+	switch(t){
+	case TokenType::ClassDeclaration:
+	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  break;
+	case TokenType::FieldDeclaration:
+	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  break;
+	case TokenType::MethodDeclaration:
+	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  break;
+	case TokenType::ConsturctorDeclaration:
+	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  break;
+	case TokenType::FormalParameter:
+	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  break;
+	case TokenType::InterfaceDeclaration:
+	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  break;
+	case TokenType::BlockStatement:
+	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  break;
+	case TokenType::LocalVariableDeclaration:
+	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  break;
+	case TokenType::ForInit:
+	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  break;
+	}
+	
+	// get this scope into then env stack
+	if(!env->merge(this_env)){
+	  return false;
+	}
+      }
+      
+      break;
+    case TokenType::ClassInstanceCreationExpressionNode:
+      if(root->children.size() > 0 &&
+	 root->children[1]->type() == TokenType::T_IDENTIFIER){
+	IdentifierNode* ID = (IdentifierNode*) root->children[0];
+	if(!DoLinkClass(ID,env)) return false;
+      }
+      break;
+    
+  default:
+    return false;
+  }
+  }
+}
+
+bool TypeLinker::ResolveType(ASTNode* root, envrionment* env){
+  /*
+  TokenType t_type = root->type();
+  switch(t_type){
+  case TokenType::MethodInvocation:{
+    MethodInvocationNode* MIN = (MethodInvocationNode*) root;
+    
+  }
+  }
+  */
+  return true;
+}
+
+
+
+/*
+ * Ctor and Dtor
+ */
+
+TypeLinker::TypeLinker(const std::vector<ASTNode*>& asts):
+  default_package_name("THE DEFAULT PACKAGE"),
+  m_asts(asts)
+{
+  std::string root_pack_name = "THIS IS THE ROOT PACK";
+  m_packages = new m_packages(root_pack_name);
+}
+
+
 
 
 TypeLinker::~TypeLinker(){
