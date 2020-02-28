@@ -663,7 +663,9 @@ MethodDeclaratorNode* MethodDeclarator() {
 }
 
 PrimaryNoNewArrayNode* PrimaryNoNewArray() {
-    
+    vector<ASTNode*> children;
+
+    return new PrimaryNoNewArrayNode(children);
 }
 
 ArrayCreationExpressionNode* ArrayCreationExpression() {
@@ -843,7 +845,7 @@ EqualityExpressionNode* EqualityExpression() {
     }
 }
 
-RelationalExpressionNode* relationalExpression() {
+RelationalExpressionNode* RelationalExpression() {
     RelationalExpressionNode* relationalExpression = nullptr;
     ShiftExpressionNode* shiftExpression = nullptr;
     ReferenceTypeNode* referenceType = nullptr;
@@ -891,21 +893,27 @@ ShiftExpressionNode* ShiftExpression() {
 }
 
 AdditiveExpressionNode* AdditiveExpression() {
-    UnaryExpressionNode* unaryExpression = nullptr;
-    MultiplicativeExpressionNode* multiplicativeExpression = nullptr;
+    MultiplicativeExpression* multiplicativeExpression = nullptr;
+    AdditiveExpression* additiveExpression = nullptr;
     int op = -1;
 
+    vector<ASTNode*> children;
+
     if (node.m_generated_tokens.size() == 1) {
-        return new AdditiveExpressionNode((node.m_generated_tokens[0]), op, relationalExpression, referenceType);
+        children.push_back(MultiplicativeExpression(node.m_generated_tokens[0]));
+        return new AdditiveExpressionNode(op, children);
     }
+
+    children.push_back(AdditiveExpression(node.m_generated_tokens[0]));
+    children.push_back(MultiplicativeExpression(node.m_generated_tokens[2]));
 
     if (node.m_generated_tokens[1].m_type == TokenType::T_STAR) {
         op = 0;
-        return new EqualityExpressionNode(ShiftExpression(node.m_generated_tokens[2]), op, RelationalExpression(node.m_generated_tokens[0]), referenceType);
+        return new AdditiveExpressionNode(op, children);
     }
     else if (node.m_generated_tokens[1].m_type == TokenType::T_SLASH) {
         op = 1;
-        return new EqualityExpressionNode(ShiftExpression(node.m_generated_tokens[2]), op, RelationalExpression(node.m_generated_tokens[0]), referenceType);
+        return new AdditiveExpressionNode(op, children);
     }
 
 }
@@ -914,6 +922,23 @@ MultiplicativeExpressionNode* MultiplicativeExpression() {
     UnaryExpressionNode* unaryExpression = nullptr;
     MultiplicativeExpressionNode* multiplicativeExpression = nullptr;
     int op = -1;
+    vector<ASTNode*> children;
+    return new MultiplicativeExpressionNode(children);
+}
+
+FieldAccessNode* FieldAccess() {
+    PrimaryNode* primaryNode = nullptr;
+    string identifier = node.m_generated_tokens[2].m_lex;
+
+    vector<ASTNode*> children;
+    if (node.m_generated_tokens[0].m_generated_tokens[0].m_type == TokenType::PrimaryNoNewArray) {
+        children.push_back(PrimaryNoNewArray(node.m_generated_tokens[0].m_generated_tokens[0]);
+    }
+    else {
+        children.push_back(ArrayCreationExpression(node.m_generated_tokens[0].m_generated_tokens[0]);
+    }
+
+    return new FieldAccessNode(identifier, children);
 }
 
 
