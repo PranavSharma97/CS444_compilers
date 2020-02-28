@@ -160,6 +160,58 @@ ClassDeclarationNode* ClassDeclaration() {
     return new ClassDeclarationNode(identifier, children);
 }
 
+InterfaceDeclarationNode* InterfaceDeclaration() {
+    vector<ModifierNode*> modifiers;
+    string identifier;
+    NameNode* name = nullptr;
+    vector<InterfaceNode*> interfaces;
+    vector<MethodHeaderNode*> methodHeaders;
+    vector<MethodHeader*> ;
+    vector<ASTNode*> children;
+    for (Token& child: node.m_generated_tokens) {
+        if (child.m_type == TokenType::Modifiers) {
+            modifiers = Modifiers(child);
+            for (int i=0; i<modifiers.size(); i++) {
+                children.push_back(modifiers[i]);
+            }
+        }
+        else if (child.m_type == TokenType::T_IDENTIFIER) {
+            identifier = child.m_lex;
+        }
+        else if (child.m_type == TokenType::ExtendsInterfaces) {
+            interfaces = ExtendsInterfaces(child);
+            for (int i=0; i<interfaces.size(); i++) {
+                children.push_back(interfaces[i]);
+            }
+        }
+        else if (child.m_type == TokenType::ClassBody) {
+            if (child.m_generated_tokens[1] == TokenType::InterfaceMemberDeclarations) {
+                interfaceMemberDeclarations = InterfaceMemberDeclarations(child.m_generated_tokens[1]);
+                for (int i=0; i<interfaceMemberDeclarations.size(); i++) {
+                    children.push_back(interfaceMemberDeclarations[i]);
+                }
+            }
+        }
+    }
+
+    return new InterfaceDeclarationNode(identifier, children);
+
+}
+
+vector<MethodHeaderNode*> InterfaceMemberDeclarations() {
+    vector<MethodHeaderNode*> methodHeaders;
+    Token& child = node.m_generated_tokens[0];
+    while (child.m_generated_tokens.size() > 1) {
+        methodHeaders.push_back(MethodHeader(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]));
+        child = child.m_generated_tokens[0];
+    }
+
+    methodHeaders.push_back(MethodHeader(child.m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[0]));
+    reverse(methodHeaders.begin(), methodHeaders.end());
+
+    return methodHeaders;
+}
+
 vector<ClassBodyDeclarationNode*> ClassBodyDeclarations() {
     Token& child = node.m_generated_tokens[0];
     vector<ClassBodyDeclarationNode*> classBodyDeclarations;
@@ -500,6 +552,20 @@ ForStatementNoShortIfNode* ForStatementNoShortIf() {
     return new ForStatementNoShortIfNode(children);
 }
 
+vector<InterfaceNode*> ExtendsInterfaces() {
+    Token& child = node.m_generated_tokens[1];
+    vector<InterfaceNode*> interfaces;
+    while (child.m_generated_tokens.size() > 2) {
+        interfaces.push_back(new InterfaceNode(ClassOrInterfaceType(child.m_generated_tokens[2].m_generated_tokens[0])));
+        child = child.m_generated_tokens[0];
+    }
+
+    interfaces.push_back(new InterfaceNode(ClassOrInterfaceType(child.m_generated_tokens[1].m_generated_tokens[0])));
+    reverse(interfaces.begin(), interfaces.end());
+
+    return interfaces;
+}
+
 vector<InterfaceNode*> Interfaces() {
     Token& child = node.m_generated_tokens[0];
     vector<InterfaceNode*> interfaces;
@@ -563,6 +629,11 @@ MethodHeaderNode* MethodHeader() {
     ModifiersNode* modifiers = Modifiers(node.m_generated_tokens[0]);
     TypeNode* type = nullptr;
     vector<ASTNode*> children;
+
+    for (int i=0; i<modifiers.size(); i++) {
+        children.push_back(modifiers[i]);
+    }
+
     if (node.m_generated_tokens[1].m_type == TokenType::Type) {
         type = Type(node.m_generated_tokens[1]);
         children.push_back(type);
@@ -571,18 +642,24 @@ MethodHeaderNode* MethodHeader() {
     MethodDeclaratorNode* methodDeclarator = MethodDeclarator(node.m_generated_tokens[2]);
     children.push_back(methodDeclarator);
 
-    return new MethodHeaderNode(modifiers, type, methodDeclarator);
+    return new MethodHeaderNode(children);
 
 }
 
 MethodDeclaratorNode* MethodDeclarator() {
     string identifier = node.m_generated_tokens[0].m_lex;
     vector<FormalParameterNode*> formalParameters;
+
+    vector<ASTNode*> children;
+
     if (node.m_generated_tokens[2].m_type == TokenType::FormalParameterList) {
         formalParameters = FormalParameterList(node.m_generated_tokens[2]);
+        for (int i=0; i<formalParameters.size(); i++) {
+            children.push_back(formalParameters[i]);
+        }
     }
 
-    return new MethodDeclaratorNode(identifier, formalParameters);
+    return new MethodDeclaratorNode(identifier, children);
 }
 
 PrimaryNoNewArrayNode* PrimaryNoNewArray() {
@@ -592,15 +669,20 @@ PrimaryNoNewArrayNode* PrimaryNoNewArray() {
 ArrayCreationExpressionNode* ArrayCreationExpression() {
     PrimitiveTypeNode* primitiveType = nullptr;
     NameNode* name = nullptr;
+
+    vector<ASTNode*> children;
     ExpressionNode* expression = Expression(node.m_generated_tokens[2].m_generated_tokens[1]);
+    children.push_back(expression);
     if (node.m_generated_tokens[1].m_type == TokenType::PrimitiveType) {
         primitiveType = PrimitiveType(node.m_generated_tokens[1]);
+        children.push_back(primitiveType);
     }
     else {
         name = ClassOrInterfaceType(node.m_generated_tokens[1]);
+        children.push_back(name);
     }
 
-    return new ArrayCreationExpressionNode(primitiveType, name);
+    return new ArrayCreationExpressionNode(children);
 }
 
 vector<ExpressionNode*> ArgumentList() {
@@ -620,11 +702,16 @@ vector<ExpressionNode*> ArgumentList() {
 ClassInstanceCreationExpressionNode* ClassInstanceCreationExpression() {
     ClassOrInterfaceTypeNode* classOrInterfaceType = ClassOrInterfaceType(node.m_generated_tokens[1]);
     vector<ExpressionNode*> argumentsList;
+    vector<ASTNode*> children;
+    childen.push_back(classOrInterfaceType);
     if (node.m_generated_tokens[3].m_type == TokenType::ArgumentList) {
         argumentList = ArgumentList(node.m_generated_tokens[3]);
+        for (int i=0; i<argumentList.size(); i++) {
+            children.push_back(argumentList[i]);
+        }
     }
 
-    return new ClassInstanceCreationExpressionNode(classOrInterfaceType, argumentsList);
+    return new ClassInstanceCreationExpressionNode(children);
 }
 
 ExpressionNode* Expression() {
@@ -644,7 +731,9 @@ AssignmentNode* Assignment() {
     LeftHandSideNode* leftHandSide = LeftHandSide(node.m_generated_tokens[0]);
     AssignmentExpressionNode* assignmentExpression = AssignmentExpression(node.m_generated_tokens[2]);
 
-    return new AssignmentNode(leftHandSide, assignmentExpression);
+    vector<ASTNode*> children = {leftHandSide, assignmentExpression};
+
+    return new AssignmentNode(children);
 }
 
 LeftHandSideNode* LeftHandSide() {
@@ -670,6 +759,7 @@ LeftHandSideNode* LeftHandSide() {
 ConditionalOrExpressionNode* ConditionalOrExpression() {
     vector<ConditionalAndExpressionNode*> conditionalAndExpressions;
     Token& child = node.m_generated_tokens[0];
+    vector<ASTNode*> children;
     while (child.m_generated_tokens.size() > 1) {
         conditionalAndExpressions.push_back(ConditionalAndExpression(child.m_generated_tokens[2]));
         child = child.m_generated_tokens[0];
@@ -732,17 +822,24 @@ EqualityExpressionNode* EqualityExpression() {
     EqualityExpressionNode* equalityExpression = nullptr;
     int op = -1;
 
+    vector<ASTNode*> children;
+
     if (node.m_generated_tokens.size() == 1) {
-        return new EqualityExpressionNode(RelationalExpression(node.m_generated_tokens[0]), op, equalityExpression);
+        children.push_back(RelationalExpression(node.m_generated_tokens[0]));
+        return new EqualityExpressionNode(RelationalExpression(op, children);
     }
 
     if (node.m_generated_tokens[1].m_type == TokenType::T_EQUAL_EQUAL) {
         op = 0;
-        return new EqualityExpressionNode(RelationalExpression(node.m_generated_tokens[2]), op, EqualityExpression(node.m_generated_tokens[0]));
+        children.push_back(EqualityExpression(node.m_generated_tokens[0]));
+        children.push_back(RelationalExpression(node.m_generated_tokens[2]));
+        return new EqualityExpressionNode(op, children);
     }
     else if (node.m_generated_tokens[1].m_type == TokenType::T_NOT_EQUAL) {
         op = 1;
-        return new EqualityExpressionNode(RelationalExpression(node.m_generated_tokens[2]), op, EqualityExpression(node.m_generated_tokens[0]));
+        children.push_back(EqualityExpression(node.m_generated_tokens[0]));
+        children.push_back(RelationalExpression(node.m_generated_tokens[2]));
+        return new EqualityExpressionNode(op, children);
     }
 }
 
@@ -753,29 +850,39 @@ RelationalExpressionNode* relationalExpression() {
 
     int op = -1;
 
+     vector<ASTNode*> children;
+
     if (node.m_generated_tokens.size() == 1) {
-        return new RelationalExpressionNode(ShiftExpression(node.m_generated_tokens[0]), op, relationalExpression, referenceType);
+        children.push_back(ShiftExpression(node.m_generated_tokens[0]));
+        return new RelationalExpressionNode(ShiftExpression(op, children);
     }
+
+    children.push_back(RelationalExpression(node.m_generated_tokens[0]));
 
     if (node.m_generated_tokens[1].m_type == TokenType::T_LESS) {
         op = 0;
-        return new EqualityExpressionNode(ShiftExpression(node.m_generated_tokens[2]), op, RelationalExpression(node.m_generated_tokens[0]), referenceType);
+        children.push_back(ShiftExpression(node.m_generated_tokens[2]));
+        return new EqualityExpressionNode(op, children); 
     }
     else if (node.m_generated_tokens[1].m_type == TokenType::T_GREATER) {
         op = 1;
-        return new EqualityExpressionNode(ShiftExpression(node.m_generated_tokens[2]), op, RelationalExpression(node.m_generated_tokens[0]), referenceType);
+        children.push_back(ShiftExpression(node.m_generated_tokens[2]));
+        return new EqualityExpressionNode(op, children); 
     }
     else if (node.m_generated_tokens[1].m_type == TokenType::T_LESS_EQUAL) {
         op = 2;
-        return new EqualityExpressionNode(ShiftExpression(node.m_generated_tokens[2]), op, RelationalExpression(node.m_generated_tokens[0]), referenceType);
+        children.push_back(ShiftExpression(node.m_generated_tokens[2]));
+        return new EqualityExpressionNode(op, children); 
     }
     else if (node.m_generated_tokens[1].m_type == TokenType::T_GREATER_EQUAL) {
         op = 3;
-        return new EqualityExpressionNode(ShiftExpression(node.m_generated_tokens[2]), op, RelationalExpression(node.m_generated_tokens[0], referenceType));
+        children.push_back(ShiftExpression(node.m_generated_tokens[2]));
+        return new EqualityExpressionNode(op, children); 
     }
     else {
         op = 4;
-        return new EqualityExpressionNode(shiftExpression, op, RelationalExpression(node.m_generated_tokens[0]), ReferenceType(node.m_generated_tokens[2]));
+        children.push_back(ReferenceType(node.m_generated_tokens[2]));
+        return new EqualityExpressionNode(op, children);
     }
 }
 
@@ -789,7 +896,7 @@ AdditiveExpressionNode* AdditiveExpression() {
     int op = -1;
 
     if (node.m_generated_tokens.size() == 1) {
-        return new MultiplicativeExpression(ShiftExpression(node.m_generated_tokens[0]), op, relationalExpression, referenceType);
+        return new AdditiveExpressionNode((node.m_generated_tokens[0]), op, relationalExpression, referenceType);
     }
 
     if (node.m_generated_tokens[1].m_type == TokenType::T_STAR) {
@@ -804,7 +911,9 @@ AdditiveExpressionNode* AdditiveExpression() {
 }
 
 MultiplicativeExpressionNode* MultiplicativeExpression() {
-            
+    UnaryExpressionNode* unaryExpression = nullptr;
+    MultiplicativeExpressionNode* multiplicativeExpression = nullptr;
+    int op = -1;
 }
 
 
