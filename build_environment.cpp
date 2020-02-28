@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <exception>
 #include <fstream>
 #include <iostream>
@@ -6,9 +7,9 @@
 #include <vector>
 
 #include "token_types.h"
+#include "astNodes.h"
 
 using namespace std;
-
 
 void debugPrint(environment *scope){
   cout << "Keys in classes: ";
@@ -50,89 +51,101 @@ void debugPrint(environment *scope){
 
 // Add to methods and check if in environment methods already
 // if inside methods already return false
-bool addToMethods(environment *scope, string identifier, ASTNode* it){
-  if (scope->methods.find(identifier) != scope->methods.end() &&
-      scope->methods[identifier].find(it) == scope->methods[identifier].end()){
-    scope->methods[identifier].push_back(it);
+bool addToMethods(environment *scope, string identifier, MethodDeclarationNode *it){
+  if (scope->methods.find(identifier) != scope->methods.end()){
+    vector<MethodDeclarationNode*> methods = scope->methods[identifier];
+    if (find(methods.begin(), methods.end(), it) == methods.end()){
+      methods.push_back(it);
+    }
+    else {
+      return false;
+    }
   }
-  else if (scope->methods.find(identifier) != scope->methods.end()){
-    return false;
-  }
-  else{
-    scope->methods.insert(pair<string,vector<MethodDeclarationNode>>(identifier,[it]));
+  else {
+    pair<string,vector<MethodDeclarationNode*>> methodsPair;
+    methodsPair.first = identifier;
+    methodsPair.second.push_back(it);
+    scope->methods.insert(methodsPair);
   }
   return true;
 }
 
 // Add to constructors and check if in environment constructors already
 // if inside constructors already return false
-bool addToConstructors(environment *scope, string identifier, ASTNode* it){
-  if (scope->constructors.find(identifier) != scope->constructors.end() &&
-      scope->constructors[identifier].find(it) == scope->constructors[identifier].end()){
-    scope->constructors[identifier].push_back(it);
-  }
-  else if (scope->constructors.find(identifier) != scope->constructors.end()){
-    return false;
+bool addToConstructors(environment *scope, string identifier, ConstructorDeclarationNode* it){
+  if (scope->constructors.find(identifier) != scope->constructors.end()) {
+    vector<ConstructorDeclarationNode*> constructors = scope->constructors[identifier];  
+    if (find(constructors.begin(), constructors.end(), it) == constructors.end()){
+      scope->constructors[identifier].push_back(it);
+    }
+    else {
+      return false;
+    }
   }
   else {
-    scope->constructors.insert(pair<string,vector<ConstructorDeclarationNode>>(identifier,[it]);
+    pair<string,vector<ConstructorDeclarationNode*>> constructorPair;
+    constructorPair.first = identifier;
+    constructorPair.second.push_back(it);
+    scope->constructors.insert(constructorPair);
   }
   return true;
 }
 
 
-void traverse(list<ASTNode*> children, environment* scope, parentIsClass=false){
+int traverse(vector<ASTNode*> children, environment* scope, bool parentIsClass=false){
   for(vector<ASTNode*>::iterator it=children.begin(); it!=children.end(); it++){
-    if (it->type() == ClassDeclaration){
-      dynamic_cast<ClassDeclarationNode*>(it);
+    if ((*it)->type() == ClassDeclaration){
+      ClassDeclarationNode *classNode = dynamic_cast<ClassDeclarationNode*>(*it);
 
       if (parentIsClass){
-        scope->classes.insert(pair<string,ClassDeclarationNode*>(it->identifier,*it));
+        scope->classes.insert(pair<string,ClassDeclarationNode*>(classNode->identifier, classNode));
       }
 
-      it->environment.classes.insert(pair<string,ClassDeclarationNode*>(it->identifier,*it));
+      (*it)->scope.classes.insert(pair<string,ClassDeclarationNode*>(classNode->identifier, classNode));
       // traverse children with new scope
-      traverse(it->children, it->environment,true);
+      traverse(classNode->children, &classNode->scope,true);
       cout << "environment of class is" << endl;
-      debugPrint(&it->environment)
+      debugPrint(&classNode->scope);
     }
-    else if (it->type() == FieldDeclaration){
-      dynamic_cast<FieldDeclarationNode*>(it);
-      string identifier = it->children.back().identifier;
+    else if ((*it)->type() == FieldDeclaration){
+      FieldDeclarationNode* fieldNode = dynamic_cast<FieldDeclarationNode*>(*it);
+      VariableDeclaratorNode* variableNode = dynamic_cast<VariableDeclaratorNode*>(fieldNode->children.back());
+      string identifier = variableNode->identifier;
 
-      if (!it->environment.merge(scope)){
+      if (!fieldNode->scope.merge(scope)){
         return 42;
       }
 
       if (parentIsClass) {
-        scope->localVariables.insert(pair<string,FieldDeclarationNode*>(identifier,*it));
+        scope->localVariables.insert(pair<string,FieldDeclarationNode*>(identifier,fieldNode));
       }
  
-      it->environment.localVariables.insert(pair<string,FieldDeclarationNode*>(identifier,*it));
+      fieldNode->scope.localVariables.insert(pair<string,FieldDeclarationNode*>(identifier,fieldNode));
 
       // set scope pointer to subscope
-      *scope = it->environment;
+      *scope = fieldNode->scope;
     }
-    else if (it->type() == MethodDeclaration){
-      dynamic_cast<MethodDeclarationNode*>(it);
+    else if ((*it)->type() == MethodDeclaration){
+      MethodDeclarationNode* methodNode = dynamic_cast<MethodDeclarationNode*>(*it);
       // go to MethodHeaderNode -> MethodDeclaratorNode -> Identifier
-      vector<ASTNode> subChildren = it->children[0];
+      MethodHeaderNode* header = dynamic_cast<MethodHeaderNode*>(methodNode->children[0]);
+      vector<ASTNode*> subChildren = header->children;
       string identifier;
-      for(vector<ASTNode>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
-        if (sub_it->type() == MethodDeclarator){
-          dynamic_cast<MethodDeclarator*>(sub_it);
-          identifier = sub_it->identifier;
+      for(vector<ASTNode*>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
+        if ((*sub_it)->type() == MethodDeclarator){
+          MethodDeclaratorNode* declarator = dynamic_cast<MethodDeclaratorNode*>(*sub_it);
+          identifier = declarator->identifier;
         }
       }
-      if (parentIsClass && !addToMethods(scope, identifier, *it)){
+      if (parentIsClass && !addToMethods(scope, identifier, methodNode)){
         return 42;
       }
-      if (!addToMethods(it->environment, identifier, *it)){
+      if (!addToMethods(&methodNode->scope, identifier, methodNode)){
         return 42;
       }
       // traverse children with new scope
-      traverse(it->children, it->environment);
-    }
+      traverse(methodNode->children, &methodNode->scope);
+    }/*
     else if (it->type() == FormalParameter){
       dynamic_cast<FormalParameterNode*>(it);
       string identifier = it->children.back().identifier;
@@ -150,28 +163,28 @@ void traverse(list<ASTNode*> children, environment* scope, parentIsClass=false){
           identifier = sub_it->identifier;
         }
       }
-      if (parentIsClass && !addToConstructors(scope, identifier, *it)){
+      if (parentIsClass && !addToConstructors(scope, identifier, &it)){
         return 42;
       }
-      if (!addToConstructors(it->environment, identifier, *it){
+      if (!addToConstructors(it->scope, identifier, &it){
         return 42;
       }
       // traverse children with new scope
-      traverse(it->children, it->environment);
+      traverse(it->children, it->scope);
     }
     else if (it->type() == InterfaceDeclaration){
       dynamic_cast<InterfaceDeclarationNode*>(it);
       if (parentIsClass){
         scope->interfaces.insert((pair<string,InterfaceDeclarationNode*>(it->identifier,*it));
       }
-      it->environment->interfaces.insert((pair<string,InterfaceDeclarationNode*>(it->identifier,*it));
+      it->scope->interfaces.insert((pair<string,InterfaceDeclarationNode*>(it->identifier,*it));
       // traverse children with new scope
-      traverse(it->children, it->environment);
+      traverse(it->children, it->scope);
     }
     else if (it->type() == BlockStatement){
       dynamic_cast<BlockStatementsNode*>(it);
       // traverse children with new scope
-      traverse(it->children, it->environment);
+      traverse(it->children, it->scope);
     }
     else if (it->type() == LocalVariableDeclaration){
       dynamic_cast<LocalVariableDeclarationNode*>(it);
@@ -185,13 +198,13 @@ void traverse(list<ASTNode*> children, environment* scope, parentIsClass=false){
         }
       }
       // local variable declaration will have its own scope
-      it->environment.merge(scope);
+      it->scope.merge(scope);
       if (parentIsClass){
          scope->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
       }
-      it->environment->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
+      it->scope->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
       // set scope pointer to subscope
-      *scope = it->environment;
+      *scope = it->scope;
       traverse(it->children, scope);
     }
     else if (it->type() == ForStatement){
@@ -206,16 +219,17 @@ void traverse(list<ASTNode*> children, environment* scope, parentIsClass=false){
             identifier = sub_it->identifier;
           }
         }
-        it[0]->environment->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
+        it[0]->scope->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
       }
-      traverse(it->children.back().children, it[0]->environment);
+      traverse(it->children.back().children, it[0]->scope);
     }
     else {
       traverse(it->children, scope);
-    }
+    }*/
   }
+  return 0;
 }
 
-CompilationUnitNode BuildEnvironment(CompilationUnitNode AST){
-  traverse(AST->children, AST->environment);
+ASTNode BuildEnvironment(ASTNode *AST){
+  traverse(AST->children, &AST->scope);
 }

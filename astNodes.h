@@ -6,6 +6,7 @@
 class ASTNode {
   public:
     virtual TokenType type() { return TOKEN_FAILURE; };
+    environment scope;
     std::vector<ASTNode*> children;
     ASTNode() = default;
     ASTNode(const std::vector<ASTNode*>& ): children(children){}

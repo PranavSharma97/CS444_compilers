@@ -9,7 +9,8 @@ class LocalVariableDeclarationNode;
 class FormalParameterNode;
 class ConstructorDeclarationNode;
 
-class environment {
+struct environment {
+  bool merge(environment* src);
   std::map<std::string,ClassDeclarationNode*> classes;
   std::map<std::string,InterfaceDeclarationNode*> interfaces;
   std::map<std::string,FieldDeclarationNode*> fields;

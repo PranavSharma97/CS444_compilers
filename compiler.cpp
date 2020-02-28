@@ -11,6 +11,7 @@
 #include "token.h"
 #include "weeder.h"
 #include "astProcedures.h"
+#include "build_environment.h"
 
 using namespace std;
 
@@ -41,7 +42,6 @@ int main(int argc, char *argv[]) {
       return 42;
     }
     parse_tree = PT.parse_tree;
-    ASTNode* astNode = CompilationUnitCreate(parse_tree); 
   } catch (std::exception& e){
     return 42;
   }
@@ -56,6 +56,10 @@ int main(int argc, char *argv[]) {
   } catch (std::exception& e){
     return 42;
   }
+
+  
+  ASTNode* astNode = CompilationUnitCreate(parse_tree);
+  BuildEnvironment(astNode);
   
   cout << "Parsing successful" << endl;
   return 0;
