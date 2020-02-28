@@ -249,6 +249,8 @@ bool TypeLinker::Link(){
       // resolve types out side of env in the ast
       if(!ResolveAST(CUN,envs)) return false;
       //if(!ResolveType(CUN,&local_env)) return false;
+
+      if(!ResolveInheritance(CUN,envs)) return false;
     }
   }  
 }
@@ -321,7 +323,7 @@ bool TypeLinker::DoLinkType(IdentifierNode* id, environment** envs){
   return true;
 }
 
-bool TypeLinker::ResolveInheritance(ASTNode* sub,ASTNode* super,std::map<ASTNode*,bool>& duplicate, environment** envs){
+bool TypeLinker::DoInherit(ASTNode* sub,ASTNode* super,std::map<ASTNode*,bool>& duplicate, environment** envs){
   // check for cycle
   if(duplicate.find(super) != duplicate.end()){
     RED();
@@ -364,24 +366,25 @@ bool TypeLinker::ResolveInheritance(ASTNode* sub,ASTNode* super,std::map<ASTNode
 	return false;
       }
 
-      // if the name is binded
-      if(name_node->declartion != nullptr){
-	
-	ClassDeclarationNode* cls = (ClassDeclarationNode*) super;
-	InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
-	if(!cls->scope->replace_merge(sup_cls->scope)) return false;
-      }else {
-	// prepare for recursive check
-	std::map<ASTNode*,bool> dup;
-	dup[super] = true;
-	if(!ResolveInheritance(super,super_class,dup,envs)) return false;
-	// bind it with name 
-	name_node->declaration = super_class;
-	return true;
+      // Name node should all be binded before this step
+      if(name_node->declaration == nullptr){
+	RED();
+	std::cerr<<"ERROR: "<<name_node->name<<" is not binded during type linking"<<std::endl;
+	DEFAULT();
+	return false;
       }
+      
+      // prepare for recursive check
+      duplicate[super] = true;
+      if(!DoInherit(super,super_class,duplicate,envs)) return false;
+      
+      // inherit the methods and fields
+      ClassDeclarationNode* cls = (ClassDeclarationNode*) super;
+      InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
+      if(!cls->scope->replace_merge(sup_cls->scope)) return false;
     }
   }
-
+  
  
   // resolve for extend class
   if(super->type() == TokenType::ClassDeclaration && extend != nullptr){
@@ -397,21 +400,20 @@ bool TypeLinker::ResolveInheritance(ASTNode* sub,ASTNode* super,std::map<ASTNode
       return false;
     }
 
-    // if the name is binded
+    // if the name is not binded
     if(name_node->declartion != nullptr){
-      
-      ClassDeclarationNode* cls = (ClassDeclarationNode*) super;
-      ClassDeclarationNode* sup_cls = (ClassDeclarationNode*) super_class;
-      if(!cls->scope->replace_merge(sup_cls->scope)) return false;
-    }else {
-      // prepare for recursive check
-      std::map<ASTNode*,bool> dup;
-      dup[super] = true;
-      if(!ResolveInheritance(super,super_class,dup,envs)) return false;
-      // bind it with name 
-      name_node->declaration = super_class;
-      return true;
+      RED();
+      std::cerr<<"ERROR: "<<name_node->name<<" is not binded during type linking"<<std::endl;
+      DEFAULT();
+      return false;
     }
+    // prepare for recursive check
+    duplicate[super] = true;
+    if(!DoInherit(super,super_class,duplicate,envs)) return false;
+    
+    ClassDeclarationNode* cls = (ClassDeclarationNode*) super;
+    ClassDeclarationNode* sup_cls = (ClassDeclarationNode*) super_class;
+    if(!cls->scope->replace_merge(sup_cls->scope)) return false;
   }
 
   
@@ -435,19 +437,19 @@ bool TypeLinker::ResolveInheritance(ASTNode* sub,ASTNode* super,std::map<ASTNode
 
       // if the name is binded
       if(name_node->declartion != nullptr){
-	
-	InterfaceDeclarationNode* cls = (InterfaceDeclarationNode*) super;
-	InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
-	if(!cls->scope->replace_merge(sup_cls->scope)) return false;
-      }else {
-	// prepare for recursive check
-	std::map<ASTNode*,bool> dup;
-	dup[super] = true;
-	if(!ResolveInheritance(super,super_class,dup,envs)) return false;
-	// bind it with name 
-	name_node->declaration = super_class;
-	return true;
+	 RED();
+	 std::cerr<<"ERROR: "<<name_node->name<<" is not binded during type linking"<<std::endl;
+	 DEFAULT();
+	 return false;
       }
+      
+      // prepare for recursive check
+      duplicate[super] = true;
+      if(!DoInherit(super,super_class,duplicate,envs)) return false;
+      InterfaceDeclarationNode* cls = (InterfaceDeclarationNode*) super;
+      InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
+      if(!cls->scope->replace_merge(sup_cls->scope)) return false;
+      
     }
   }
 
@@ -455,7 +457,7 @@ bool TypeLinker::ResolveInheritance(ASTNode* sub,ASTNode* super,std::map<ASTNode
 }
 
 
-bool TypeLinker::ResolveInheritance(ASTNode* node, environment** envs){
+bool TypeLinker::DoInherit(ASTNode* node, environment** envs){
   ASTNode *extend,*implement,*i_extend;
   extend = GetByType(node->children, TokenType::Name);
   implement = GetByType(node->children, TokenType::T_INTERFACE);
@@ -481,21 +483,24 @@ bool TypeLinker::ResolveInheritance(ASTNode* node, environment** envs){
 	return false;
       }
 
-      // if the name is binded
-      if(name_node->declartion != nullptr){
-	
-	ClassDeclarationNode* cls = (ClassDeclarationNode*) node;
-	InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
-	if(!cls->scope->replace_merge(sup_cls->scope)) return false;
-      }else {
-	// prepare for recursive check
-	std::map<ASTNode*,bool> dup;
-	dup[node] = true;
-	if(!ResolveInheritance(node,super_class,dup,envs)) return false;
-	// bind it with name 
-	name_node->declaration = super_class;
-	return true;
+      
+      // if didn't find declaration, return false.
+      if(super_interface == nullptr){
+	RED();
+	std::cerr<<"ERROR:"<<name_node->name<<" is not defined or ambiguous."<<std::endl;
+	DEFAULT();
+	return false;
       }
+      
+      // prepare for recursive check
+      std::map<ASTNode*,bool> dup;
+      dup[node] = true;
+      if(!DoInherit(node,super_class,dup,envs)) return false;
+      // inherit methods and fields
+      ClassDeclarationNode* cls = (ClassDeclarationNode*) node;
+      InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
+      if(!cls->scope->replace_merge(sup_cls->scope)) return false;
+      
     }
   }
 
@@ -514,21 +519,23 @@ bool TypeLinker::ResolveInheritance(ASTNode* node, environment** envs){
       return false;
     }
 
-    // if the name is binded
-    if(name_node->declartion != nullptr){
-      
-      ClassDeclarationNode* cls = (ClassDeclarationNode*) node;
-      ClassDeclarationNode* sup_cls = (ClassDeclarationNode*) super_class;
-      if(!cls->scope->replace_merge(sup_cls->scope)) return false;
-    }else {
-      // prepare for recursive check
-      std::map<ASTNode*,bool> dup;
-      dup[node] = true;
-      if(!ResolveInheritance(node,super_class,dup,envs)) return false;
-      // bind it with name 
-      name_node->declaration = super_class;
-      return true;
+    
+    // if didn't find declaration, return false.
+    if(super_interface == nullptr){
+      RED();
+      std::cerr<<"ERROR:"<<name_node->name<<" is not defined or ambiguous."<<std::endl;
+      DEFAULT();
+      return false;
     }
+    // prepare for recursive check
+    std::map<ASTNode*,bool> dup;
+    dup[node] = true;
+    if(!DoInherit(node,super_class,dup,envs)) return false;
+    // Inherit methods and fields
+    ClassDeclarationNode* cls = (ClassDeclarationNode*) node;
+    ClassDeclarationNode* sup_cls = (ClassDeclarationNode*) super_class;
+    if(!cls->scope->replace_merge(sup_cls->scope)) return false;
+    return true;
   }
  
   // if interfaces extends interfaces
@@ -540,7 +547,7 @@ bool TypeLinker::ResolveInheritance(ASTNode* node, environment** envs){
     for(ASTNode* name: all_interface){
       NameNode* name_node = (NameNode*) name;
       ASTNode* super_interface = GetInterfaceFromEnv(name_node->name,envs);
-
+      
       // if didn't find declaration, return false.
       if(super_interface == nullptr){
 	RED();
@@ -548,54 +555,83 @@ bool TypeLinker::ResolveInheritance(ASTNode* node, environment** envs){
 	DEFAULT();
 	return false;
       }
-
-      // if the name is binded
-      if(name_node->declartion != nullptr){
+      // prepare for recursive check
+      std::map<ASTNode*,bool> dup;
+      dup[node] = true;
+      if(!DoInherit(node,super_class,dup,envs)) return false;
 	
-	InterfaceDeclarationNode* cls = (InterfaceDeclarationNode*) node;
-	InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
-	if(!cls->scope->replace_merge(sup_cls->scope)) return false;
-      }else {
-	// prepare for recursive check
-	std::map<ASTNode*,bool> dup;
-	dup[node] = true;
-	if(!ResolveInheritance(node,super_class,dup,envs)) return false;
-	// bind it with name 
-	name_node->declaration = super_class;
-	return true;
-      }
+      InterfaceDeclarationNode* cls = (InterfaceDeclarationNode*) node;
+      InterfaceDeclarationNode* sup_cls = (InterfaceDeclarationNode*) super_interface;
+      if(!cls->scope->replace_merge(sup_cls->scope)) return false;
     }
   }
 
   return true;
 }
 
-bool TypeLinker::ResolveAST(ASTNode* root, environment** envs){
+
+bool TypeLinker::ResolveInheritance(ASTNode* root, environment** envs){
   TokenType t = root->type();
+  // Copy the environment to stack
+  environment next_local_env;
+  next_local_env.merge(envs[0]);
+  environment* new_envs[4];
+  new_envs[0] = &next_local_env;
+  new_envs[1] = envs[1];
+  new_envs[2] = envs[2];
+  new_envs[3] = envs[3];
+  
   if(HasEnv(t)){
     switch(t){
     case TokenType::CompilationUnit:
-      if(!envs[0]->merge(((CompilationUnitNode*)root)->scope)) return false;
+      if(!new_envs[0]->merge(((CompilationUnitNode*)root)->scope)) return false;
       break;
     case TokenType::ClassDeclaration:
+    case TokenType::InterfaceDeclaration:
       // Resolve inheritance
-      if(!ResolveInheritance(root,envs)){
+      if(!DoInherit(root,new_envs)){
 	return false;
       }
       
       // get this scope into then env stack
-      if(!envs[0]->merge(((ClassDeclarationNode*)root)->scope)){
+      if(!new_envs[0]->merge(((ClassDeclarationNode*)root)->scope)){
 	return false;
       }
       break;
       // The follwoing nodes has a scope and does declaration
-    case TokenType::ConsturctorDeclaration:
+    default:
+      return false;
+    }
+  }
+  
+  for(ASTNode* n: root->children){
+    if(!ResolveAST(n,new_envs)) return false;
+  }
+  return true;
+}
+
+
+bool TypeLinker::ResolveAST(ASTNode* root, environment** envs){
+  TokenType t = root->type();
+   // Copy the environment to stack
+  environment next_local_env;
+  next_local_env.merge(envs[0]);
+  environment* new_envs[4];
+  new_envs[0] = &next_local_env;
+  new_envs[1] = envs[1];
+  new_envs[2] = envs[2];
+  new_envs[3] = envs[3];
+  if(HasEnv(t)){
+    switch(t){
+    case TokenType::CompilationUnit:
+      if(!new_envs[0]->merge(((CompilationUnitNode*)root)->scope)) return false;
       break;
+    case TokenType::ClassDeclaration:
     case TokenType::InterfaceDeclaration:
-    case TokenType::BlockStatement:
-      
-    case TokenType::FieldDeclaration:
+    case TokenType::ConsturctorDeclaration:
     case TokenType::MethodDeclaration:
+    case TokenType::BlockStatement:
+    case TokenType::FieldDeclaration:
     case TokenType::LocalVariableDeclaration:
     case TokenType::FormalParameter:
     case TokenType::ForInit:
@@ -604,8 +640,11 @@ bool TypeLinker::ResolveAST(ASTNode* root, environment** envs){
       if(root->children.size() > 0 &&
 	 root->children[0]->type() == TokenType::T_IDENTIFIER){
 	IdentifierNode* ID = (IdentifierNode*) root->children[0];
-	if(!DoLinkType(ID,envs)) return false;
+	if(!DoLinkType(ID,new_envs)) return false;
       }
+
+      // Field declaration and method declaration probably don't need
+      // to merge their environment.
       
       // add the environment defined here into the environment
       {
@@ -616,43 +655,43 @@ bool TypeLinker::ResolveAST(ASTNode* root, environment** envs){
 	  this_env = ((ClassDeclarationNode*) root)->scope;
 	  break;
 	case TokenType::FieldDeclaration:
-	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  this_env = ((FieldDeclarationNode*) root)->scope;
 	  break;
 	case TokenType::MethodDeclaration:
-	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  this_env = ((MethodDeclarationNode*) root)->scope;
 	  break;
 	case TokenType::ConsturctorDeclaration:
-	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  this_env = ((ConstructorDeclarationNode*) root)->scope;
 	  break;
 	case TokenType::FormalParameter:
-	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  this_env = ((FormalParameterNode*) root)->scope;
 	  break;
 	case TokenType::InterfaceDeclaration:
-	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  this_env = ((InterfaceDeclarationNode*) root)->scope;
 	  break;
 	case TokenType::BlockStatement:
-	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  this_env = ((BlockStatementNode*) root)->scope;
 	  break;
 	case TokenType::LocalVariableDeclaration:
-	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  this_env = ((LocalVariableDeclarationNode*) root)->scope;
 	  break;
 	case TokenType::ForInit:
-	  this_env = ((ClassDeclarationNode*) root)->scope;
+	  this_env = ((ForInitNode*) root)->scope;
 	  break;
 	}
 	
-	// get this scope into then env stack
-	if(!envs[0]->merge(this_env)){
+	// get this scope into the env stack
+	if(!new_envs[0]->merge(this_env)){
 	  return false;
 	}
       }
-      
       break;
     case TokenType::ClassInstanceCreationExpressionNode:
+      // No new scope is added. 
       if(root->children.size() > 0 &&
 	 root->children[1]->type() == TokenType::T_IDENTIFIER){
 	IdentifierNode* ID = (IdentifierNode*) root->children[0];
-	if(!DoLinkType(ID,envs)) return false;
+	if(!DoLinkType(ID,new_envs)) return false;
       }
       break;
       
@@ -660,14 +699,7 @@ bool TypeLinker::ResolveAST(ASTNode* root, environment** envs){
       return false;
     }
   }
-  // Copy the environment to stack
-  environment next_local_env;
-  next_local_env.merge(envs[0]);
-  environment* new_envs[4];
-  new_envs[0] = &next_local_env;
-  new_envs[1] = envs[1];
-  new_envs[2] = envs[2];
-  new_envs[3] = envs[3];
+  
   for(ASTNode* n: root->children){
     if(!ResolveAST(n,new_envs)) return false;
   }
