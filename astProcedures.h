@@ -36,7 +36,7 @@ ClassDeclarationNode* ClassDeclarationCreate(Token node);
 InterfaceDeclarationNode* InterfaceDeclarationCreate(Token node);
 
 
-std::vector<MethodHeaderNode*> InterfaceMemberDeclarationsCreate(Token node);
+std::vector<MethodDeclarationNode*> InterfaceMemberDeclarationsCreate(Token node);
 
 
 std::vector<ClassBodyDeclarationNode*> ClassBodyDeclarationsCreate(Token node);
