@@ -306,18 +306,18 @@ ASTNode* TypeLinker::GetByType(std::vector<ASTNode*>& nodes, TokenType type){
 }
 
 
-bool TypeLinker::DoLinkClass(IdentifierNode* id, environment** envs){
+bool TypeLinker::DoLinkType(IdentifierNode* id, environment** envs){
   ASTNode* dec = nullptr;
   // Handles qualified name
   size_t found = id->identifier.find('.');
   if(found != std::string::npos){
     dec = m_packages->GetQualified(id->identifier);
   } else {
+    // Handles simple names
     dec = GetTypeFromEnv(id->identifier,envs);
     if(dec == nullptr) return false;
   }
-  
-  id->class_declare = env->classes[id->identifier];
+  id->class_declare = dec;
   return true;
 }
 
@@ -604,7 +604,7 @@ bool TypeLinker::ResolveAST(ASTNode* root, environment** envs){
       if(root->children.size() > 0 &&
 	 root->children[0]->type() == TokenType::T_IDENTIFIER){
 	IdentifierNode* ID = (IdentifierNode*) root->children[0];
-	if(!DoLinkClass(ID,envs)) return false;
+	if(!DoLinkType(ID,envs)) return false;
       }
       
       // add the environment defined here into the environment
@@ -652,7 +652,7 @@ bool TypeLinker::ResolveAST(ASTNode* root, environment** envs){
       if(root->children.size() > 0 &&
 	 root->children[1]->type() == TokenType::T_IDENTIFIER){
 	IdentifierNode* ID = (IdentifierNode*) root->children[0];
-	if(!DoLinkClass(ID,envs)) return false;
+	if(!DoLinkType(ID,envs)) return false;
       }
       break;
       

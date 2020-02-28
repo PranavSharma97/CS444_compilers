@@ -19,7 +19,7 @@ class TypeLinker{
   bool HasEnv(TokenType t);
   bool ResolveAST(ASTNode* root, environment** envs);
   //bool ResolveType(ASTNode* root, environment* env);
-  bool DoLinkClass(IdentifierNode* id, environment** envs);
+  bool DoLinkType(IdentifierNode* id, environment** envs);
   bool ResolveInheritance(ASTNode* sub,ASTNode* super,ASTNode* start,environment** envs);
   environment* GetCurrentPackage(CompilationUnitNode* CUN);
   ASTNode* GetByType(std::vector<ASTNode*>& ndoes, TokenType type);
