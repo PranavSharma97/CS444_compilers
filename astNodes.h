@@ -1,6 +1,7 @@
 #include <vector>
 #include <string>
 #include "token_types.h"
+#include "environment.h"
 
 class ASTNode {
   public:
@@ -255,6 +256,7 @@ class NameNode: public ArrayTypeNode, public ClassOrInterfaceTypeNode, public Po
 
 class CompilationUnitNode: public ASTNode {
   public:
+    environment scope;
     TokenType type() { return ArrayType; }
     std::vector<ASTNode*> children;
     CompilationUnitNode(std::vector<ASTNode*> children): ASTNode(children) {}
@@ -271,6 +273,7 @@ class ImportDeclarationNode: public ASTNode {
 class ClassDeclarationNode: public ASTNode {
   public:
     TokenType type() { return ClassDeclaration; }
+    environment scope;
     std::string identifier;
     std::vector<ASTNode*> children;
     ClassDeclarationNode(std::string identifier, std::vector<ASTNode*> children): identifier(identifier), children(children) {}
@@ -310,6 +313,7 @@ class FieldDeclarationNode: public ClassMemberDeclarationNode {
 // Contains Modifiers, Type, and VariableDeclarator pointer
   public:
     TokenType type() { return FieldDeclaration; }
+    environment scope;
     std::vector<ASTNode*> children;
     FieldDeclarationNode(std::vector<ASTNode*> children): ClassMemberDeclarationNode(children) {}
 };
@@ -327,6 +331,7 @@ class VariableDeclaratorNode: public ASTNode {
 class MethodDeclarationNode: public ClassMemberDeclarationNode {
   public:
     TokenType type() { return MethodDeclaration; }
+    environment scope;
     std::vector<ASTNode*> children;
     MethodDeclarationNode(std::vector<ASTNode*> children): ClassMemberDeclarationNode(children) {}
 };
@@ -365,6 +370,7 @@ class FormalParameterNode: public ASTNode {
 class ConstructorDeclarationNode: public ClassBodyDeclarationNode {
   public:
     TokenType type() { return ConstructorDeclaration; }
+    environment scope;
     std::vector<ASTNode*> children;
     ConstructorDeclarationNode(std::vector<ASTNode*> children): ClassBodyDeclarationNode(children) {}
 };
@@ -382,10 +388,10 @@ class InterfaceDeclarationNode: public ASTNode {
     // InterfaceMemberDeclarations pointer
   public:
     TokenType type() { return InterfaceDeclaration; }
+    environment scope;
     std::vector<ASTNode*> children;
     std::string identifier;
     InterfaceDeclarationNode(std::string identifier, std::vector<ASTNode*> children): identifier(identifier), children(children) {}
-
 };
 
 class ExtendsInterfacesNode: public ASTNode {
@@ -407,6 +413,7 @@ class InterfaceMemberDeclarationsNode: public ASTNode {
 class BlockStatementNode: public virtual ASTNode {
   public:
     TokenType type() { return BlockStatement; }
+    environment scope;
     std::vector<ASTNode*> children;
     BlockStatementNode(std::vector<ASTNode*> children): ASTNode(children) {}
 };
@@ -414,6 +421,7 @@ class BlockStatementNode: public virtual ASTNode {
 class LocalVariableDeclarationNode: public BlockStatementNode {
   public:
     TokenType type() { return LocalVariableDeclaration; }
+    environment scope;
     std::vector<ASTNode*> children;
     LocalVariableDeclarationNode(std::vector<ASTNode*> children): BlockStatementNode(children) {}
 };
@@ -471,6 +479,7 @@ class WhileStatementNode: public StatementNode {
 class ForStatementNode: public StatementNode {
   public:
     TokenType type() { return ForStatement; }
+    environment scope;
     std::vector<ASTNode*> children;
     ForStatementNode(std::vector<ASTNode*> children): StatementNode(children) {}
 };
