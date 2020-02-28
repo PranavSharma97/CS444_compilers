@@ -177,9 +177,9 @@ void traverse(list<ASTNode*> children, environment* scope, parentIsClass=false){
       dynamic_cast<LocalVariableDeclarationNode*>(it);
       // VariableDeclarators -> VariableDeclaratorId -> identifier
       string identifier;
-      vector<ASTNode> subChildren = it->children[0];
+      vector<ASTNode> subChildren = it->children;
       for(vector<ASTNode>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
-        if (sub_it->type() == MethodDeclarator){
+        if (sub_it->type() == VariableDeclarator){
           dynamic_cast<MethodDeclarator*>(sub_it);
           identifier = sub_it->identifier;
         }
@@ -194,21 +194,21 @@ void traverse(list<ASTNode*> children, environment* scope, parentIsClass=false){
       *scope = it->environment;
       traverse(it->children, scope);
     }
-    else if (it->type() == ForInit){
+    else if (it->type() == ForStatement){
       dynamic_cast<ForStatementNode*>(it);
       // LocalVariableDeclaration
       if (it->children[0].type() == LocalVariableDeclaration){
         string identifier;
         vector<ASTNode> subChildren = it->children[0];
         for(vector<ASTNode>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
-          if (sub_it->type() == MethodDeclarator){
-            dynamic_cast<MethodDeclarator*>(sub_it);
+          if (sub_it->type() == VariableDeclarator){
+            dynamic_cast<VariableDeclaratorNode*>(sub_it);
             identifier = sub_it->identifier;
           }
         }
-        it->environment->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
+        it[0]->environment->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
       }
-      traverse(it->children.back().children, it->environment);
+      traverse(it->children.back().children, it[0]->environment);
     }
     else {
       traverse(it->children, scope);
