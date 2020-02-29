@@ -545,6 +545,39 @@ void Token::clear(){
   m_generated_tokens.clear();
 }
 
+TokenType Token::type() const { return m_type; }
+
+//
+Token* Token::SearchByTypeBFS(TokenType type){
+  Token* res = nullptr;
+  for(Token& t: m_generated_tokens){
+    if(t.m_type == type) return &t;
+  }
+  for(Token& t: m_generated_tokens){
+    res = t.SearchByTypeBFS(type);
+    if(res!=nullptr) break;
+  }
+  return res;
+}
+
+Token* Token::SearchByTypeDFS(TokenType type){
+  if(m_type == type) return this;
+  Token* res = nullptr;
+  if(m_generated_tokens.size() > 0){
+    for(Token& t: m_generated_tokens){
+      res = t.SearchByTypeDFS(type);
+      if(res!=nullptr) break;
+    }
+  }
+  return nullptr;
+}
+
+Token* Token::SearchOneChild(TokenType type){
+  for(Token& t: m_generated_tokens){
+    if(t.m_type == type) return &t;
+  }
+  return nullptr;
+}
 std::ostream& operator<<(std::ostream& os, const Token& t){
   os << t.m_display_name;
   return os;

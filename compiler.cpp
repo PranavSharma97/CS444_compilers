@@ -45,6 +45,7 @@ int main(int argc, char *argv[]) {
     return 42;
   }
 
+  Token weeded_tree;
   try{
     Weeder W(file,parse_tree);
     bool valid = W.weed();
@@ -52,6 +53,7 @@ int main(int argc, char *argv[]) {
       cout << "Invalid weeding" << endl;
       return 42;
     }
+    weeded_tree = W.m_parse_tree;
   } catch (std::exception& e){
     return 42;
   }
