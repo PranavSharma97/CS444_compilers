@@ -43,6 +43,7 @@ int main(int argc, char *argv[]) {
     parse_tree = PT.parse_tree;
     //ASTNode* astNode = CompilationUnitCreate(parse_tree); 
   } catch (std::exception& e){
+    cout << e.what() << endl;
     return 42;
   }
   ASTNode* astNode = CompilationUnitCreate(parse_tree);
@@ -60,5 +61,20 @@ int main(int argc, char *argv[]) {
   }
   
   cout << "Parsing successful" << endl;
+/*  
+  try{
+    ASTNode* astNode = CompilationUnitCreate(parse_tree);
+    cout<<"\n\n\n\n";
+    //printChildrenOfNodes(astNode);
+    cout<<"\n\n\n\n";
+  } catch (std::exception& e){
+    cout<<"Error during AST building"<<endl;
+    cout<<e.what()<<endl;    
+    return 42;
+  }
+*/
+  cout << "AST building successful" << endl;
+
+  delete astNode;
   return 0;
 }
