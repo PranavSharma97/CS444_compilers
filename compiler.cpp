@@ -10,7 +10,7 @@
 #include "scanner.h"
 #include "token.h"
 #include "weeder.h"
-
+#include "build_environment.h"
 
 using namespace std;
 
@@ -57,6 +57,8 @@ int main(int argc, char *argv[]) {
   } catch (std::exception& e){
     return 42;
   }
+  
+  BuildEnvironment(&weeded_tree);
   
   cout << "Parsing successful" << endl;
   return 0;

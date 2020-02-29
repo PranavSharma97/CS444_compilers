@@ -1,1 +1,3 @@
-int i=1;
+public class test {
+  int i=1;
+}
