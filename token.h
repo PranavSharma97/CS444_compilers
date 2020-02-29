@@ -1,11 +1,9 @@
 #pragma once
 
 #include "token_types.h"
-//#include "environment.h"
+#include "environment.h"
 #include <string>
 #include <vector>
-
-class environment;
 
 class Token{
  public:
@@ -15,7 +13,7 @@ class Token{
 
   int m_rule;
 
-  environment *scope;
+  environment scope;
 
   std::vector<Token> m_generated_tokens;
 

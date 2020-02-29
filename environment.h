@@ -3,8 +3,8 @@
 #include <string>
 #include <vector>
 
-#include "token.h"
 
+class Token;
 
 class environment {
 
@@ -15,15 +15,18 @@ class environment {
   bool valid_ctor(std::pair<std::string,std::vector<Token*>>& kv);
  public:
   environment() = default;
-  bool merge(environment* src);
-  void overwrite_merge(environment* src);
+  environment(const environment& other);
+  ~environment() = default;
+  bool merge(environment& src);
+  void overwrite_merge(environment& src);
   
   Token* GetType(std::string & name);
   Token* GetClass(std::string & name);
   Token* GetInterface(std::string & name);
   
   // Used for inheritance;
-  bool replace_merge(environment* src);
+  bool replace_merge(environment& src);
+  void clear();
   
   std::map<std::string,Token*> classes;
   std::map<std::string,Token*> interfaces;
