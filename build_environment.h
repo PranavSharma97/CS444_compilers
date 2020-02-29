@@ -1,3 +1,4 @@
 #include "token.h"
 
-int BuildEnvironment(Token* token);
+Token BuildEnvironment(Token* token);
+void printEnvironments(Token token);

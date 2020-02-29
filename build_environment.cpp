@@ -12,10 +12,12 @@
 
 using namespace std;
 
-int traverse(vector<Token> children, environment scope, bool parentIsClass=false){
-  cout << "starting traversal" << endl;
+Token traverse(Token *token, environment scope, bool parentIsClass=false){
+  // cout << "starting traversal" << endl;
+  // cout << "parent is class" << parentIsClass;
+  vector<Token> &children = token->m_generated_tokens;
   for(vector<Token>::iterator it=children.begin(); it!=children.end(); it++) {
-    cout << "looking for token " << it->m_type << " lex " << it->m_lex << endl;
+    // cout << "looking for token " << it->m_type << " lex " << it->m_lex << endl;
     if (it->m_type == ClassDeclaration){
       string identifier = it->m_generated_tokens[2].m_lex;
       cout << "found class declaration with identifier " << identifier << endl;
@@ -23,14 +25,14 @@ int traverse(vector<Token> children, environment scope, bool parentIsClass=false
         scope.classes[identifier] = &(*it);
       }
       it->scope.classes[identifier] = &(*it);
-      traverse(it->m_generated_tokens, it->scope, true);
+      *it = traverse(&(*it), it->scope, true);
       cout << "finished traversing class" <<  identifier << endl;
     }
     else if(it->m_type == FieldDeclaration){
       string identifier = it->m_generated_tokens.back().m_lex;
       cout << "found FieldDeclaration with identifier " << identifier << endl;
       if(!it->scope.merge(scope)){
-        return 42;
+        throw 42;
       }
       if (parentIsClass) {
         scope.fields[identifier] = &(*it);
@@ -48,7 +50,7 @@ int traverse(vector<Token> children, environment scope, bool parentIsClass=false
           scope.methods[identifier].push_back(&(*it));
         }
         else{
-          return 42;
+          throw 42;
         }
       }
       if (it->scope.methods.find(identifier) != it->scope.methods.end()) {
@@ -56,10 +58,10 @@ int traverse(vector<Token> children, environment scope, bool parentIsClass=false
           it->scope.methods[identifier].push_back(&(*it));
         }
         else{
-          return 42;
+          throw 42;
         }
       }
-      traverse(it->m_generated_tokens, it->scope);
+      *it = traverse(&(*it), it->scope);
       cout << "finished traversing MethodDeclaration with identifier " << identifier << endl;
     }
     else if (it->m_type == FormalParameter){
@@ -72,13 +74,16 @@ int traverse(vector<Token> children, environment scope, bool parentIsClass=false
     else if (it->m_type == ConstructorDeclaration){
       Token *identifierToken = it->SearchByTypeDFS(T_IDENTIFIER);
       string identifier = identifierToken->m_lex;
-      cout << "found MethodDeclaration with identifier " << identifier << endl;
+      cout << "found ConstructorDeclaration with identifier " << identifier << endl;
+      cout << "PARENT IS CLASS: " << parentIsClass << endl;
       if (parentIsClass && !(scope.constructors.find(identifier) != scope.constructors.end())) {
         if (find(scope.constructors[identifier].begin(), scope.constructors[identifier].end(), &(*it)) == scope.constructors[identifier].end()){
           scope.constructors[identifier].push_back(&(*it));
+          cout <<"SUCCESS" << endl;
+          cout << scope.constructors.size();
         }
         else{
-          return 42;
+          throw 42;
         }
       }
       if (it->scope.constructors.find(identifier) != it->scope.constructors.end()) {
@@ -86,10 +91,10 @@ int traverse(vector<Token> children, environment scope, bool parentIsClass=false
           it->scope.constructors[identifier].push_back(&(*it));
         }
         else{
-          return 42;
+          throw 42;
         }
       }
-      traverse(it->m_generated_tokens, it->scope);
+      *it = traverse(&(*it), it->scope);
       cout << "finished traversing ConstructorDeclaration with identifier " << identifier << endl;
     }
     else if (it->m_type == InterfaceDeclaration){
@@ -98,12 +103,12 @@ int traverse(vector<Token> children, environment scope, bool parentIsClass=false
       if (parentIsClass){
         scope.interfaces[identifier] = &(*it);
       }
-      traverse(it->m_generated_tokens, it->scope);
+      *it = traverse(&(*it), it->scope);
       cout << "finished traversing InterfaceDeclaration with identifier " << identifier << endl;
     }
     else if (it->m_type == BlockStatement){
       cout << "found BlockStatement" << endl;
-      traverse(it->m_generated_tokens, it->scope);
+      *it = traverse(&(*it), it->scope);
       cout << "finished BlockStatement" << endl;
     }
     else if (it->m_type == LocalVariableDeclaration){
@@ -111,28 +116,44 @@ int traverse(vector<Token> children, environment scope, bool parentIsClass=false
       string identifier = methodDecl->m_lex;
       cout << "found LocalVariableDeclaration ith identifier " << identifier << endl;
       if (!it->scope.merge(scope)){
-        return 42;
+        throw 42;
       }
       if (parentIsClass){
         scope.localVariables[identifier] = &(*it);
       }
       it->scope.localVariables[identifier] = &(*it);
       scope = it->scope;
-      traverse(it->m_generated_tokens, scope);
+      *it = traverse(&(*it), scope);
       cout << "finished traversing LocalVariableDeclaration with identifier " << identifier << endl;
     }
     else if (it->m_type == ForStatement){
       cout << "found ForStatement" << endl;
-      traverse(it->m_generated_tokens, it->scope);
+      *it = traverse(&(*it), it->scope);
       cout << "end ForStatement" << endl;
     }
     else {
-      traverse(it->m_generated_tokens, scope);
+      *it = traverse(&(*it), scope, parentIsClass);
     }
   }
-  return 0;
+  return *token;
 }
 
-int BuildEnvironment(Token *token){
-  return traverse(token->m_generated_tokens, token->scope);
+Token BuildEnvironment(Token *token){
+  return traverse(token, token->scope);
+}
+
+void printEnvironments(Token token){
+  for(vector<Token>::iterator it = token.m_generated_tokens.begin(); it!=token.m_generated_tokens.end(); it++) {
+    cout << "LEXEME " << it->m_type << " has scope " << endl;
+    cout << it->scope.constructors.size() << endl;
+    for(map<string,vector<Token*>>::iterator subit=it->scope.constructors.begin(); subit!=it->scope.constructors.end(); subit++){
+      cout << subit->first << endl;
+      cout << "HERE" << endl;
+    }
+    for(map<string,Token*>::iterator subit=it->scope.classes.begin(); subit!=it->scope.classes.end(); subit++){
+      cout << subit->first << endl;
+      cout << "HERE" << endl;
+    }
+    printEnvironments(*it);
+  }
 }

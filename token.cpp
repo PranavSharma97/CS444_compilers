@@ -579,7 +579,7 @@ Token* Token::SearchByTypeDFS(TokenType type){
       if(res!=nullptr) break;
     }
   }
-  return nullptr;
+  return res;
 }
 
 Token* Token::SearchOneChild(TokenType type){
