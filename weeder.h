@@ -8,7 +8,6 @@
 
 class Weeder{
   std::string class_name;
-  Token m_parse_tree;
 
   void shrink(Token& node);
   bool weed(Token& node,std::map<TokenType,int>& conditions);
@@ -20,6 +19,10 @@ class Weeder{
   bool search_all(Token& node, std::map<TokenType,int>& keys);
   bool search(Token& node, TokenType key);
  public:
+  
   Weeder(const std::string& file_name, const Token& parse_tree);
   bool weed();
+
+  
+  Token m_parse_tree;
 };
