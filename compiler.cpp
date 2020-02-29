@@ -14,6 +14,7 @@
 
 using namespace std;
 
+
 int main(int argc, char *argv[]) {
   string file(argv[1]);
   cout << file << endl;
@@ -53,9 +54,26 @@ int main(int argc, char *argv[]) {
       cout << "Invalid weeding" << endl;
       return 42;
     }
-    weeded_tree = W.m_parse_tree;
+    weeded_tree = W.m_ast_tree;
   } catch (std::exception& e){
     return 42;
+  }
+  
+  vector<Token> queue;
+  int counter = 0;
+  queue.emplace_back(weeded_tree);
+  counter = 1;
+  int layer = 0;
+  while(queue.size()>0){
+    Token t = queue[0];
+    cout<<t<<" | ";
+    queue.erase(queue.begin());
+    counter --;
+    for(Token n:t.m_generated_tokens){
+      queue.emplace_back(n);
+    }
+    
+    if(counter == 0) { layer += 1; counter = queue.size(); cout<<endl; }
   }
   
   cout << "Parsing successful" << endl;
