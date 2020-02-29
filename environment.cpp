@@ -150,6 +150,7 @@ bool environment::merge(environment& src){
       return false;
     }
   }
+  return true;
 }
 
 void environment::overwrite_merge(environment& src){
