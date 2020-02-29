@@ -12,7 +12,7 @@ class environment {
   bool valid_method(std::pair<std::string,std::vector<Token*>>& kv);
 
   // Hierarchy checking on constructors
-  bool valid_ctor(std::pair<std::string,std::vector<Token>>& kv);
+  bool valid_ctor(std::pair<std::string,std::vector<Token*>>& kv);
  public:
   environment() = default;
   bool merge(environment* src);

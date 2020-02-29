@@ -5,7 +5,7 @@
 
 Token* GetNodeByType(std::vector<Token*>& nodes, TokenType type){
   for(Token* node: nodes){
-    if(nodes->type() == type) return nodes;
+    if(node->type() == type) return node;
   }
   return nullptr;
 }
@@ -66,7 +66,7 @@ bool environment::merge(environment* src){
   }
   
   // Merge methods, current doesn't check the methods with same parameters
-  for(std::pair<std::string, Token*> kv_pair: src->methods){
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src->methods){
     if(valid_method(kv_pair)){
       for(Token* n: kv_pair.second){
 	methods[kv_pair.first].emplace_back(n);
@@ -81,7 +81,7 @@ bool environment::merge(environment* src){
   }
 
   // Merge Ctors
-  for(std::pair<std::string, Token*> kv_pair: src->constructors){
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src->constructors){
     if(valid_ctor(kv_pair)){
       for(Token* n: kv_pair.second){
 	constructors[kv_pair.first].emplace_back(n);
@@ -123,7 +123,7 @@ bool environment::merge(environment* src){
   }
 
   // Merge localVariables
-  for(std::pair<std::string, LocalVariableDeclarationNode*> kv_pair: src->localVariables){
+  for(std::pair<std::string, Token*> kv_pair: src->localVariables){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
        localVariables.find(kv_pair.first) == localVariables.end()){
       localVariables[kv_pair.first] = kv_pair.second;
@@ -158,25 +158,25 @@ void environment::overwrite_merge(environment* src){
   }
   
   // Merge methods, current doesn't check the methods with same parameters
-  for(std::pair<std::string, Token*> kv_pair: src->methods){
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src->methods){
     if(valid_method(kv_pair)){
       for(Token* n: kv_pair.second){
 	methods[kv_pair.first].emplace_back(n);
       }
     }else{
-      vector<Token*> new_vec;
+      std::vector<Token*> new_vec;
       methods[kv_pair.first] = new_vec;
     }
   }
 
   // Merge Ctors
-  for(std::pair<std::string, Token*> kv_pair: src->constructors){
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src->constructors){
     if(valid_ctor(kv_pair)){
       for(Token* n: kv_pair.second){
 	constructors[kv_pair.first].emplace_back(n);
       }
     }else{ 
-      vector<Token*> new_vec;
+      std::vector<Token*> new_vec;
       constructors[kv_pair.first] = new_vec;
      
     }
@@ -202,7 +202,7 @@ void environment::overwrite_merge(environment* src){
   }
 
   // Merge localVariables
-  for(std::pair<std::string, LocalVariableDeclarationNode*> kv_pair: src->localVariables){
+  for(std::pair<std::string, Token*> kv_pair: src->localVariables){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
        localVariables.find(kv_pair.first) == localVariables.end()){
       localVariables[kv_pair.first] = kv_pair.second;
