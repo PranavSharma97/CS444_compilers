@@ -1,7 +1,22 @@
 #include "environment.h"
+#include "token.h"
 #include "color_print.h"
 #include <utility>
 #include <iostream>
+
+/*
+ * Copy CTOR
+ */
+
+environment::environment(const environment& other):
+  classes(other.classes),
+  interfaces(other.interfaces),
+  fields(other.fields),
+  methods(other.methods),
+  localVariables(other.localVariables),
+  formalParameters(other.formalParameters),
+  constructors(other.constructors)
+{}
 
 Token* GetNodeByType(std::vector<Token*>& nodes, TokenType type){
   for(Token* node: nodes){
@@ -33,13 +48,13 @@ bool environment::valid_ctor(std::pair<std::string,std::vector<Token* >>& kv){
   return false;
 }
 
-bool environment::replace_merge(environment* src){
+bool environment::replace_merge(environment& src){
   return true;
 }
 
-bool environment::merge(environment* src){
+bool environment::merge(environment& src){
   // Merge classes
-  for(std::pair<std::string, Token*> kv_pair: src->classes){
+  for(std::pair<std::string, Token*> kv_pair: src.classes){
     if(classes.find(kv_pair.first) == classes.end() &&
        interfaces.find(kv_pair.first) == interfaces.end()){
       classes[kv_pair.first] = kv_pair.second;
@@ -52,7 +67,7 @@ bool environment::merge(environment* src){
     }
   }
   // Merge interfaces
-  for(std::pair<std::string, Token*> kv_pair: src->interfaces){
+  for(std::pair<std::string, Token*> kv_pair: src.interfaces){
     if(classes.find(kv_pair.first) == classes.end() &&
        interfaces.find(kv_pair.first) == interfaces.end()){
       interfaces[kv_pair.first] = kv_pair.second;
@@ -66,7 +81,7 @@ bool environment::merge(environment* src){
   }
   
   // Merge methods, current doesn't check the methods with same parameters
-  for(std::pair<std::string, std::vector<Token*>> kv_pair: src->methods){
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src.methods){
     if(valid_method(kv_pair)){
       for(Token* n: kv_pair.second){
 	methods[kv_pair.first].emplace_back(n);
@@ -81,7 +96,7 @@ bool environment::merge(environment* src){
   }
 
   // Merge Ctors
-  for(std::pair<std::string, std::vector<Token*>> kv_pair: src->constructors){
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src.constructors){
     if(valid_ctor(kv_pair)){
       for(Token* n: kv_pair.second){
 	constructors[kv_pair.first].emplace_back(n);
@@ -96,7 +111,7 @@ bool environment::merge(environment* src){
   }
   
   // Merge formal Parameters
-  for(std::pair<std::string, Token*> kv_pair: src->formalParameters){
+  for(std::pair<std::string, Token*> kv_pair: src.formalParameters){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
        localVariables.find(kv_pair.first) == localVariables.end()){
       formalParameters[kv_pair.first] = kv_pair.second;
@@ -110,7 +125,7 @@ bool environment::merge(environment* src){
   }
 
   // Merge fields
-  for(std::pair<std::string, Token*> kv_pair: src->fields){
+  for(std::pair<std::string, Token*> kv_pair: src.fields){
     if(fields.find(kv_pair.first) == fields.end()){
       fields[kv_pair.first] = kv_pair.second;
     }else{
@@ -123,7 +138,7 @@ bool environment::merge(environment* src){
   }
 
   // Merge localVariables
-  for(std::pair<std::string, Token*> kv_pair: src->localVariables){
+  for(std::pair<std::string, Token*> kv_pair: src.localVariables){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
        localVariables.find(kv_pair.first) == localVariables.end()){
       localVariables[kv_pair.first] = kv_pair.second;
@@ -137,9 +152,9 @@ bool environment::merge(environment* src){
   }
 }
 
-void environment::overwrite_merge(environment* src){
+void environment::overwrite_merge(environment& src){
   // Merge classes
-  for(std::pair<std::string, Token*> kv_pair: src->classes){
+  for(std::pair<std::string, Token*> kv_pair: src.classes){
     if(classes.find(kv_pair.first) == classes.end() &&
        interfaces.find(kv_pair.first) == interfaces.end()){
       classes[kv_pair.first] = kv_pair.second;
@@ -148,7 +163,7 @@ void environment::overwrite_merge(environment* src){
     }
   }
   // Merge interfaces
-  for(std::pair<std::string, Token*> kv_pair: src->interfaces){
+  for(std::pair<std::string, Token*> kv_pair: src.interfaces){
     if(classes.find(kv_pair.first) == classes.end() &&
        interfaces.find(kv_pair.first) == interfaces.end()){
       interfaces[kv_pair.first] = kv_pair.second;
@@ -158,7 +173,7 @@ void environment::overwrite_merge(environment* src){
   }
   
   // Merge methods, current doesn't check the methods with same parameters
-  for(std::pair<std::string, std::vector<Token*>> kv_pair: src->methods){
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src.methods){
     if(valid_method(kv_pair)){
       for(Token* n: kv_pair.second){
 	methods[kv_pair.first].emplace_back(n);
@@ -170,7 +185,7 @@ void environment::overwrite_merge(environment* src){
   }
 
   // Merge Ctors
-  for(std::pair<std::string, std::vector<Token*>> kv_pair: src->constructors){
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src.constructors){
     if(valid_ctor(kv_pair)){
       for(Token* n: kv_pair.second){
 	constructors[kv_pair.first].emplace_back(n);
@@ -183,7 +198,7 @@ void environment::overwrite_merge(environment* src){
   }
   
   // Merge formal Parameters
-  for(std::pair<std::string, Token*> kv_pair: src->formalParameters){
+  for(std::pair<std::string, Token*> kv_pair: src.formalParameters){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
        localVariables.find(kv_pair.first) == localVariables.end()){
       formalParameters[kv_pair.first] = kv_pair.second;
@@ -193,7 +208,7 @@ void environment::overwrite_merge(environment* src){
   }
 
   // Merge fields
-  for(std::pair<std::string, Token*> kv_pair: src->fields){
+  for(std::pair<std::string, Token*> kv_pair: src.fields){
     if(fields.find(kv_pair.first) == fields.end()){
       fields[kv_pair.first] = kv_pair.second;
     }else{
@@ -202,7 +217,7 @@ void environment::overwrite_merge(environment* src){
   }
 
   // Merge localVariables
-  for(std::pair<std::string, Token*> kv_pair: src->localVariables){
+  for(std::pair<std::string, Token*> kv_pair: src.localVariables){
     if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
        localVariables.find(kv_pair.first) == localVariables.end()){
       localVariables[kv_pair.first] = kv_pair.second;
@@ -230,4 +245,14 @@ Token* environment::GetClass(std::string & name){
 Token* environment::GetInterface(std::string& name){
   if(interfaces.find(name) == interfaces.end()) return nullptr;
   return interfaces[name];
+}
+
+void environment::clear(){
+  classes.clear();
+  interfaces.clear();
+  fields.clear();
+  methods.clear();
+  localVariables.clear();
+  formalParameters.clear();
+  constructors.clear();
 }

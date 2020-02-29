@@ -1,4 +1,5 @@
 #include "color_print.h"
+#include "helper_functions.h"
 #include "weeder.h"
 
 #include <exception>
@@ -11,7 +12,7 @@ Weeder::Weeder(const std::string& file_name, const Token& parse_tree):
 {
   std::vector<std::string> slash_vec;
   //std::vector<std::string> dot_vec;
-  split(file_name,'/',slash_vec);
+  string_split(file_name,'/',slash_vec);
   class_name = slash_vec[slash_vec.size()-1];
   // Get rid of .java 
   class_name.erase(class_name.end()-5,class_name.end());
@@ -352,13 +353,6 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
   return true;
 }
 
-void Weeder::split(const std::string& s, const char delim, std::vector<std::string>& lst){
-  std::stringstream ss(s);
-  std::string piece;
-  while(std::getline(ss,piece,delim)){
-    lst.emplace_back(piece);
-  }
-}
 
 bool Weeder::search_any(Token& node, std::map<TokenType,int>& keys){
   bool result = false;

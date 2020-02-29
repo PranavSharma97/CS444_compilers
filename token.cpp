@@ -543,6 +543,16 @@ void Token::clear(){
   m_display_name = "TOKEN_EMPTY";
   m_rule = -1;
   m_generated_tokens.clear();
+
+  // clear the scope
+  scope.classes.clear();
+  scope.interfaces.clear();
+  scope.fields.clear();
+  scope.methods.clear();
+  scope.localVariables.clear();
+  scope.formalParameters.clear();
+  scope.constructors.clear();
+  
 }
 
 TokenType Token::type() const { return m_type; }
@@ -578,6 +588,8 @@ Token* Token::SearchOneChild(TokenType type){
   }
   return nullptr;
 }
+
+
 std::ostream& operator<<(std::ostream& os, const Token& t){
   os << t.m_display_name;
   return os;
