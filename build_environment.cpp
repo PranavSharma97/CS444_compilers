@@ -98,10 +98,10 @@ int traverse(vector<ASTNode*> children, environment* scope, bool parentIsClass=f
       ClassDeclarationNode *classNode = dynamic_cast<ClassDeclarationNode*>(*it);
 
       if (parentIsClass){
-        scope->classes.insert(pair<string,ClassDeclarationNode*>(classNode->identifier, classNode));
+        scope->classes[classNode->identifier] = classNode;
       }
 
-      (*it)->scope.classes.insert(pair<string,ClassDeclarationNode*>(classNode->identifier, classNode));
+      (*it)->scope.classes[classNode->identifier] = classNode;
       // traverse children with new scope
       traverse(classNode->children, &classNode->scope,true);
       cout << "environment of class is" << endl;
@@ -117,10 +117,10 @@ int traverse(vector<ASTNode*> children, environment* scope, bool parentIsClass=f
       }
 
       if (parentIsClass) {
-        scope->localVariables.insert(pair<string,FieldDeclarationNode*>(identifier,fieldNode));
+        scope->fields[identifier] = fieldNode;
       }
  
-      fieldNode->scope.localVariables.insert(pair<string,FieldDeclarationNode*>(identifier,fieldNode));
+      fieldNode->scope->fields[identifier] = fieldNode;
 
       // set scope pointer to subscope
       *scope = fieldNode->scope;
@@ -145,22 +145,22 @@ int traverse(vector<ASTNode*> children, environment* scope, bool parentIsClass=f
       }
       // traverse children with new scope
       traverse(methodNode->children, &methodNode->scope);
-    }/*
-    else if (it->type() == FormalParameter){
-      dynamic_cast<FormalParameterNode*>(it);
+    }
+    else if ((*it)->type() == FormalParameter){
+      FormalParameterNode* formal = (FormalParameterNode*)(*it);
       string identifier = it->children.back().identifier;
       if (parentIsClass){
-        scope->formalParameters.insert(pair<string,FormalParameterNode*>(identifier,*it));
+        scope->formalParameters[identifier] = it;
       }
     }
-    else if (it->type() == ConstructorDeclaration){
-      dynamic_cast<ConstructorDeclaration*>(it);
+    else if ((*it)->type() == ConstructorDeclaration){
+      ConstructorDeclaration* constructor = dynamic_cast<ConstructorDeclaration*>(*it);
       string identifier;
       // go to ConstructorDeclarator -> Identifier
-      for(vector<ASTNode>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
-        if (sub_it->type() == ConstructorDeclarator){
-          dynamic_cast<ConstructorDeclarator*>(sub_it);
-          identifier = sub_it->identifier;
+      for(vector<ASTNode*>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
+        if ((*sub_it)->type() == ConstructorDeclarator){
+          ConstructorDeclarator* constr_sub = dynamic_cast<ConstructorDeclarator*>(*sub_it);
+          identifier = constr_sub->identifier;
         }
       }
       if (parentIsClass && !addToConstructors(scope, identifier, &it)){
@@ -170,62 +170,63 @@ int traverse(vector<ASTNode*> children, environment* scope, bool parentIsClass=f
         return 42;
       }
       // traverse children with new scope
-      traverse(it->children, it->scope);
+      traverse(constructor->children, &constructor->scope);
     }
-    else if (it->type() == InterfaceDeclaration){
-      dynamic_cast<InterfaceDeclarationNode*>(it);
+    else if ((*it)->type() == InterfaceDeclaration){
+      InterfaceDeclarationNode* interfaceNode = dynamic_cast<InterfaceDeclarationNode*>(*it);
       if (parentIsClass){
-        scope->interfaces.insert((pair<string,InterfaceDeclarationNode*>(it->identifier,*it));
+        scope->interfaces[interfaceNode->identifier] = interfaceNode;
       }
-      it->scope->interfaces.insert((pair<string,InterfaceDeclarationNode*>(it->identifier,*it));
+      interfaceNode->scope->interfaces[interfaceNode->identifier] = interfaceNode;
       // traverse children with new scope
-      traverse(it->children, it->scope);
+      traverse(interfaceNode->children, interfaceNode->scope);
     }
-    else if (it->type() == BlockStatement){
-      dynamic_cast<BlockStatementsNode*>(it);
+    else if ((*it)->type() == BlockStatement){
+      BlockStatementsNode* blocks = dynamic_cast<BlockStatementsNode*>(*it);
       // traverse children with new scope
-      traverse(it->children, it->scope);
+      traverse(blocks->children, blocks->scope);
     }
-    else if (it->type() == LocalVariableDeclaration){
-      dynamic_cast<LocalVariableDeclarationNode*>(it);
+    else if ((*it)->type() == LocalVariableDeclaration){
+      LocalVariableDeclarationNode* localVariable = dynamic_cast<LocalVariableDeclarationNode*>(*it);
       // VariableDeclarators -> VariableDeclaratorId -> identifier
       string identifier;
-      vector<ASTNode> subChildren = it->children;
-      for(vector<ASTNode>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
-        if (sub_it->type() == VariableDeclarator){
-          dynamic_cast<MethodDeclarator*>(sub_it);
-          identifier = sub_it->identifier;
+      vector<ASTNode> subChildren = localVariable->children;
+      for(vector<ASTNode*>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
+        if ((*sub_it)->type() == VariableDeclarator){
+          MethodDeclarator* methDecl = dynamic_cast<MethodDeclarator*>(*sub_it);
+          identifier = methDecl->identifier;
         }
       }
       // local variable declaration will have its own scope
-      it->scope.merge(scope);
+      localVariable->scope.merge(scope);
       if (parentIsClass){
-         scope->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
+         scope->localVariables[localVariable->identifier] = localVariable;
       }
-      it->scope->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
+      localVariable->scope.localVariables[localVariable->identifier] = *localVariable;
       // set scope pointer to subscope
-      *scope = it->scope;
-      traverse(it->children, scope);
+      *scope = localVariable->scope;
+      traverse(localVariable->children, scope);
     }
-    else if (it->type() == ForStatement){
-      dynamic_cast<ForStatementNode*>(it);
+    else if ((*it)->type() == ForStatement){
+      ForStatementNode* forNode = dynamic_cast<ForStatementNode*>(*it);
       // LocalVariableDeclaration
-      if (it->children[0].type() == LocalVariableDeclaration){
+      if (forNode->children[0]->type() == LocalVariableDeclaration){
         string identifier;
-        vector<ASTNode> subChildren = it->children[0];
-        for(vector<ASTNode>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
-          if (sub_it->type() == VariableDeclarator){
-            dynamic_cast<VariableDeclaratorNode*>(sub_it);
-            identifier = sub_it->identifier;
+        LocalVariableDeclarationNode *localVar = (LocalVariableDeclarationNode*) forNode->children[0];
+        vector<ASTNode*> subChildren = localVar->children;
+        for(vector<ASTNode*>::iterator sub_it=subChildren.begin(); sub_it!=subChildren.end(); sub_it++){
+          if ((*sub_it)->type() == VariableDeclarator){
+            VariableDeclaratorNode* variableNode = dynamic_cast<VariableDeclaratorNode*>(*sub_it);
+            identifier = variableNode->identifier;
           }
         }
-        it[0]->scope->localVariables.insert((pair<string,LocalVariableDeclarationNode*>(it->identifier,*it));
+        forNode->scope.localVariables[identifier] = localVar;
       }
-      traverse(it->children.back().children, it[0]->scope);
+      traverse(forNode->children.back()->children, &forNode->scope);
     }
     else {
-      traverse(it->children, scope);
-    }*/
+      traverse((*it)->children, scope);
+    }
   }
   return 0;
 }
