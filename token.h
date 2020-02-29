@@ -14,6 +14,7 @@ class Token{
   int m_rule;
 
   environment scope;
+  Token* declaration;
 
   std::vector<Token> m_generated_tokens;
 
