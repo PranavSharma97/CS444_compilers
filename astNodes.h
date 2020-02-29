@@ -9,6 +9,7 @@ class ASTNode {
     std::vector<ASTNode*> children;
     ASTNode() = default;
     ASTNode(const std::vector<ASTNode*>& ): children(children){}
+    virtual ~ASTNode() { for(ASTNode* n:children) { delete n;} }
 };
 
 class ExpressionNode: public virtual ASTNode {

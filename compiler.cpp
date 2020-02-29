@@ -41,11 +41,13 @@ int main(int argc, char *argv[]) {
       return 42;
     }
     parse_tree = PT.parse_tree;
-    ASTNode* astNode = CompilationUnitCreate(parse_tree); 
+    //ASTNode* astNode = CompilationUnitCreate(parse_tree); 
   } catch (std::exception& e){
     return 42;
   }
-
+  ASTNode* astNode = CompilationUnitCreate(parse_tree);
+  //delete astNode;
+  
   try{
     Weeder W(file,parse_tree);
     bool valid = W.weed();
