@@ -44,6 +44,8 @@ void Weeder::BuildAST(Token& node){
       Flatten(node,TokenType::ImportDeclarations);
       do_cut = false;
       break;
+      //case TokenType::ForInit:
+      //case TokenType::ForUpdate:
     }
     if(do_cut && node.m_generated_tokens.size() == 1){
       std::cerr<<node<<" -> "<<node.m_generated_tokens[0];
@@ -54,7 +56,10 @@ void Weeder::BuildAST(Token& node){
 
   // handle the ones with multiple children
   switch(node.m_type){    
-  
+  case Tokentype::FormalParameterList:
+  case TokenType::BlockStatements:
+    Flatten(node,node.m_type);
+    break;
   case TokenType::QualifiedName:
     // convert all name to either qualified name or T_IDENTIFIER
     shrink(node);
