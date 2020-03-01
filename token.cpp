@@ -4,6 +4,7 @@ Token::Token():
   m_type(TokenType::TOKEN_EMPTY)
 {
   declaration = nullptr;
+  Protected = false;
   m_rule = -1;
   m_display_name = "TOKEN_EMPTY";
 }
@@ -13,6 +14,7 @@ Token::Token(TokenType type, std::string lex):
   m_lex(lex)
 {
   declaration = nullptr;
+  Protected = false;
   m_rule = -1;
   // Determine the display name
   int type_int = static_cast<int>(type);
