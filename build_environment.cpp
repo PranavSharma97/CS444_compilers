@@ -46,14 +46,8 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
     else if(it->m_type == FieldDeclaration){
       string identifier = it->m_generated_tokens.back().m_lex;
 
-      if(!it->scope.merge(*scope)){
-        throw 42;
-      }
-
       scope->fields = addToParent(parentIsClass, scope->fields, identifier, &(*it));
       it->scope.fields = addToSelf(it->scope.fields, identifier, &(*it));
-
-      *scope = it->scope;
     }
     else if (it->m_type == MethodDeclaration){
       Token *identifierToken = it->m_generated_tokens[0].SearchByTypeDFS(T_IDENTIFIER);
@@ -119,7 +113,9 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       }
       scope->localVariables = addToParent(parentIsClass, scope->localVariables, identifier, &(*it));
       it->scope.localVariables = addToSelf(it->scope.localVariables, identifier, &(*it));
-      *scope = it->scope;
+
+      // uncomment if you want local variables to contain previous local variables
+      // *scope = it->scope;
 
       traverse(&(*it), scope, parentIsClass);
     }
