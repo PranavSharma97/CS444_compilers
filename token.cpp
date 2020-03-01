@@ -563,15 +563,15 @@ TokenType Token::type() const { return m_type; }
 
 //
 Token* Token::SearchByTypeBFS(TokenType type){
-  Token* res = nullptr;
-  for(Token& t: m_generated_tokens){
-    if(t.m_type == type) return &t;
+  std::vector<Token*> queue;
+  queue.emplace_back(this);
+  while(queue.size() > 0){
+    Token* t = queue[0];
+    if(t->m_type == type) return t;
+    for(Token& child: t->m_generated_tokens){ queue.emplace_back(&child); }
+    queue.erase(queue.begin());
   }
-  for(Token& t: m_generated_tokens){
-    res = t.SearchByTypeBFS(type);
-    if(res!=nullptr) break;
-  }
-  return res;
+  return nullptr;
 }
 
 Token* Token::SearchByTypeDFS(TokenType type){

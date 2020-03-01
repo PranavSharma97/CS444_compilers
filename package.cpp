@@ -32,7 +32,7 @@ bool Package::AddToPackage(std::vector<std::string>& path, environment* src){
 }
 
 
-bool Package::AddToPackage(std::string& path, environment* src){
+bool Package::AddToPackage(const std::string& path, environment* src){
   std::vector<std::string> v_path;
   string_split(path,'.',v_path);
 
@@ -62,7 +62,7 @@ environment* Package::Search(std::vector<std::string>& path){
 }
 
 // import pack.pack.class;
-environment* Package::Search(std::string& path){
+environment* Package::Search(const std::string& path){
   std::vector<std::string> v_path;
   string_split(path,'.',v_path);
 
@@ -83,7 +83,7 @@ void Package::MergeAll(environment* dst){
 bool Package::GetAll(std::vector<std::string>& path, environment* dst){
   // verifys the last is * or I'm a package (I have sub packs)
   std::string key = path[0];
-  if(path[0] == "*"){
+  if(path.size()==0){
     dst->overwrite_merge(*m_env);
     //for(std::pair<std::string, Package*> kv_pair: m_sub_packs){
       //kv_pair.MergeAll(dst);
@@ -101,7 +101,7 @@ bool Package::GetAll(std::vector<std::string>& path, environment* dst){
 }
 
 // import pack.pack.*;
-environment* Package::GetAll(std::string& path){
+environment* Package::GetAll(const std::string& path){
   environment* new_env = new environment();
   std::vector<std::string> v_path;
   string_split(path,'.',v_path);
@@ -150,7 +150,7 @@ Token* Package::GetQualified(std::vector<std::string>& path){
   return nullptr;
 }
 
-Token* Package::GetQualified(std::string& name){
+Token* Package::GetQualified(const std::string& name){
   std::vector<std::string> v_path;
   string_split(name,'.',v_path);
 
@@ -174,7 +174,7 @@ environment* Package::GetPack(std::vector<std::string>& path){
   return nullptr;
 }
 
-environment* Package::GetPack(std::string& pack_name){
+environment* Package::GetPack(const std::string& pack_name){
   std::vector<std::string> v_path;
   string_split(pack_name,'.',v_path);
 
@@ -193,7 +193,7 @@ Package::Package(const std::string& pack_name):
   package_name(pack_name)
 {}
 
-Package::Package(std::string& path, environment* src):
+Package::Package(const std::string& path, environment* src):
   m_env(nullptr),
   package_name("")
 {

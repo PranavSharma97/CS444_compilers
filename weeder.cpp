@@ -38,6 +38,15 @@ void Weeder::BuildAST(Token& node){
   // 
   while(node.m_generated_tokens.size() == 1){
     switch(node.m_type){
+          
+    case TokenType::FormalParameterList:
+    case TokenType::BlockStatements:
+    case TokenType::InterfaceTypeList:
+    case TokenType::ExtendsInterfaces:
+    case TokenType::ClassTypeList:
+    case TokenType::Modifiers:
+      do_cut = false;
+      break;
     case TokenType::CompilationUnit:
       node.m_lex = class_name;
       // unpact all import declarations
@@ -58,6 +67,10 @@ void Weeder::BuildAST(Token& node){
   switch(node.m_type){    
   case TokenType::FormalParameterList:
   case TokenType::BlockStatements:
+  case TokenType::InterfaceTypeList:
+  case TokenType::ExtendsInterfaces:
+  case TokenType::ClassTypeList:
+  case TokenType::Modifiers:
     Flatten(node,node.m_type);
     break;
   case TokenType::QualifiedName:
@@ -76,14 +89,6 @@ void Weeder::BuildAST(Token& node){
 	c++;
       }
     }
-    break;
-    // expands all class implements inerface type lists
-  case TokenType::Interfaces:
-    Flatten(node,TokenType::InterfaceTypeList);
-    break;
-    // expands all intterfaces extends interface 
-  case TokenType::InterfaceDeclaration:
-    Flatten(node,TokenType::ExtendsInterfaces);
     break;
   case TokenType::CompilationUnit:
     // unpact all import declarations
