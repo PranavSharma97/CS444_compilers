@@ -10,7 +10,7 @@
 #include "scanner.h"
 #include "token.h"
 #include "weeder.h"
-
+#include "build_environment.h"
 
 using namespace std;
 
