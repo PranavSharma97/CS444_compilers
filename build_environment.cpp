@@ -47,7 +47,6 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
     if (it->m_type == ClassDeclaration){
       string identifier = it->m_generated_tokens[2].m_lex;
       scope->classes = addToParent(parentIsClass, scope->classes, identifier, &(*it));
-      it->scope.classes = addToSelf(it->scope.classes, identifier, &(*it));
 
       addProtectedFlag(&(*it));
 
@@ -120,6 +119,11 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       scope->interfaces = addToParent(parentIsClass, scope->interfaces, identifier, &(*it));
       addProtectedFlag(&(*it));
       traverse(&(*it), &it->scope);
+    }
+    else if (it->m_type == AbstractMethodDeclaration){
+      Token *identifierToken = it->m_generated_tokens[0].SearchByTypeDFS(T_IDENTIFIER);
+      string identifier = identifierToken->m_lex;
+      it->scope.methods[identifier].push_back(&(*it));
     }
     else if (it->m_type == BlockStatement){
       traverse(&(*it), &it->scope);
