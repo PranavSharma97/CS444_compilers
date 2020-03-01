@@ -58,8 +58,8 @@ int main(int argc, char *argv[]) {
   } catch (std::exception& e){
     return 42;
   }
-
-  /*
+/*
+  
   
   vector<Token> queue;
   int counter = 0;
@@ -68,20 +68,19 @@ int main(int argc, char *argv[]) {
   int layer = 0;
   while(queue.size()>0){
     Token t = queue[0];
-    cout<<t.m_lex<<" | ";
+    cerr<<"("<<t<<","<<t.m_lex<<") | ";
     queue.erase(queue.begin());
     counter --;
     for(Token n:t.m_generated_tokens){
       queue.emplace_back(n);
     }
     
-    if(counter == 0) { layer += 1; counter = queue.size(); cout<<endl; }
+    if(counter == 0) { layer += 1; counter = queue.size(); cerr<<endl; }
   }
-  
   */
-  Token tree_with_environment = BuildEnvironment(&weeded_tree);
-  //printEnvironments(1,tree_with_environment);
   
+  Token tree_with_environment = BuildEnvironment(&weeded_tree);
+  printEnvironments(1,tree_with_environment);
   
   
   cout << "Parsing successful" << endl;
