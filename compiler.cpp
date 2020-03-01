@@ -58,7 +58,9 @@ int main(int argc, char *argv[]) {
   } catch (std::exception& e){
     return 42;
   }
+
   
+  /*
   vector<Token> queue;
   int counter = 0;
   queue.emplace_back(weeded_tree);
@@ -75,6 +77,12 @@ int main(int argc, char *argv[]) {
     
     if(counter == 0) { layer += 1; counter = queue.size(); cout<<endl; }
   }
+  */
+
+  Token tree_with_environment = BuildEnvironment(&weeded_tree);
+  printEnvironments(1,tree_with_environment);
+  
+  
   
   cout << "Parsing successful" << endl;
   return 0;

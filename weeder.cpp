@@ -56,7 +56,7 @@ void Weeder::BuildAST(Token& node){
 
   // handle the ones with multiple children
   switch(node.m_type){    
-  case Tokentype::FormalParameterList:
+  case TokenType::FormalParameterList:
   case TokenType::BlockStatements:
     Flatten(node,node.m_type);
     break;
