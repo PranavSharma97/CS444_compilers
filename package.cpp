@@ -24,15 +24,22 @@ bool Package::AddToPackage(std::vector<std::string>& path, environment* src){
   std::string key = path[0];
   std::vector<std::string> new_path;
   for(int i = 1;i<path.size();i++){ new_path.emplace_back(path[i]);}
-
+  std::cout<<package_name<<" Add "<<key<<std::endl;
   if(m_sub_packs.find(key) == m_sub_packs.end()){
+    PURPLE();
+    std::cout<<key<<"is not here yet"<<std::endl;
+    DEFAULT();
     Package* new_pack = new Package(key);
     m_sub_packs[key] = new_pack;
+    std::cout<<"SRC: "<<src<<std::endl;
     if(new_path.size()>0) return AddToPackage(new_path,src);
     new_pack->m_env = new environment();
     new_pack->m_env->merge(*src);
     return true;
   }else{
+    PURPLE();
+    std::cout<<key<<" is here"<<std::endl;
+    DEFAULT();
     if(new_path.size()==0) {
       if(m_env==nullptr) {
 	m_env = new environment();

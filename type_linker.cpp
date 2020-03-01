@@ -69,11 +69,19 @@ Token* GetTypeFromEnv(std::string& name, environment ** envs){
 
 bool TypeLinker::ConstructPackage(){
   for(Token* n: m_asts){
+    Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
     // search for PackageDeclaration nodes and add to package
     Token* p = n->SearchByTypeBFS(TokenType::PackageDeclaration);
+    std::string pname = (p==nullptr)? default_package_name:p->m_generated_tokens[1].m_lex;
+    CYAN();
+    std::cout<<"ConstructPackage: File "<<cun->m_lex<<" in "<<pname<<std::endl;
+    DEFAULT();
     if(p!=nullptr){
       // If cannot add package to package environment, break.
-      if(!m_packages->AddToPackage(p->m_generated_tokens[1].m_lex,&(n->scope))){
+      CYAN();
+      std::cout<<"ConstrcutPackage: adding "<<&(cun->scope)<<std::endl; 
+      DEFAULT();
+      if(!m_packages->AddToPackage(p->m_generated_tokens[1].m_lex,&(cun->scope))){
 	RED();
 	std::cerr<<"PACKAGE ERROR: Cannot add environment to package ";
 	std::cerr<<p->m_generated_tokens[1].m_lex<<std::endl;
@@ -82,7 +90,10 @@ bool TypeLinker::ConstructPackage(){
       }
     } else {
       // else add to default package
-      if(!m_packages->AddToPackage(default_package_name,&(n->scope))){
+      CYAN();
+      std::cout<<"ConstrcutPackage: adding "<<&(cun->scope)<<std::endl; 
+      DEFAULT();
+      if(!m_packages->AddToPackage(default_package_name,&(cun->scope))){
 	RED();
 	std::cerr<<"PACKAGE ERROR: Cannot add environment to default package."<<std::endl;
 	DEFAULT();
@@ -157,7 +168,7 @@ bool TypeLinker::Link(){
   for(Token* n: m_asts){
     environment* envs[4];
     environment local_env,single_type,on_demand;
-    
+    Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
     // Get the package environment first
     environment* p_env = GetCurrentPackage(n);
     if(p_env == nullptr) return false;
@@ -213,7 +224,7 @@ bool TypeLinker::Link(){
       }
       // Check if the classes, interfaces in this compilation unit
       // clashes with other components in the package envrionment i'm using
-      if(!local_env.merge(n->scope)){
+      if(!local_env.merge(cun->scope)){
 	RED();
 	std::cerr<<"Type Linker ERROR: Compilation Unit "<<n->m_lex;
 	std::cerr<<" clashes with package environment."<<std::endl;
@@ -270,6 +281,7 @@ bool TypeLinker::DoLinkType(Token* id, environment** envs){
     if(dec == nullptr) return false;
   }
   id->declaration = dec;
+  std::cout<<"Linked"<<std::endl; 
   return true;
 }
 
@@ -529,6 +541,9 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
       if(root->m_generated_tokens.size() > 0 &&
 	 root->m_generated_tokens[2].type() == TokenType::T_IDENTIFIER ||
 	 root->m_generated_tokens[2].type() == TokenType::QualifiedName){
+	CYAN();
+	std::cout<<"Link: "<<(*root)<<std::endl;
+	DEFAULT();
 	if(!DoLinkType(&(root->m_generated_tokens[2]),new_envs)) return false;
 	checked = true;
       }
@@ -544,6 +559,9 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
       if(root->m_generated_tokens.size() > 0 && (!checked) &&
 	 root->m_generated_tokens[1].type() == TokenType::T_IDENTIFIER ||
 	 root->m_generated_tokens[1].type() == TokenType::QualifiedName){
+	CYAN();
+	std::cout<<"Link: "<<(*root)<<std::endl;
+	DEFAULT();
 	if(!DoLinkType(&(root->m_generated_tokens[1]),new_envs)) return false;
 	checked = true;
       }
@@ -556,6 +574,9 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
       if(root->m_generated_tokens.size() > 0 && (!checked) &&
 	 root->m_generated_tokens[0].type() == TokenType::T_IDENTIFIER ||
 	 root->m_generated_tokens[0].type() == TokenType::QualifiedName){
+	CYAN();
+	std::cout<<"Link: "<<(*root)<<std::endl;
+	DEFAULT();
 	if(!DoLinkType(&(root->m_generated_tokens[0]),new_envs)) return false;
 	checked = true;
       }
@@ -566,8 +587,12 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
     case TokenType::ExtendsInterfaces:
       if(!checked){
 	for(Token& child: root->m_generated_tokens){
+	  CYAN();
+	  std::cout<<"Link: "<<(*root)<<std::endl;
+	  DEFAULT();
 	  if(child.type() == TokenType::T_IDENTIFIER ||
 	     child.type() == TokenType::QualifiedName){
+	    
 	    if(!DoLinkType(&child,new_envs)) return false;
 	    checked = true;
 	  }

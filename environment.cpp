@@ -8,15 +8,54 @@
  * Copy CTOR
  */
 
-environment::environment(const environment& other):
-  classes(other.classes),
-  interfaces(other.interfaces),
-  fields(other.fields),
-  methods(other.methods),
-  localVariables(other.localVariables),
-  formalParameters(other.formalParameters),
-  constructors(other.constructors)
-{}
+environment::environment(const environment& other)/*:
+  classes(other.classes.size()),
+  interfaces(other.interfaces.size()),
+  fields(other.fields.size()),
+  methods(other.methods.size()),
+  localVariables(other.localVariables.size()),
+  formalParameters(other.formalParameters.size()),
+  constructors(other.constructors.size())*/
+{
+  for(std::pair<std::string,Token*> kv_pair: other.classes){
+    classes[kv_pair.first] = kv_pair.second;
+  }
+
+  for(std::pair<std::string,Token*> kv_pair: other.interfaces){
+    interfaces[kv_pair.first] = kv_pair.second; //other.interfaces[kv_pair.first];
+  }
+
+  for(std::pair<std::string,Token*> kv_pair: other.fields){
+    fields[kv_pair.first] = kv_pair.second;//other.fields[kv_pair.first];
+  }
+
+  for(std::pair<std::string,std::vector<Token*>> kv_pair: other.methods){
+    std::vector<Token*> new_vec;
+    methods[kv_pair.first] = new_vec;
+    for(Token* t: kv_pair.second){
+      methods[kv_pair.first].emplace_back(t);
+    }
+  }
+
+  for(std::pair<std::string,Token*> kv_pair: other.localVariables){
+    localVariables[kv_pair.first] = kv_pair.second;//other.localVariables[kv_pair.first];
+  }
+  
+  for(std::pair<std::string,Token*> kv_pair: other.formalParameters){
+    formalParameters[kv_pair.first] = kv_pair.second;//other.formalParameters[kv_pair.first];
+  }
+
+  for(std::pair<std::string,std::vector<Token*>> kv_pair: other.constructors){
+    std::vector<Token*> new_vec;
+    constructors[kv_pair.first] = new_vec;
+    for(Token* t: kv_pair.second){
+      constructors[kv_pair.first].emplace_back(t);
+    }
+  }
+  
+  
+  
+}
 
 Token* GetNodeByType(std::vector<Token*>& nodes, TokenType type){
   for(Token* node: nodes){
@@ -52,13 +91,20 @@ bool environment::replace_merge(environment& src){
   return true;
 }
 
-bool environment::merge(environment& src){
+bool environment::merge(environment src){
   // Merge classes
+  int counter = 0;
+  YELLOW();
+  std::cout<<"MERGING ... " <<std::endl;
+  DEFAULT();
+  std::cout<<"STEP 1"<<std::endl;
   for(std::pair<std::string, Token*> kv_pair: src.classes){
-    if(classes.find(kv_pair.first) == classes.end() &&
-       interfaces.find(kv_pair.first) == interfaces.end()){
-      std::cout<<"ENV: Added ["<<kv_pair.first<<","<<(*kv_pair.second);
-      std::cout<<","<<kv_pair.second->m_lex<<std::endl;
+    std::cout<<"STEP 2:"<<kv_pair.first<<std::endl;
+    if(classes.find(kv_pair.first) == classes.end() ){
+       //interfaces.find(kv_pair.first) == interfaces.end()){
+       
+      std::cout<<"CLASS ENV: Added ["<<kv_pair.first<<","<<kv_pair.second->m_display_name;
+      std::cout<<","<<kv_pair.second->m_lex<<"] "<<counter++<<std::endl;
       classes[kv_pair.first] = kv_pair.second;
     }else{
       RED();
@@ -73,8 +119,8 @@ bool environment::merge(environment& src){
     if(classes.find(kv_pair.first) == classes.end() &&
        interfaces.find(kv_pair.first) == interfaces.end()){
       
-      std::cout<<"ENV: Added ["<<kv_pair.first<<","<<(*kv_pair.second);
-      std::cout<<","<<kv_pair.second->m_lex<<std::endl;
+      std::cout<<"INTERFACE ENV: Added ["<<kv_pair.first<<","<<(*(kv_pair.second));
+      std::cout<<","<<kv_pair.second->m_lex<<"]"<<std::endl;
       interfaces[kv_pair.first] = kv_pair.second;
     }else{
       RED();
@@ -90,8 +136,8 @@ bool environment::merge(environment& src){
     if(valid_method(kv_pair)){
       for(Token* n: kv_pair.second){
 	
-      std::cout<<"ENV: Added ["<<kv_pair.first<<","<<(*n);
-      std::cout<<","<<n->m_lex<<std::endl;
+      std::cout<<"METHOD ENV: Added ["<<kv_pair.first<<","<<(*n);
+      std::cout<<","<<n->m_lex<<"]"<<std::endl;
 	methods[kv_pair.first].emplace_back(n);
       }
     }else{
@@ -108,8 +154,8 @@ bool environment::merge(environment& src){
     if(valid_ctor(kv_pair)){
       for(Token* n: kv_pair.second){
 	
-      std::cout<<"ENV: Added ["<<kv_pair.first<<","<<(*n);
-      std::cout<<","<<n->m_lex<<std::endl;
+      std::cout<<"CTOR ENV: Added ["<<kv_pair.first<<","<<(*n);
+      std::cout<<","<<n->m_lex<<"]"<<std::endl;
 	constructors[kv_pair.first].emplace_back(n);
       }
     }else{

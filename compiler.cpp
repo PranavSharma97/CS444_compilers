@@ -85,9 +85,9 @@ int main(int argc, char *argv[]) {
       if(counter == 0) { layer += 1; counter = queue.size(); cerr<<endl; }
       }
     */
-  
+    vector<int> levels{0};
     Token tree_with_environment = BuildEnvironment(&weeded_tree);
-    printEnvironments(1,tree_with_environment);
+    printEnvironments(levels,&tree_with_environment,1);
     parse_trees.emplace_back(tree_with_environment);
   }
 
