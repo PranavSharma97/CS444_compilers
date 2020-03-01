@@ -34,7 +34,7 @@ void Flatten(Token& node, TokenType victim){
 
 void Weeder::BuildAST(Token& node){
   bool do_cut = true;
-  std::cerr<<"Start:"<<node<<" ... ";
+  //std::cerr<<"Start:"<<node<<" ... ";
   // 
   while(node.m_generated_tokens.size() == 1){
     switch(node.m_type){
@@ -57,9 +57,9 @@ void Weeder::BuildAST(Token& node){
       //case TokenType::ForUpdate:
     }
     if(do_cut && node.m_generated_tokens.size() == 1){
-      std::cerr<<node<<" -> "<<node.m_generated_tokens[0];
+      //std::cerr<<node<<" -> "<<node.m_generated_tokens[0];
       node = node.m_generated_tokens[0];
-      std::cerr<<" = "<<node<<" | ";
+      //std::cerr<<" = "<<node<<" | ";
     } else break;
   }
 
@@ -80,26 +80,20 @@ void Weeder::BuildAST(Token& node){
     Flatten(node,TokenType::QualifiedName);
     // get all those names as my m_lex
     node.m_lex = "";
-    {
-      int s = node.m_generated_tokens.size() - 2;
-      int c = 0;
-      for(Token& n:node.m_generated_tokens){
-	node.m_lex = node.m_lex + n.m_lex;
-	if(c <= s) node.m_lex = node.m_lex + ".";
-	c++;
-      }
+    for(Token& n:node.m_generated_tokens){
+      node.m_lex = node.m_lex + n.m_lex; 
     }
     break;
   case TokenType::CompilationUnit:
     // unpact all import declarations
     Flatten(node,TokenType::ImportDeclarations);
     
-    std::cerr<<std::endl;
+    //std::cerr<<std::endl;
     break;
   
   default: break;
   }
-  std::cerr<<"Finished:"<<node<<std::endl;
+  //std::cerr<<"Finished:"<<node<<std::endl;
   for(Token& t:node.m_generated_tokens){
     BuildAST(t);
   }

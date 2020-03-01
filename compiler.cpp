@@ -59,8 +59,8 @@ int main(int argc, char *argv[]) {
     return 42;
   }
 
-  
   /*
+  
   vector<Token> queue;
   int counter = 0;
   queue.emplace_back(weeded_tree);
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
   int layer = 0;
   while(queue.size()>0){
     Token t = queue[0];
-    cout<<t<<" | ";
+    cout<<t.m_lex<<" | ";
     queue.erase(queue.begin());
     counter --;
     for(Token n:t.m_generated_tokens){
@@ -77,10 +77,10 @@ int main(int argc, char *argv[]) {
     
     if(counter == 0) { layer += 1; counter = queue.size(); cout<<endl; }
   }
+  
   */
-
   Token tree_with_environment = BuildEnvironment(&weeded_tree);
-  printEnvironments(1,tree_with_environment);
+  //printEnvironments(1,tree_with_environment);
   
   
   
