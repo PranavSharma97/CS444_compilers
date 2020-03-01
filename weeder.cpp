@@ -7,8 +7,103 @@
 #include <iostream>
 #include <utility> // std::pair
 
+
+void Flatten(Token& node, TokenType victim){
+  std::vector<Token> v(node.m_generated_tokens);/*
+  std::copy(node.m_generated_tokens.begin(),
+	    node.m_generated_tokens.end(),
+	    v.begin());
+						*/
+  for(int i = 0; i<v.size();i++){
+    // expand the victim
+    if(v[i].m_type == victim){
+      int u_size = v[i].m_generated_tokens.size();
+      // remove it
+      std::vector<Token> u = v[i].m_generated_tokens;
+      for(int j = u_size-1;j>=0;j--){
+	v.emplace(v.begin()+i,u[j]);
+      }
+      v.erase(v.begin()+i+u_size);
+      // re read
+      i--;
+    }
+  }
+  node.m_generated_tokens = v;
+}
+
+
+void Weeder::BuildAST(Token& node){
+  bool do_cut = true;
+  std::cerr<<"Start:"<<node<<" ... ";
+  // 
+  while(node.m_generated_tokens.size() == 1){
+    switch(node.m_type){
+    case TokenType::CompilationUnit:
+      node.m_lex = class_name;
+      // unpact all import declarations
+      Flatten(node,TokenType::ImportDeclarations);
+      do_cut = false;
+      break;
+      //case TokenType::ForInit:
+      //case TokenType::ForUpdate:
+    }
+    if(do_cut && node.m_generated_tokens.size() == 1){
+      std::cerr<<node<<" -> "<<node.m_generated_tokens[0];
+      node = node.m_generated_tokens[0];
+      std::cerr<<" = "<<node<<" | ";
+    } else break;
+  }
+
+  // handle the ones with multiple children
+  switch(node.m_type){    
+  case TokenType::FormalParameterList:
+  case TokenType::BlockStatements:
+    Flatten(node,node.m_type);
+    break;
+  case TokenType::QualifiedName:
+    // convert all name to either qualified name or T_IDENTIFIER
+    shrink(node);
+      // unpack all T_IDENTIFIER in order
+    Flatten(node,TokenType::QualifiedName);
+    // get all those names as my m_lex
+    node.m_lex = "";
+    {
+      int s = node.m_generated_tokens.size() - 2;
+      int c = 0;
+      for(Token& n:node.m_generated_tokens){
+	node.m_lex = node.m_lex + n.m_lex;
+	if(c <= s) node.m_lex = node.m_lex + ".";
+	c++;
+      }
+    }
+    break;
+    // expands all class implements inerface type lists
+  case TokenType::Interfaces:
+    Flatten(node,TokenType::InterfaceTypeList);
+    break;
+    // expands all intterfaces extends interface 
+  case TokenType::InterfaceDeclaration:
+    Flatten(node,TokenType::ExtendsInterfaces);
+    break;
+  case TokenType::CompilationUnit:
+    // unpact all import declarations
+    Flatten(node,TokenType::ImportDeclarations);
+    
+    std::cerr<<std::endl;
+    break;
+  
+  default: break;
+  }
+  std::cerr<<"Finished:"<<node<<std::endl;
+  for(Token& t:node.m_generated_tokens){
+    BuildAST(t);
+  }
+}
+
+
 Weeder::Weeder(const std::string& file_name, const Token& parse_tree):
-  m_parse_tree(parse_tree)
+  m_parse_tree(parse_tree),
+  m_ast_tree(parse_tree)
 {
   std::vector<std::string> slash_vec;
   //std::vector<std::string> dot_vec;
@@ -393,5 +488,8 @@ bool Weeder::search_all(Token&node, std::map<TokenType,int>& keys){
 
 bool Weeder::weed(){
   std::map<TokenType,int> cond_table;
-  return weed(m_parse_tree,cond_table);
+  if(weed(m_parse_tree,cond_table)){
+    BuildAST(m_ast_tree);
+    return true;
+  }else return false;
 }
