@@ -36,7 +36,7 @@ map<string,Token*> addToSelf(map<string,Token*> scopeList, string identifier, To
 Token traverse(Token *token, environment *scope, bool parentIsClass=false){
   vector<Token> &children = token->m_generated_tokens;
   for(vector<Token>::iterator it=children.begin(); it!=children.end(); it++) {
-    //cout << "looking at token" << it->m_display_name << " parentIsClass: " << parentIsClass << endl;
+    // cout << "looking at token" << it->m_display_name << " parentIsClass: " << parentIsClass << endl;
     if (it->m_type == ClassDeclaration){
       string identifier = it->m_generated_tokens[2].m_lex;
       scope->classes = addToParent(parentIsClass, scope->classes, identifier, &(*it));
@@ -45,7 +45,8 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       traverse(&(*it), &it->scope, true);
     }
     else if(it->m_type == FieldDeclaration){
-      string identifier = it->m_generated_tokens.back().m_lex;
+      Token identifierToken = *(it->m_generated_tokens.rbegin()+1);
+      string identifier = identifierToken.m_lex;
 
       scope->fields = addToParent(parentIsClass, scope->fields, identifier, &(*it));
       it->scope.fields = addToSelf(it->scope.fields, identifier, &(*it));
