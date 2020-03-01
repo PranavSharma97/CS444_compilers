@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
   
   for(int i = 1;i<argc;i++){
 
-    string file(argv[1]);
+    string file(argv[i]);
     cout << file << endl;
 
     vector<Token> result;
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
     tree_ptrs.emplace_back(&t);
   }
   TypeLinker TPLink(tree_ptrs);
-  
+  if(!TPLink.Link()) return 42;
   cout << "Parsing successful" << endl;
   return 0;
 }

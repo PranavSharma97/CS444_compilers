@@ -12,7 +12,7 @@ OBJECTS = ${OBJECTS1}
 DEPENDS = ${OBJECTS:.o=.d}
 EXECS = ${EXEC1}
 
-DEBUG ?= 1
+DEBUG ?= 0
 ifeq ($(DEBUG), 1)
     CXXFLAGS =-DDEBUG
 else

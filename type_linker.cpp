@@ -18,7 +18,7 @@ Token* GetClassFromEnv(std::string& name,environment ** envs){
 	dec = envs[3]->GetClass(name);
 	if(dec == nullptr){
 	  RED();
-	  std::cerr<<"ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
+	  std::cerr<<"GetClass ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
 	  DEFAULT();
 	}
       }
@@ -37,7 +37,7 @@ Token* GetInterfaceFromEnv(std::string& name,environment ** envs){
 	dec = envs[3]->GetInterface(name);
 	if(dec == nullptr){
 	  RED();
-	  std::cerr<<"ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
+	  std::cerr<<"GetInterface ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
 	  DEFAULT();
 	}
       }
@@ -56,7 +56,7 @@ Token* GetTypeFromEnv(std::string& name, environment ** envs){
 	dec = envs[3]->GetType(name);
 	if(dec == nullptr){
 	  RED();
-	  std::cerr<<"ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
+	  std::cerr<<"GetType ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
 	  DEFAULT();
 	}
       }
@@ -103,7 +103,7 @@ environment* TypeLinker::GetCurrentPackage(Token* CUN){
       pack_count ++;
       if(pack_count>1){
 	RED();
-	std::cerr<<"ERROR: a file cannot be in two packages.";
+	std::cerr<<"TypeLink ERROR: a file cannot be in two packages.";
 	std::cerr<<std::endl;
 	DEFAULT();
 	break;
@@ -120,10 +120,29 @@ environment* TypeLinker::GetCurrentPackage(Token* CUN){
   if(pack_count > 1) return nullptr;
 
   // Otherwise try to get package environment.
+  // BFS print packages
+  /*
+  std::vector<Package*> queue;
+  queue.emplace_back(m_packages);
+  int counter = 1;
+  int layer = 0;
+  while(queue.size()>0){
+    Package* pp = queue[0];
+    std::cout<<(pp->package_name)<<"|";
+    queue.erase(queue.begin());
+    counter --;
+    for(std::pair<std::string,Package*> kv_pair:pp->m_sub_packs){
+      queue.emplace_back(kv_pair.second);
+    }
+    if(counter == 0) { layer += 1; counter = queue.size();
+      std::cout<<std::endl<<"L"<<layer<<":";
+    }
+  }
+  */
   pack_env = m_packages->GetPack(pack_name);
   if(pack_env == nullptr){
     RED();
-    std::cerr<<"ERROR: Package "<<pack_name<<" is not constructed.";
+    std::cerr<<"Type Link ERROR: Package "<<pack_name<<" is not constructed.";
     std::cerr<<std::endl;
     DEFAULT();
   }
@@ -239,6 +258,7 @@ bool TypeLinker::HasEnv(Token* root){
 
 
 bool TypeLinker::DoLinkType(Token* id, environment** envs){
+  std::cout<<"Linking...("<<(*id)<<","<<id->m_lex<<")"<<std::endl;
   Token* dec = nullptr;
   // Handles qualified name
   size_t found = id->m_lex.find('.');
@@ -509,7 +529,7 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
       if(root->m_generated_tokens.size() > 0 &&
 	 root->m_generated_tokens[2].type() == TokenType::T_IDENTIFIER ||
 	 root->m_generated_tokens[2].type() == TokenType::QualifiedName){
-	if(!DoLinkType(&(root->m_generated_tokens[0]),new_envs)) return false;
+	if(!DoLinkType(&(root->m_generated_tokens[2]),new_envs)) return false;
 	checked = true;
       }
 
@@ -524,7 +544,7 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
       if(root->m_generated_tokens.size() > 0 && (!checked) &&
 	 root->m_generated_tokens[1].type() == TokenType::T_IDENTIFIER ||
 	 root->m_generated_tokens[1].type() == TokenType::QualifiedName){
-	if(!DoLinkType(&(root->m_generated_tokens[0]),new_envs)) return false;
+	if(!DoLinkType(&(root->m_generated_tokens[1]),new_envs)) return false;
 	checked = true;
       }
 

@@ -20,14 +20,28 @@ class Package{
 
 
 bool Package::AddToPackage(std::vector<std::string>& path, environment* src){
-  if(path.size() == 1){
-    if(m_env == nullptr) m_env = new environment();
-    return m_env->merge(*src);
+
+  std::string key = path[0];
+  std::vector<std::string> new_path;
+  for(int i = 1;i<path.size();i++){ new_path.emplace_back(path[i]);}
+
+  if(m_sub_packs.find(key) == m_sub_packs.end()){
+    Package* new_pack = new Package(key);
+    m_sub_packs[key] = new_pack;
+    if(new_path.size()>0) return AddToPackage(new_path,src);
+    new_pack->m_env = new environment();
+    new_pack->m_env->merge(*src);
+    return true;
   }else{
-    Package* new_pack = new Package(path[0]);
-    m_sub_packs[path[0]] = new_pack;
-    path.erase(path.begin());
-    return new_pack->AddToPackage(path,src);
+    if(new_path.size()==0) {
+      if(m_env==nullptr) {
+	m_env = new environment();
+	m_env->merge(*src);
+	return true;
+      }
+      return m_env->merge(*src);
+    }
+    return m_sub_packs[key]->AddToPackage(new_path,src);
   }
 }
 
@@ -159,19 +173,20 @@ Token* Package::GetQualified(const std::string& name){
 }
 
 environment* Package::GetPack(std::vector<std::string>& path){
-  std::string key = path[0];
-  if(path.size() > 1){
+  if(path.size() > 0){
+    std::string key = path[0];
+    //std::cout<<"GET PACK:"<<key<<std::endl; 
+    std::vector<std::string> new_path;
+    for(int i = 1; i<path.size();i++) { new_path.emplace_back(path[i]); }
+
     if(m_sub_packs.find(key) != m_sub_packs.end()){
-      path.erase(path.begin());
-      return m_sub_packs[key]->GetPack(path);
+      return m_sub_packs[key]->GetPack(new_path);
+    }else {
+      return nullptr;
     }
-  }else{
-    // return my sub pack's environment
-    if(m_sub_packs.find(key) != m_sub_packs.end()){
-      return m_sub_packs[key]->m_env;
-    }
+  } else {
+    return m_env;
   }
-  return nullptr;
 }
 
 environment* Package::GetPack(const std::string& pack_name){
