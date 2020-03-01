@@ -57,6 +57,8 @@ bool environment::merge(environment& src){
   for(std::pair<std::string, Token*> kv_pair: src.classes){
     if(classes.find(kv_pair.first) == classes.end() &&
        interfaces.find(kv_pair.first) == interfaces.end()){
+      std::cout<<"ENV: Added ["<<kv_pair.first<<","<<(*kv_pair.second);
+      std::cout<<","<<kv_pair.second->m_lex<<std::endl;
       classes[kv_pair.first] = kv_pair.second;
     }else{
       RED();
@@ -70,6 +72,9 @@ bool environment::merge(environment& src){
   for(std::pair<std::string, Token*> kv_pair: src.interfaces){
     if(classes.find(kv_pair.first) == classes.end() &&
        interfaces.find(kv_pair.first) == interfaces.end()){
+      
+      std::cout<<"ENV: Added ["<<kv_pair.first<<","<<(*kv_pair.second);
+      std::cout<<","<<kv_pair.second->m_lex<<std::endl;
       interfaces[kv_pair.first] = kv_pair.second;
     }else{
       RED();
@@ -84,6 +89,9 @@ bool environment::merge(environment& src){
   for(std::pair<std::string, std::vector<Token*>> kv_pair: src.methods){
     if(valid_method(kv_pair)){
       for(Token* n: kv_pair.second){
+	
+      std::cout<<"ENV: Added ["<<kv_pair.first<<","<<(*n);
+      std::cout<<","<<n->m_lex<<std::endl;
 	methods[kv_pair.first].emplace_back(n);
       }
     }else{
@@ -99,6 +107,9 @@ bool environment::merge(environment& src){
   for(std::pair<std::string, std::vector<Token*>> kv_pair: src.constructors){
     if(valid_ctor(kv_pair)){
       for(Token* n: kv_pair.second){
+	
+      std::cout<<"ENV: Added ["<<kv_pair.first<<","<<(*n);
+      std::cout<<","<<n->m_lex<<std::endl;
 	constructors[kv_pair.first].emplace_back(n);
       }
     }else{
