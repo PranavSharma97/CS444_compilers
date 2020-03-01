@@ -15,6 +15,7 @@ class Token{
 
   environment scope;
   Token* declaration;
+  bool Protected;
 
   std::vector<Token> m_generated_tokens;
 
