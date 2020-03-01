@@ -36,6 +36,7 @@ map<string,Token*> addToSelf(map<string,Token*> scopeList, string identifier, To
 Token traverse(Token *token, environment *scope, bool parentIsClass=false){
   vector<Token> &children = token->m_generated_tokens;
   for(vector<Token>::iterator it=children.begin(); it!=children.end(); it++) {
+    //cout << "looking at token" << it->m_display_name << " parentIsClass: " << parentIsClass << endl;
     if (it->m_type == ClassDeclaration){
       string identifier = it->m_generated_tokens[2].m_lex;
       scope->classes = addToParent(parentIsClass, scope->classes, identifier, &(*it));
@@ -122,6 +123,9 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
     else if (it->m_type == ForStatement){
       traverse(&(*it), &it->scope);
     }
+    else if (it->m_type == CompilationUnit){
+      traverse(&(*it), &it->scope, true);
+    }
     else {
       traverse(&(*it), scope, parentIsClass);
     }
@@ -130,47 +134,51 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
 }
 
 Token BuildEnvironment(Token *token){
-  return traverse(token, &token->scope);
+  Token t = traverse(token, &token->scope);
+  return t;
 }
 
-void printEnvironments(int level, Token token){
-  for(vector<Token>::iterator it = token.m_generated_tokens.begin(); it!=token.m_generated_tokens.end(); it++) {
+void printHelper(string name, map<string,Token*> scopeList){
+  cout << name;
+  for(map<string,Token*>::iterator subit=scopeList.begin(); subit!=scopeList.end(); subit++){
+    cout << subit->first;
+  }
+  cout << endl;
+}
+
+void printHelper2(string name, map<string,vector<Token*>> scopeList){
+  cout << name;
+  for(map<string,vector<Token*>>::iterator subit=scopeList.begin(); subit!=scopeList.end(); subit++){
+    cout << subit->first;
+  }
+  cout << endl;
+}
+
+void printScope(Token token){
+  cout << " Type: " << token.m_display_name << " has the following scope:" << endl;
+  printHelper("classes: ", token.scope.classes);
+  printHelper("interfaces: ", token.scope.classes);
+  printHelper("fields: ", token.scope.fields);
+  printHelper2("methods: ", token.scope.methods);
+  printHelper("localVariables: ", token.scope.localVariables);
+  printHelper("formalParameters: ", token.scope.formalParameters);
+  printHelper2("constructors: ", token.scope.constructors);
+}
+
+void printEnvironments(vector<int> levels, Token *token){
+  for(vector<Token>::iterator it = token->m_generated_tokens.begin(); it!=token->m_generated_tokens.end(); it++) {
     int anyScope = it->scope.constructors.size() + it->scope.classes.size() +it->scope.interfaces.size();
     anyScope += it->scope.fields.size() + it->scope.methods.size() + it->scope.localVariables.size();
     anyScope += it->scope.formalParameters.size();
     if (anyScope >  0) {
-      cout << endl;
-      cout << "Level: " << level << " Type: " << it->m_display_name << " has the following scope:" << endl;
-      cout << "classes: ";
-      for(map<string,Token*>::iterator subit=it->scope.classes.begin(); subit!=it->scope.classes.end(); subit++){
-        cout << subit->first;
+      cout << endl << "Level: ";
+      for(vector<int>::iterator level=levels.begin(); level!=levels.end(); level++){
+        cout << *level << ".";
       }
-      cout << endl << "interfaces: ";
-      for(map<string,Token*>::iterator subit=it->scope.interfaces.begin(); subit!=it->scope.interfaces.end(); subit++){
-        cout << subit->first;
-      }
-      cout << endl << "fields: ";
-      for(map<string,Token*>::iterator subit=it->scope.fields.begin(); subit!=it->scope.fields.end(); subit++){
-        cout << subit->first;
-      }
-      cout << endl << "methods: ";
-      for(map<string,vector<Token*>>::iterator subit=it->scope.methods.begin(); subit!=it->scope.methods.end(); subit++){
-        cout << subit->first;
-      }
-      cout << endl << "localVariables: ";
-      for(map<string,Token*>::iterator subit=it->scope.localVariables.begin(); subit!=it->scope.localVariables.end(); subit++){
-        cout << subit->first;
-      }
-      cout << endl << "formalParameters: ";
-      for(map<string,Token*>::iterator subit=it->scope.formalParameters.begin(); subit!=it->scope.formalParameters.end(); subit++){
-        cout << subit->first;
-      }
-      cout << endl << "constructors: ";
-      for(map<string,vector<Token*>>::iterator subit=it->scope.constructors.begin(); subit!=it->scope.constructors.end(); subit++){
-        cout << subit->first;
-      }
-      cout << endl;
+      printScope(*it);
     }
-    printEnvironments(level+1, *it);
+    levels.push_back(levels.back()+1);
+    printEnvironments(levels, &(*it));
+    levels.pop_back();
   }
 }
