@@ -22,7 +22,7 @@ using namespace std;
 int main(int argc, char *argv[]) {
 
   vector<Token> parse_trees;
-  
+  vector<Token*> tree_ptrs;
   for(int i = 1;i<argc;i++){
 
     string file(argv[i]);
@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
     } catch (std::exception& e){
       return 42;
     }
+  }
     /*
   
   
@@ -86,23 +87,28 @@ int main(int argc, char *argv[]) {
       if(counter == 0) { layer += 1; counter = queue.size(); cerr<<endl; }
       }
     */
+  for(int i = 0; i<parse_trees.size();i++){
+    BuildEnvironment(&parse_trees[i]);
+    RED();
+    cout<<"PTR"<<(i-1)<<":"<<(&parse_trees[i])<<endl;
+    DEFAULT();
+    tree_ptrs.emplace_back((&parse_trees[i]));
     vector<int> levels{0};
-    Token tree_with_environment = BuildEnvironment(&(parse_trees[i-1]));
-    printEnvironments(levels,&parse_trees[i-1],1);
-    
+    printEnvironments(levels,&parse_trees[i]);
+    //printEnvironments(levels,&parse_trees[i-1],1);
   }
-  */
 
-  BuildEnvironment(&weeded_tree);
-  vector<int> levels{0};
-  printEnvironments(levels,&weeded_tree);
   
   
-      // convert parse_trees to token pointers
-  vector<Token*> tree_ptrs;
-  for(Token& t:parse_trees){
-    tree_ptrs.emplace_back(&t);
-  }
+  // convert parse_trees to token pointers
+  /* for(int i = 0;i<parse_trees.size();i++){
+    tree_ptrs.emplace_back(&parse_trees[i]);
+  }*/
+  CYAN();
+  cout<<"FIRST ONE"<<tree_ptrs[0]<<endl<<endl;
+  
+  cout<<"SECOND ONE"<<tree_ptrs[1]<<endl<<endl;;
+  DEFAULT();
   TypeLinker TPLink(tree_ptrs);
   if(!TPLink.Link()) return 42;
   cout << "Parsing successful" << endl;

@@ -103,8 +103,8 @@ bool environment::merge(environment src){
     if(classes.find(kv_pair.first) == classes.end() ){
        //interfaces.find(kv_pair.first) == interfaces.end()){
        
-      std::cout<<"CLASS ENV: Added ["<<kv_pair.first<<","<<kv_pair.second->m_display_name;
-      std::cout<<","<<kv_pair.second->m_lex<<"] "<<counter++<<std::endl;
+      std::cout<<"CLASS ENV: Added ["<<kv_pair.first<<","<<kv_pair.second;
+      std::cout<<","<<*(kv_pair.second)<<"] "<<counter++<<std::endl;
       classes[kv_pair.first] = kv_pair.second;
     }else{
       RED();
