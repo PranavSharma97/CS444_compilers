@@ -6,6 +6,7 @@ Token::Token():
   declaration = nullptr;
   Protected = false;
   Abstract = true;
+  Inherited = false;
   m_rule = -1;
   m_display_name = "TOKEN_EMPTY";
 }
@@ -17,6 +18,7 @@ Token::Token(TokenType type, std::string lex):
 {
   declaration = nullptr;
   Protected = false;
+  Inherited = false;
   Abstract = true;
   m_rule = -1;
   // Determine the display name

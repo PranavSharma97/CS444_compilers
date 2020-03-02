@@ -16,25 +16,43 @@ let "NEG_FAILED = 0"
 
 positive="positive.txt"
 while IFS= read -r file; do
-    if ! ./joosc "$file" >> positive.out;then
-	#POS_FAILED = $((POS_FAILED+1))
-	cp "$file" ./failed_tests/positive/
-	let "POS_FAILED = POS_FAILED + 1"
+    if [[ -f "$file" ]]; then
+	if ! ./test_file "$file" >> positive.out;then
+	    #POS_FAILED = $((POS_FAILED+1))
+	    cp -r "$file" ./failed_tests/positive/
+	    let "POS_FAILED = POS_FAILED + 1"
+	fi
+    else
+	if ! ./test_dir "$file" >> positive.out;then
+	    #POS_FAILED = $((POS_FAILED+1))
+	    cp -r "$file" ./failed_tests/positive/
+	    let "POS_FAILED = POS_FAILED + 1"
+	fi
+	
     fi
 done < "$positive"
 
 negative="negative.txt"
 while IFS= read -r file; do
-    if ./joosc "$file" >> negative.out;then
-	# NEG_FAILED = $((NEG_FAILED + 1))
-	let "NEG_FAILED = NEG_FAILED + 1"
-	cp "$file" ./failed_tests/negative/
+    if [[ -d "$file" ]]; then
+	if ./test_file "$file" >> negative.out;then
+	    # NEG_FAILED = $((NEG_FAILED + 1))
+	    let "NEG_FAILED = NEG_FAILED + 1"
+	    cp -r "$file" ./failed_tests/negative/
+	fi
+    else
+	if ./test_dir "$file" >> negative.out;then
+	    # NEG_FAILED = $((NEG_FAILED + 1))
+	    let "NEG_FAILED = NEG_FAILED + 1"
+	    cp -r "$file" ./failed_tests/negative/
+	fi
     fi
+	
 done < "$negative"
 
 echo "Positive fails: $POS_FAILED, negative failes: $NEG_FAILED"
 
 # for file in /u/cs444/pub/assignment_testcases/a1/*
 # do
-#   ./joosc "$file" >> result.out
+#   ./test_with_stdlib "$file" >> result.out
 # done

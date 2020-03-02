@@ -21,7 +21,8 @@ class TypeLinker{
   environment* GetCurrentPackage(Token* CUN);
   Token* GetFromEnv(std::string &name, environment** envs);
   
-  // Type Linking 
+  // Type Linking
+  bool ResolvePackage(Token* cun, environment** envs);
   bool ResolveAST(Token* root, environment** envs);
   bool DoLinkType(Token* id, environment** envs);
 

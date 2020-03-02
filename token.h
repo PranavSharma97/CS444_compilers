@@ -17,6 +17,7 @@ class Token{
   Token* declaration;
   bool Protected;
   bool Abstract;
+  bool Inherited;
   std::vector<Token> m_generated_tokens;
 
   Token();
