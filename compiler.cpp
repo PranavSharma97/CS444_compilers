@@ -95,6 +95,11 @@ int main(int argc, char *argv[]) {
     printEnvironments(levels,&parse_trees[i-1],1);
     
   }
+  */
+
+  BuildEnvironment(&weeded_tree);
+  vector<int> levels{0};
+  printEnvironments(levels,&weeded_tree);
   
   
       // convert parse_trees to token pointers
