@@ -287,11 +287,7 @@ void environment::overwrite_merge(environment& src){
 }
 
 Token* environment::GetType(std::string & name){
-  if(name == "PrintStream"){
-    for(std::pair<std::string,Token*> kv:classes){
-      std::cout<<kv.first<<","<<kv.second<<std::endl;
-    }
-  }
+  
   if(classes.find(name) == classes.end()){
     if(interfaces.find(name) == interfaces.end()){
       return nullptr;

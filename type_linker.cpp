@@ -192,7 +192,7 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
 
   // Check if java.lang is on demanded
   std::string javalang = "java.lang";
-  bool jlang = false;
+  std::map<std::string,bool> on_demand_imported;
   for(Token& c: cun->m_generated_tokens){
     TokenType node_type = c.m_type;
     // Search for all import declarations, try to import them to local env
@@ -201,25 +201,26 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
       CYAN();
       std::cout<<"Package Environment Building"<<std::endl;
       DEFAULT();
+      std::string pack_name = c.m_generated_tokens[1].m_lex;
       // get the envrionment from the pack
       environment* pack_env;
       bool is_on_demand = false;
       // check if the on demand import 
       if(node_type == TokenType::TypeImportOnDemandDeclaration){
 	is_on_demand = true;
-	
-	if(node_type == TokenType::TypeImportOnDemandDeclaration) {
-	  jlang = (c.m_generated_tokens[1].m_lex == javalang);
-	}
-	pack_env = m_packages->GetAll(c.m_generated_tokens[1].m_lex);
+	// On demand import should be imported only once
+	if(on_demand_imported.find(pack_name) == on_demand_imported.end()){
+	  on_demand_imported[pack_name] = true;
+	  pack_env = m_packages->GetAll(pack_name);
+	}else continue;
       }else{
-	pack_env = m_packages->Search(c.m_generated_tokens[1].m_lex);
+	pack_env = m_packages->Search(pack_name);
       }
 	
       if(pack_env == nullptr){
 	RED();
 	std::cerr<<"Type Linker ERROR: cannot find ";
-	std::cerr<<c.m_generated_tokens[1].m_lex;
+	std::cerr<<pack_name;
 	std::cerr<<std::endl;
 	DEFAULT();
 	return false;
@@ -239,7 +240,7 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
       // If error occurs when merging environment
       if(!result){
 	RED();
-	std::cerr<<"Type Linker ERROR: "<<c.m_generated_tokens[1].m_lex;
+	std::cerr<<"Type Linker ERROR: "<<pack_name;
 	std::cerr<<" cannot";
 	std::cerr<<" be imported."<<std::endl;
 	DEFAULT();
@@ -260,8 +261,8 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
     }
   }
 
-  // Import java lang
-  if(!jlang){
+  // Import java lang if we've not yet
+  if(on_demand_imported.find(javalang) == on_demand_imported.end()){
     environment* JL = m_packages->GetAll(javalang);
     if(JL == nullptr){
       RED();
