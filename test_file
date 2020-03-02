@@ -1,0 +1,21 @@
+#! /bin/bash
+
+
+#CURRENT="$(pwd)"
+
+JHOME=~/cs444/cs444_compilers
+#mkdir $JHOME/temp
+#TEMP=$JHOME/temp
+
+#cp $JHOME/joosc $TEMP
+#cp -r $JHOME/stdlib $TEMP 
+
+JOOSC=$JHOME/joosc
+STDLIB=$JHOME/stdlib
+JAVA=$STDLIB/java
+LANG=$JAVA/lang
+IO=$JAVA/io
+UTIL=$JAVA/util
+
+$JOOSC $@ $LANG/Byte.java $LANG/String.java $LANG/Number.java $LANG/Character.java $LANG/System.java $LANG/Cloneable.java $LANG/Class.java $LANG/Boolean.java $LANG/Integer.java $LANG/Object.java $LANG/Short.java $UTIL/Arrays.java $IO/PrintStream.java $IO/OutputStream.java $IO/Serializable.java
+
