@@ -189,13 +189,15 @@ environment* TypeLinker::GetCurrentPackage(Token* CUN){
 }
 
 bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
-  
+
+  // Check if java.lang is on demanded
+  std::string javalang = "java.lang";
+  bool jlang = false;
   for(Token& c: cun->m_generated_tokens){
     TokenType node_type = c.m_type;
     // Search for all import declarations, try to import them to local env
     if(node_type == TokenType::SingleTypeImportDeclaration ||
        node_type == TokenType::TypeImportOnDemandDeclaration){
-	
       CYAN();
       std::cout<<"Package Environment Building"<<std::endl;
       DEFAULT();
@@ -205,6 +207,10 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
       // check if the on demand import 
       if(node_type == TokenType::TypeImportOnDemandDeclaration){
 	is_on_demand = true;
+	
+	if(node_type == TokenType::TypeImportOnDemandDeclaration) {
+	  jlang = (c.m_generated_tokens[1].m_lex == javalang);
+	}
 	pack_env = m_packages->GetAll(c.m_generated_tokens[1].m_lex);
       }else{
 	pack_env = m_packages->Search(c.m_generated_tokens[1].m_lex);
@@ -253,6 +259,21 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
       return false;
     }
   }
+
+  // Import java lang
+  if(!jlang){
+    environment* JL = m_packages->GetAll(javalang);
+    if(JL == nullptr){
+      RED();
+      std::cerr<<"Type Linker ERROR: cannot find java.lang";
+      std::cerr<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    envs[3]->overwrite_merge(*JL);
+    delete JL;
+  }
+  
   std::cout<<std::endl;
   return true;
 }
@@ -535,7 +556,7 @@ bool TypeLinker::ResolveInheritance(Token* root, environment** envs){
   new_envs[1] = envs[1];
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
-  
+
   if(HasEnv(t)){
     switch(t){
     case TokenType::CompilationUnit:

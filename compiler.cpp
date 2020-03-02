@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
   }*/
   TypeLinker TPLink(tree_ptrs);
   if(!TPLink.Link()) return 42;
-
+  /*
   for(Token* ti: tree_ptrs){
     vector<Token*> queue;
     int counter = 0;
@@ -106,7 +106,8 @@ int main(int argc, char *argv[]) {
     
       if(counter == 0) { layer += 1; counter = queue.size(); cerr<<endl; }
     } 
-  }
+    }*/
+  
   cout << "Parsing successful" << endl;
   return 0;
 }
