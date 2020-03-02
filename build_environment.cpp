@@ -40,6 +40,14 @@ void addProtectedFlag(Token *token){
   }
 }
 
+void removeAbstractFlag(Token *token){
+  Token *abstract = (*token).m_generated_tokens[0].SearchByTypeDFS(T_ABSTRACT);
+  Token *block = (*token).SearchByTypeDFS(Block);
+  if (!abstract && block){
+    token->Abstract = false;
+  }
+}
+
 Token traverse(Token *token, environment *scope, bool parentIsClass=false){
   vector<Token> &children = token->m_generated_tokens;
   for(vector<Token>::iterator it=children.begin(); it!=children.end(); it++) {
@@ -47,7 +55,6 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
     if (it->m_type == ClassDeclaration){
       string identifier = it->m_generated_tokens[2].m_lex;
       scope->classes = addToParent(parentIsClass, scope->classes, identifier, &(*it));
-      it->scope.classes = addToSelf(it->scope.classes, identifier, &(*it));
 
       addProtectedFlag(&(*it));
 
@@ -67,6 +74,7 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       string identifier = identifierToken->m_lex;
 
       addProtectedFlag(&(*it));
+      removeAbstractFlag(&(*it));
 
       if (parentIsClass && !(scope->methods.find(identifier) != scope->methods.end())) {
         if (find(scope->methods[identifier].begin(), scope->methods[identifier].end(), &(*it)) == scope->methods[identifier].end()){
@@ -119,7 +127,13 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       string identifier = it->m_generated_tokens[2].m_lex;
       scope->interfaces = addToParent(parentIsClass, scope->interfaces, identifier, &(*it));
       addProtectedFlag(&(*it));
-      traverse(&(*it), &it->scope);
+      traverse(&(*it), &it->scope, true);
+    }
+    else if (it->m_type == AbstractMethodDeclaration){
+      Token *identifierToken = it->m_generated_tokens[0].SearchByTypeDFS(T_IDENTIFIER);
+      string identifier = identifierToken->m_lex;
+      scope->methods[identifier].push_back(&(*it));
+      it->scope.methods[identifier].push_back(&(*it));
     }
     else if (it->m_type == BlockStatement){
       traverse(&(*it), &it->scope);
@@ -152,15 +166,14 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
   return *token;
 }
 
-Token BuildEnvironment(Token *token){
-  Token t = traverse(token, &token->scope);
-  return t;
+void BuildEnvironment(Token *token){
+  traverse(token, &token->scope);
 }
 
 void printHelper(string name, map<string,Token*> scopeList){
   cout << name;
   for(map<string,Token*>::iterator subit=scopeList.begin(); subit!=scopeList.end(); subit++){
-    cout << subit->first;
+    cout << subit->first << " type: " << *(subit->second);
     if (subit->second->Protected){
       cout << "(protected)";
     }
@@ -177,9 +190,11 @@ void printHelper2(string name, map<string,vector<Token*>> scopeList){
       if ((*subit)->Protected){
         cout << (*subit)->m_lex << "(protected)";
       }
+      if (name == "methods: " && (*subit)->Abstract){
+        cout << "(abstract)";
+      }
       cout << ", ";
     }
-    cout << ", ";
   }
   cout << endl;
 }
@@ -195,8 +210,10 @@ void printScope(Token token){
   printHelper2("constructors: ", token.scope.constructors);
 }
 
-void printEnvironments(vector<int> levels, Token *token, int curLevel){
+void printEnvironments(vector<int> levels, Token *token){
+  int curLevel = 0;
   for(vector<Token>::iterator it = token->m_generated_tokens.begin(); it!=token->m_generated_tokens.end(); it++) {
+    curLevel += 1;
     int anyScope = it->scope.constructors.size() + it->scope.classes.size() +it->scope.interfaces.size();
     anyScope += it->scope.fields.size() + it->scope.methods.size() + it->scope.localVariables.size();
     anyScope += it->scope.formalParameters.size();
@@ -208,7 +225,7 @@ void printEnvironments(vector<int> levels, Token *token, int curLevel){
       printScope(*it);
     }
     levels.push_back(curLevel);
-    printEnvironments(levels, &(*it), curLevel+1);
+    printEnvironments(levels, &(*it));
     levels.pop_back();
   }
 }

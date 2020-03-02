@@ -390,8 +390,8 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       return false;
     }
 
-    // If not protected, it's a private method
-    if(!search(node.m_generated_tokens[0],TokenType::T_PROTECTED)){
+    // If not protected or public, it's a private method
+    if(!search(node.m_generated_tokens[0],TokenType::T_PROTECTED) && !(node.m_generated_tokens[0],TokenType::T_PUBLIC)){
       RED();
       std::cerr<<"WEEDER ERROR: interface method cannot be private."<<std::endl;
       DEFAULT();
