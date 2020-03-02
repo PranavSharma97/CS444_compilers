@@ -211,8 +211,10 @@ void printScope(Token token){
   printHelper2("constructors: ", token.scope.constructors);
 }
 
-void printEnvironments(vector<int> levels, Token *token, int curLevel){
+void printEnvironments(vector<int> levels, Token *token){
+  int curLevel = 0;
   for(vector<Token>::iterator it = token->m_generated_tokens.begin(); it!=token->m_generated_tokens.end(); it++) {
+    curLevel += 1;
     int anyScope = it->scope.constructors.size() + it->scope.classes.size() +it->scope.interfaces.size();
     anyScope += it->scope.fields.size() + it->scope.methods.size() + it->scope.localVariables.size();
     anyScope += it->scope.formalParameters.size();
@@ -224,7 +226,7 @@ void printEnvironments(vector<int> levels, Token *token, int curLevel){
       printScope(*it);
     }
     levels.push_back(curLevel);
-    printEnvironments(levels, &(*it), curLevel+1);
+    printEnvironments(levels, &(*it));
     levels.pop_back();
   }
 }
