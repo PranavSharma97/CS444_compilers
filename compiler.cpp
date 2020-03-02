@@ -79,9 +79,9 @@ int main(int argc, char *argv[]) {
   }
   */
 
-  Token tree_with_environment = BuildEnvironment(&weeded_tree);
+  BuildEnvironment(&weeded_tree);
   vector<int> levels{0};
-  printEnvironments(levels,&tree_with_environment);
+  printEnvironments(levels,&weeded_tree);
   
   cout << "Parsing successful" << endl;
   return 0;

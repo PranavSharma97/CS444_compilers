@@ -166,9 +166,8 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
   return *token;
 }
 
-Token BuildEnvironment(Token *token){
-  Token t = traverse(token, &token->scope);
-  return t;
+void BuildEnvironment(Token *token){
+  traverse(token, &token->scope);
 }
 
 void printHelper(string name, map<string,Token*> scopeList){
