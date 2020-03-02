@@ -22,7 +22,7 @@ class TypeLinker{
   Token* GetFromEnv(std::string &name, environment** envs);
   
   // Type Linking
-  bool ResolvePackage(Token* n, Token* cun, environment** envs);
+  bool ResolvePackage(Token* cun, environment** envs);
   bool ResolveAST(Token* root, environment** envs);
   bool DoLinkType(Token* id, environment** envs);
 

@@ -120,8 +120,8 @@ bool environment::merge(environment src){
     if(classes.find(kv_pair.first) == classes.end() &&
        interfaces.find(kv_pair.first) == interfaces.end()){
       
-      std::cout<<"INTERFACE ENV: Added ["<<kv_pair.first<<","<<(*(kv_pair.second));
-      std::cout<<","<<kv_pair.second->m_lex<<"]"<<std::endl;
+      //std::cout<<"INTERFACE ENV: Added ["<<kv_pair.first<<","<<(*(kv_pair.second));
+      //std::cout<<","<<kv_pair.second->m_lex<<"]"<<std::endl;
       interfaces[kv_pair.first] = kv_pair.second;
     }else{
       RED();
@@ -137,8 +137,8 @@ bool environment::merge(environment src){
     if(valid_method(kv_pair)){
       for(Token* n: kv_pair.second){
 	
-      std::cout<<"METHOD ENV: Added ["<<kv_pair.first<<","<<(*n);
-      std::cout<<","<<n->m_lex<<"]"<<std::endl;
+	std::cout<<"METHOD ENV: Added ["<<kv_pair.first<<","<<(*n);
+	std::cout<<","<<n->m_lex<<"]"<<std::endl;
 	methods[kv_pair.first].emplace_back(n);
       }
     }else{
@@ -287,6 +287,11 @@ void environment::overwrite_merge(environment& src){
 }
 
 Token* environment::GetType(std::string & name){
+  if(name == "PrintStream"){
+    for(std::pair<std::string,Token*> kv:classes){
+      std::cout<<kv.first<<","<<kv.second<<std::endl;
+    }
+  }
   if(classes.find(name) == classes.end()){
     if(interfaces.find(name) == interfaces.end()){
       return nullptr;

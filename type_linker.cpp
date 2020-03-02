@@ -47,12 +47,16 @@ Token* GetInterfaceFromEnv(std::string& name,environment ** envs){
 }
 
 Token* GetTypeFromEnv(std::string& name, environment ** envs){
+  //std::cout<<"Local"<<std::endl;
   Token *dec = envs[0]->GetType(name);
   if(dec == nullptr){
+    //std::cout<<"DirectImport"<<std::endl;
     dec = envs[1]->GetType(name);
     if(dec == nullptr){
+      //std::cout<<"Package"<<std::endl;
       dec = envs[2]->GetType(name);
       if(dec == nullptr){
+	//std::cout<<"ImportAll"<<std::endl;
 	dec = envs[3]->GetType(name);
 	if(dec == nullptr){
 	  RED();
@@ -72,16 +76,18 @@ bool TypeLinker::ConstructPackage(){
     Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
     // Print The compilation unit package
 
-    
+    PURPLE();
+    std::cout<<"CUN:"<<cun->m_lex<<std::endl;
+    DEFAULT();
     
     // search for PackageDeclaration nodes and add to package
     Token* p = n->SearchByTypeBFS(TokenType::PackageDeclaration);
     std::string pname = (p==nullptr)? default_package_name:p->m_generated_tokens[1].m_lex;
-    /*
+    
     CYAN();
     std::cout<<"ConstructPackage: File "<<cun->m_lex<<" in "<<pname<<std::endl;
     DEFAULT();
-    */
+    
     if(p!=nullptr){
       // If cannot add package to package environment, break.
       /*
@@ -182,10 +188,10 @@ environment* TypeLinker::GetCurrentPackage(Token* CUN){
   return pack_env;
 }
 
-bool TypeLinker::ResolvePackage(Token* n,Token* cun,environment** envs){
+bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
   
-  for(Token& c: n->m_generated_tokens){
-    TokenType node_type = c.type();
+  for(Token& c: cun->m_generated_tokens){
+    TokenType node_type = c.m_type;
     // Search for all import declarations, try to import them to local env
     if(node_type == TokenType::SingleTypeImportDeclaration ||
        node_type == TokenType::TypeImportOnDemandDeclaration){
@@ -241,12 +247,13 @@ bool TypeLinker::ResolvePackage(Token* n,Token* cun,environment** envs){
     // check if single type clashes with local
     if(!temp_env.merge(cun->scope)){
       RED();
-      std::cerr<<"Type Linker ERROR: Compilation Unit "<<n->m_lex;
+      std::cerr<<"Type Linker ERROR: Compilation Unit "<<cun->m_lex;
       std::cerr<<" clashes with single type import environment."<<std::endl;
       DEFAULT();
       return false;
     }
   }
+  std::cout<<std::endl;
   return true;
 }
 
@@ -259,7 +266,7 @@ bool TypeLinker::Link(){
     Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
     environment local_env,single_type,on_demand;
     // Get the package environment first
-    environment* p_env = GetCurrentPackage(n);
+    environment* p_env = GetCurrentPackage(cun);
     if(p_env == nullptr) return false;
     envs[0] = &local_env;
     envs[1] = &single_type;
@@ -269,14 +276,14 @@ bool TypeLinker::Link(){
     std::cout<<"ENVIRONMENT READY"<<std::endl;
     DEFAULT();
     
-    if(!ResolvePackage(n,cun,envs)) return false;
+    if(!ResolvePackage(cun,envs)) return false;
     // check if any package name is a class name
     if(!m_packages->CheckNames(envs)) return false;
     CYAN();
     std::cout<<"PACKAGE NAMES CHECKED"<<std::endl;
     DEFAULT();
     // resolve types out side of env in the ast
-    if(!ResolveAST(n,envs)) return false;
+    if(!ResolveAST(cun,envs)) return false;
     CYAN();
     std::cout<<"AST Type Linked"<<std::endl;
     DEFAULT();
