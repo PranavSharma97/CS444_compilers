@@ -70,12 +70,26 @@ Token* GetTypeFromEnv(std::string& name, environment ** envs){
 bool TypeLinker::ConstructPackage(){
   for(Token* n: m_asts){
     Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
+    // Print The compilation unit package
+
+    
+    
     // search for PackageDeclaration nodes and add to package
     Token* p = n->SearchByTypeBFS(TokenType::PackageDeclaration);
     std::string pname = (p==nullptr)? default_package_name:p->m_generated_tokens[1].m_lex;
     CYAN();
     std::cout<<"ConstructPackage: File "<<cun->m_lex<<" in "<<pname<<std::endl;
     DEFAULT();
+
+    
+    CYAN();
+    std::cout<<"CPKG:"<<(*cun)<<","<<cun->m_lex<<std::endl;
+    for(std::pair<std::string,Token*> kv_pair:(cun->scope).classes){
+      std::cout<<kv_pair.first<<","<<(cun->scope.classes)[kv_pair.first]<<std::endl;
+      std::cout<<kv_pair.first<<","<<kv_pair.second<<std::endl;
+    }
+    DEFAULT();
+    
     if(p!=nullptr){
       // If cannot add package to package environment, break.
       CYAN();

@@ -10,6 +10,7 @@ Token::Token():
   m_display_name = "TOKEN_EMPTY";
 }
 
+
 Token::Token(TokenType type, std::string lex):
   m_type(type),
   m_lex(lex)
@@ -567,11 +568,18 @@ TokenType Token::type() const { return m_type; }
 Token* Token::SearchByTypeBFS(TokenType type){
   std::vector<Token*> queue;
   queue.emplace_back(this);
-  while(queue.size() > 0){
-    Token* t = queue[0];
+  int start = 0;
+  int end = queue.size();
+  while(end-start > 0){
+    Token* t = queue[start];
+    start ++;
     if(t->m_type == type) return t;
-    for(Token& child: t->m_generated_tokens){ queue.emplace_back(&child); }
-    queue.erase(queue.begin());
+    for(Token& child: t->m_generated_tokens){
+      queue.emplace_back(&child);
+      end++;
+    }
+    
+    //queue.erase(queue.begin());
   }
   return nullptr;
 }

@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <exception>
+#include <utility>
 
 // Alphabetical order
 #include "debugger.h"
@@ -12,6 +13,7 @@
 #include "weeder.h"
 #include "build_environment.h"
 #include "type_linker.h"
+#include "color_print.h"
 
 
 using namespace std;
@@ -87,11 +89,15 @@ int main(int argc, char *argv[]) {
     */
     vector<int> levels{0};
     Token tree_with_environment = BuildEnvironment(&weeded_tree);
-    printEnvironments(levels,&tree_with_environment,1);
-    parse_trees.emplace_back(tree_with_environment);
+    //parse_trees[i-1] = BuildEnvironment(&weeded_tree);
+    //printEnvironments(levels,&tree_with_environment,1);
+    parse_trees.push_back(tree_with_environment);
+    printEnvironments(levels,&parse_trees[i-1],1);
+    
   }
-
-  // convert parse_trees to token pointers
+  
+  
+      // convert parse_trees to token pointers
   vector<Token*> tree_ptrs;
   for(Token& t:parse_trees){
     tree_ptrs.emplace_back(&t);
