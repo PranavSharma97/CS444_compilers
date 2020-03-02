@@ -5,9 +5,11 @@ Token::Token():
 {
   declaration = nullptr;
   Protected = false;
+  Abstract = true;
   m_rule = -1;
   m_display_name = "TOKEN_EMPTY";
 }
+
 
 Token::Token(TokenType type, std::string lex):
   m_type(type),
@@ -15,6 +17,7 @@ Token::Token(TokenType type, std::string lex):
 {
   declaration = nullptr;
   Protected = false;
+  Abstract = true;
   m_rule = -1;
   // Determine the display name
   int type_int = static_cast<int>(type);
@@ -563,15 +566,22 @@ TokenType Token::type() const { return m_type; }
 
 //
 Token* Token::SearchByTypeBFS(TokenType type){
-  Token* res = nullptr;
-  for(Token& t: m_generated_tokens){
-    if(t.m_type == type) return &t;
+  std::vector<Token*> queue;
+  queue.emplace_back(this);
+  int start = 0;
+  int end = queue.size();
+  while(end-start > 0){
+    Token* t = queue[start];
+    start ++;
+    if(t->m_type == type) return t;
+    for(Token& child: t->m_generated_tokens){
+      queue.emplace_back(&child);
+      end++;
+    }
+    
+    //queue.erase(queue.begin());
   }
-  for(Token& t: m_generated_tokens){
-    res = t.SearchByTypeBFS(type);
-    if(res!=nullptr) break;
-  }
-  return res;
+  return nullptr;
 }
 
 Token* Token::SearchByTypeDFS(TokenType type){

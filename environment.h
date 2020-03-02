@@ -17,7 +17,7 @@ class environment {
   environment() = default;
   environment(const environment& other);
   ~environment() = default;
-  bool merge(environment& src);
+  bool merge(environment src);
   void overwrite_merge(environment& src);
   
   Token* GetType(std::string & name);

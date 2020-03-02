@@ -17,18 +17,18 @@ class Package{
   
   Package();
   Package(const std::string & pack_name);
-  Package(std::string& path, environment* src);
+  Package(const std::string& path, environment* src);
   ~Package();
-  bool AddToPackage(std::string& path, environment* src);
+  bool AddToPackage(const std::string& path, environment* src);
   // search for one class, return it in an environment.
   // return value is newed on heap.
-  environment* Search(std::string& path);
+  environment* Search(const std::string& path);
   // Searches for all,creates new environment.
-  environment* GetAll(std::string& path);
+  environment* GetAll(const std::string& path);
   // Check if any of the package name clashes with a class or interface
   // in the given environment.
   bool CheckNames(environment** envs);
 
-  Token* GetQualified(std::string & name);
-  environment* GetPack(std::string& pack_name);
+  Token* GetQualified(const std::string & name);
+  environment* GetPack(const std::string& pack_name);
 };
