@@ -55,7 +55,6 @@ int main(int argc, char *argv[]) {
       return 42;
     }
 
-    Token weeded_tree;
     try{
       Weeder W(file,parse_tree);
       bool valid = W.weed();
@@ -63,7 +62,7 @@ int main(int argc, char *argv[]) {
 	cout << "Invalid weeding" << endl;
 	return 42;
       }
-      weeded_tree = W.m_ast_tree;
+      parse_trees.emplace_back(W.m_ast_tree);
     } catch (std::exception& e){
       return 42;
     }
@@ -88,10 +87,7 @@ int main(int argc, char *argv[]) {
       }
     */
     vector<int> levels{0};
-    Token tree_with_environment = BuildEnvironment(&weeded_tree);
-    //parse_trees[i-1] = BuildEnvironment(&weeded_tree);
-    //printEnvironments(levels,&tree_with_environment,1);
-    parse_trees.push_back(tree_with_environment);
+    Token tree_with_environment = BuildEnvironment(&(parse_trees[i-1]));
     printEnvironments(levels,&parse_trees[i-1],1);
     
   }
