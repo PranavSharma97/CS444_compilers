@@ -67,31 +67,9 @@ int main(int argc, char *argv[]) {
       return 42;
     }
   }
-    /*
-  
-  
-      vector<Token> queue;
-      int counter = 0;
-      queue.emplace_back(weeded_tree);
-      counter = 1;
-      int layer = 0;
-      while(queue.size()>0){
-      Token t = queue[0];
-      cerr<<"("<<t<<","<<t.m_lex<<") | ";
-      queue.erase(queue.begin());
-      counter --;
-      for(Token n:t.m_generated_tokens){
-      queue.emplace_back(n);
-      }
     
-      if(counter == 0) { layer += 1; counter = queue.size(); cerr<<endl; }
-      }
-    */
   for(int i = 0; i<parse_trees.size();i++){
     BuildEnvironment(&parse_trees[i]);
-    RED();
-    cout<<"PTR"<<(i-1)<<":"<<(&parse_trees[i])<<endl;
-    DEFAULT();
     tree_ptrs.emplace_back((&parse_trees[i]));
     vector<int> levels{0};
     printEnvironments(levels,&parse_trees[i]);
@@ -104,13 +82,31 @@ int main(int argc, char *argv[]) {
   /* for(int i = 0;i<parse_trees.size();i++){
     tree_ptrs.emplace_back(&parse_trees[i]);
   }*/
-  CYAN();
-  cout<<"FIRST ONE"<<tree_ptrs[0]<<endl<<endl;
-  
-  cout<<"SECOND ONE"<<tree_ptrs[1]<<endl<<endl;;
-  DEFAULT();
   TypeLinker TPLink(tree_ptrs);
   if(!TPLink.Link()) return 42;
+
+  for(Token* ti: tree_ptrs){
+    vector<Token*> queue;
+    int counter = 0;
+    queue.emplace_back(ti);
+    counter = 1;
+    int layer = 0;
+    while(queue.size()>0){
+      Token* t = queue[0];
+      if(t->declaration != nullptr){
+	cerr<<"("<<*t<<","<<t->m_lex<<"->"<<*(t->declaration)<<") | ";
+      } else {
+	cerr<<"("<<*t<<","<<t->m_lex<<"-> No) | ";
+      }
+      queue.erase(queue.begin());
+      counter --;
+      for(Token& n:t->m_generated_tokens){
+	queue.emplace_back(&n);
+      }
+    
+      if(counter == 0) { layer += 1; counter = queue.size(); cerr<<endl; }
+    } 
+  }
   cout << "Parsing successful" << endl;
   return 0;
 }

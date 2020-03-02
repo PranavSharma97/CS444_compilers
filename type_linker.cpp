@@ -77,45 +77,49 @@ bool TypeLinker::ConstructPackage(){
     // search for PackageDeclaration nodes and add to package
     Token* p = n->SearchByTypeBFS(TokenType::PackageDeclaration);
     std::string pname = (p==nullptr)? default_package_name:p->m_generated_tokens[1].m_lex;
+    /*
     CYAN();
     std::cout<<"ConstructPackage: File "<<cun->m_lex<<" in "<<pname<<std::endl;
     DEFAULT();
-
-    
-    CYAN();
-    std::cout<<"CPKG:"<<(*cun)<<","<<cun->m_lex<<std::endl;
-    for(std::pair<std::string,Token*> kv_pair:(cun->scope).classes){
-      std::cout<<kv_pair.first<<","<<(cun->scope.classes)[kv_pair.first]<<std::endl;
-      std::cout<<kv_pair.first<<","<<kv_pair.second<<std::endl;
-    }
-    DEFAULT();
-    
+    */
     if(p!=nullptr){
       // If cannot add package to package environment, break.
+      /*
       CYAN();
       std::cout<<"ConstrcutPackage: adding "<<&(cun->scope)<<std::endl; 
       DEFAULT();
+      */
       if(!m_packages->AddToPackage(p->m_generated_tokens[1].m_lex,&(cun->scope))){
+	/*
 	RED();
 	std::cerr<<"PACKAGE ERROR: Cannot add environment to package ";
 	std::cerr<<p->m_generated_tokens[1].m_lex<<std::endl;
 	DEFAULT();
+	*/	
 	return false;
       }
     } else {
       // else add to default package
+      /*
       CYAN();
       std::cout<<"ConstrcutPackage: adding "<<&(cun->scope)<<std::endl; 
       DEFAULT();
+      */
       if(!m_packages->AddToPackage(default_package_name,&(cun->scope))){
+	/*
 	RED();
 	std::cerr<<"PACKAGE ERROR: Cannot add environment to default package."<<std::endl;
 	DEFAULT();
+	*/	
 	return false;
       }
     }
  
   }
+  
+  CYAN();
+  std::cout<<"PACKAGE CONSTRUCTED!"<<std::endl;
+  DEFAULT();
   return true;
 }
 
@@ -164,6 +168,9 @@ environment* TypeLinker::GetCurrentPackage(Token* CUN){
     }
   }
   */
+  CYAN();
+  std::cout<<"Search For Package:"<<pack_name<<std::endl;
+  DEFAULT();
   pack_env = m_packages->GetPack(pack_name);
   if(pack_env == nullptr){
     RED();
@@ -175,14 +182,82 @@ environment* TypeLinker::GetCurrentPackage(Token* CUN){
   return pack_env;
 }
 
+bool TypeLinker::ResolvePackage(Token* n,Token* cun,environment** envs){
+  
+  for(Token& c: n->m_generated_tokens){
+    TokenType node_type = c.type();
+    // Search for all import declarations, try to import them to local env
+    if(node_type == TokenType::SingleTypeImportDeclaration ||
+       node_type == TokenType::TypeImportOnDemandDeclaration){
+	
+      CYAN();
+      std::cout<<"Package Environment Building"<<std::endl;
+      DEFAULT();
+      // get the envrionment from the pack
+      environment* pack_env;
+      bool is_on_demand = false;
+      // check if the on demand import 
+      if(node_type == TokenType::TypeImportOnDemandDeclaration){
+	is_on_demand = true;
+	pack_env = m_packages->GetAll(c.m_generated_tokens[1].m_lex);
+      }else{
+	pack_env = m_packages->Search(c.m_generated_tokens[1].m_lex);
+      }
+	
+      if(pack_env == nullptr){
+	RED();
+	std::cerr<<"Type Linker ERROR: cannot find ";
+	std::cerr<<c.m_generated_tokens[1].m_lex;
+	std::cerr<<std::endl;
+	DEFAULT();
+	return false;
+      }
+      // Merge the environment with corresponding package
+      bool result;
+      if(is_on_demand){
+	envs[3]->overwrite_merge(*pack_env);
+	result = true;
+      }else{
+	result = envs[1]->merge(*pack_env);
+      }
+      // since both get all and search creates a newenvironment on stack
+      // delete it
+      delete pack_env;
+
+      // If error occurs when merging environment
+      if(!result){
+	RED();
+	std::cerr<<"Type Linker ERROR: "<<c.m_generated_tokens[1].m_lex;
+	std::cerr<<" cannot";
+	std::cerr<<" be imported."<<std::endl;
+	DEFAULT();
+	return false;
+      }
+    }
+    // Check if the classes, interfaces in this compilation unit
+    // clashes with other components in the package envrionment i'm using
+      
+    environment temp_env(*envs[1]);
+    // check if single type clashes with local
+    if(!temp_env.merge(cun->scope)){
+      RED();
+      std::cerr<<"Type Linker ERROR: Compilation Unit "<<n->m_lex;
+      std::cerr<<" clashes with single type import environment."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+  }
+  return true;
+}
+
 bool TypeLinker::Link(){
   // Construct packages
   if(!ConstructPackage()) return false;
   // Link for each
   for(Token* n: m_asts){
     environment* envs[4];
-    environment local_env,single_type,on_demand;
     Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
+    environment local_env,single_type,on_demand;
     // Get the package environment first
     environment* p_env = GetCurrentPackage(n);
     if(p_env == nullptr) return false;
@@ -190,71 +265,27 @@ bool TypeLinker::Link(){
     envs[1] = &single_type;
     envs[2] = p_env;
     envs[3] = &on_demand;
-    for(Token& c: n->m_generated_tokens){
-      TokenType node_type = c.type();
-      // Search for all import declarations, try to import them to local env
-      if(node_type == TokenType::SingleTypeImportDeclaration ||
-	 node_type == TokenType::TypeImportOnDemandDeclaration){
-	// get the envrionment from the pack
-	environment* pack_env;
-	bool is_on_demand = false;
-	// check if the on demand import 
-	if(node_type == TokenType::TypeImportOnDemandDeclaration){
-	  is_on_demand = true;
-	  pack_env = m_packages->GetAll(c.m_generated_tokens[1].m_lex);
-	}else{
-	  pack_env = m_packages->Search(c.m_generated_tokens[1].m_lex);
-	}
-	
-	if(pack_env == nullptr){
-	  RED();
-	  std::cerr<<"Type Linker ERROR: cannot find ";
-	  std::cerr<<c.m_generated_tokens[1].m_lex;
-	  std::cerr<<std::endl;
-	  DEFAULT();
-	  return false;
-	}
-	// Merge the environment with local_env
-	bool result;
-	if(is_on_demand){
-	  on_demand.overwrite_merge(*pack_env);
-	  result = true;
-	}else{
-	  result = single_type.merge(*pack_env);
-	}
-	// since both get all and search creates a newenvironment on stack
-	// delete it
-	delete pack_env;
-
-	// If error occurs when merging environment
-	if(!result){
-	  RED();
-	  std::cerr<<"Type Linker ERROR: "<<c.m_generated_tokens[1].m_lex;
-	  std::cerr<<" cannot";
-	  std::cerr<<" be imported."<<std::endl;
-	  DEFAULT();
-	  return false;
-	}
-      }
-      // Check if the classes, interfaces in this compilation unit
-      // clashes with other components in the package envrionment i'm using
-      if(!local_env.merge(cun->scope)){
-	RED();
-	std::cerr<<"Type Linker ERROR: Compilation Unit "<<n->m_lex;
-	std::cerr<<" clashes with package environment."<<std::endl;
-	DEFAULT();
-	return false;
-      }
-
-      // check if any package name is a class name
-      if(!m_packages->CheckNames(envs)) return false;
-      // resolve types out side of env in the ast
-      if(!ResolveAST(n,envs)) return false;
-      //if(!ResolveType(CUN,&local_env)) return false;
-
-      //if(!ResolveInheritance(n,envs)) return false;
-    }
-  }  
+    CYAN();
+    std::cout<<"ENVIRONMENT READY"<<std::endl;
+    DEFAULT();
+    
+    if(!ResolvePackage(n,cun,envs)) return false;
+    // check if any package name is a class name
+    if(!m_packages->CheckNames(envs)) return false;
+    CYAN();
+    std::cout<<"PACKAGE NAMES CHECKED"<<std::endl;
+    DEFAULT();
+    // resolve types out side of env in the ast
+    if(!ResolveAST(n,envs)) return false;
+    CYAN();
+    std::cout<<"AST Type Linked"<<std::endl;
+    DEFAULT();
+    
+    //if(!ResolveType(CUN,&local_env)) return false;
+    
+    //if(!ResolveInheritance(n,envs)) return false;
+  }
+  return true;
 }
 
 bool TypeLinker::HasEnv(TokenType t){
@@ -283,7 +314,7 @@ bool TypeLinker::HasEnv(Token* root){
 
 
 bool TypeLinker::DoLinkType(Token* id, environment** envs){
-  std::cout<<"Linking...("<<(*id)<<","<<id->m_lex<<")"<<std::endl;
+  //std::cout<<"Linking...("<<(*id)<<","<<id->m_lex<<")"<<std::endl;
   Token* dec = nullptr;
   // Handles qualified name
   size_t found = id->m_lex.find('.');
@@ -295,7 +326,7 @@ bool TypeLinker::DoLinkType(Token* id, environment** envs){
     if(dec == nullptr) return false;
   }
   id->declaration = dec;
-  std::cout<<"Linked"<<std::endl; 
+  //std::cout<<"Linked"<<std::endl; 
   return true;
 }
 
@@ -535,88 +566,86 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
   environment next_local_env;
   next_local_env.merge(*(envs[0]));
   environment* new_envs[4];
-  bool checked = false;
+
   new_envs[0] = &next_local_env;
   new_envs[1] = envs[1];
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
-  if(HasEnv(t)){
-    switch(t){
-    case TokenType::CompilationUnit:
-      if(!new_envs[0]->merge(root->scope)) return false;
-      break;
+  switch(t){
+  case TokenType::CompilationUnit:
+    if(!new_envs[0]->merge(root->scope)) return false;
+    break;
 
-      // for these types, if the third child is id, then it's a class name
-      // need to be resolved.
+    // for these types, if the third child is id, then it's a class name
+    // need to be resolved.
 	
-    case TokenType::ClassDeclaration:
-    case TokenType::InterfaceDeclaration:
+  case TokenType::ClassDeclaration:
+  case TokenType::InterfaceDeclaration:
 
-      if(root->m_generated_tokens.size() > 0 &&
-	 root->m_generated_tokens[2].type() == TokenType::T_IDENTIFIER ||
-	 root->m_generated_tokens[2].type() == TokenType::QualifiedName){
-	CYAN();
-	std::cout<<"Link: "<<(*root)<<std::endl;
-	DEFAULT();
-	if(!DoLinkType(&(root->m_generated_tokens[2]),new_envs)) return false;
-	checked = true;
-      }
-
-      // for these types, if the second child is id, then it's a class name
-      // need to be resolved.
-    case TokenType::Super:
-    case TokenType::MethodHeader:
-    case TokenType::FieldDeclaration:
-    case TokenType::ArrayCreationExpression:
-    case TokenType::ClassInstanceCreationExpression:
-	
-      if(root->m_generated_tokens.size() > 0 && (!checked) &&
-	 root->m_generated_tokens[1].type() == TokenType::T_IDENTIFIER ||
-	 root->m_generated_tokens[1].type() == TokenType::QualifiedName){
-	CYAN();
-	std::cout<<"Link: "<<(*root)<<std::endl;
-	DEFAULT();
-	if(!DoLinkType(&(root->m_generated_tokens[1]),new_envs)) return false;
-	checked = true;
-      }
-
-      // for these types, if the first child is id, then it's a class name
-      // need to be resolved.
-    case TokenType::ConstructorDeclarator:
-    case TokenType::FormalParameter:
-    case TokenType::LocalVariableDeclaration:
-      if(root->m_generated_tokens.size() > 0 && (!checked) &&
-	 root->m_generated_tokens[0].type() == TokenType::T_IDENTIFIER ||
-	 root->m_generated_tokens[0].type() == TokenType::QualifiedName){
-	CYAN();
-	std::cout<<"Link: "<<(*root)<<std::endl;
-	DEFAULT();
-	if(!DoLinkType(&(root->m_generated_tokens[0]),new_envs)) return false;
-	checked = true;
-      }
-      break;
-      //link the list of interfaces or classes
-    case TokenType::InterfaceTypeList:
-    case TokenType::ClassTypeList:
-    case TokenType::ExtendsInterfaces:
-      if(!checked){
-	for(Token& child: root->m_generated_tokens){
-	  CYAN();
-	  std::cout<<"Link: "<<(*root)<<std::endl;
-	  DEFAULT();
-	  if(child.type() == TokenType::T_IDENTIFIER ||
-	     child.type() == TokenType::QualifiedName){
-	    
-	    if(!DoLinkType(&child,new_envs)) return false;
-	    checked = true;
-	  }
-	}
-      }
-      break;
-      
-    default:
-      return false;
+    if(root->m_generated_tokens.size() > 0 &&
+       root->m_generated_tokens[2].type() == TokenType::T_IDENTIFIER ||
+       root->m_generated_tokens[2].type() == TokenType::QualifiedName){
+      CYAN();
+      //std::cout<<"Link: "<<(*root)<<","<<root->m_lex<<std::endl;
+      DEFAULT();
+      if(!DoLinkType(&(root->m_generated_tokens[2]),new_envs)) return false;
     }
+    break;
+    // for these types, if the second child is id, then it's a class name
+    // need to be resolved.
+  case TokenType::Super:
+  case TokenType::MethodHeader:
+  case TokenType::FieldDeclaration:
+  case TokenType::ArrayCreationExpression:
+  case TokenType::ClassInstanceCreationExpression:
+	
+    if(root->m_generated_tokens.size() > 0 &&
+       root->m_generated_tokens[1].type() == TokenType::T_IDENTIFIER ||
+       root->m_generated_tokens[1].type() == TokenType::QualifiedName){
+      /*CYAN();
+      std::cout<<"Link: "<<(*root)<<","<<root->m_lex<<std::endl;
+      DEFAULT();
+      */      
+      if(!DoLinkType(&(root->m_generated_tokens[1]),new_envs)) return false;
+    }
+    break;
+    // for these types, if the first child is id, then it's a class name
+    // need to be resolved.
+  case TokenType::ConstructorDeclarator:
+  case TokenType::FormalParameter:
+  case TokenType::LocalVariableDeclaration:
+    if(root->m_generated_tokens.size() > 0 &&
+       root->m_generated_tokens[0].type() == TokenType::T_IDENTIFIER ||
+       root->m_generated_tokens[0].type() == TokenType::QualifiedName){
+      /*
+      CYAN();
+      std::cout<<"Link: "<<(*root)<<std::endl;
+      DEFAULT();
+      */      
+      if(!DoLinkType(&(root->m_generated_tokens[0]),new_envs)) return false;
+    }
+    break;
+    //link the list of interfaces or classes
+  case TokenType::InterfaceTypeList:
+  case TokenType::ClassTypeList:
+  case TokenType::ExtendsInterfaces:
+    for(Token& child: root->m_generated_tokens){
+      /*
+      CYAN();
+      std::cout<<"Link: "<<(*root)<<std::endl;
+      DEFAULT();
+      */      
+      if(child.type() == TokenType::T_IDENTIFIER ||
+	 child.type() == TokenType::QualifiedName){
+	    
+	if(!DoLinkType(&child,new_envs)) return false;
+      }
+    }
+    
+    break;
+      
+  default:
+    break;
   }
   
   for(Token& n: root->m_generated_tokens){

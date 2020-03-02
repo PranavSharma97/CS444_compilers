@@ -94,23 +94,24 @@ bool environment::replace_merge(environment& src){
 bool environment::merge(environment src){
   // Merge classes
   int counter = 0;
-  YELLOW();
+  /*YELLOW();
   std::cout<<"MERGING ... " <<std::endl;
   DEFAULT();
   std::cout<<"STEP 1"<<std::endl;
+  */
   for(std::pair<std::string, Token*> kv_pair: src.classes){
-    std::cout<<"STEP 2:"<<kv_pair.first<<std::endl;
-    if(classes.find(kv_pair.first) == classes.end() ){
-       //interfaces.find(kv_pair.first) == interfaces.end()){
+    // std::cout<<"STEP 2:"<<kv_pair.first<<std::endl;
+    if(classes.find(kv_pair.first) == classes.end() &&
+       interfaces.find(kv_pair.first) == interfaces.end()){
        
-      std::cout<<"CLASS ENV: Added ["<<kv_pair.first<<","<<kv_pair.second;
-      std::cout<<","<<*(kv_pair.second)<<"] "<<counter++<<std::endl;
+      //std::cout<<"CLASS ENV: Added ["<<kv_pair.first<<","<<kv_pair.second;
+      //std::cout<<","<<*(kv_pair.second)<<"] "<<counter++<<std::endl;
       classes[kv_pair.first] = kv_pair.second;
     }else{
-      RED();
-      std::cerr<<"TYPE LINKER ERROR: Class: "<<kv_pair.first;
-      std::cerr<<" already defined"<<std::endl;
-      DEFAULT();
+      //RED();
+      //std::cerr<<"TYPE LINKER ERROR: Class: "<<kv_pair.first;
+      //std::cerr<<" already defined"<<std::endl;
+      //DEFAULT();
       return false;
     }
   }
