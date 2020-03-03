@@ -548,7 +548,7 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
       
       Token* super_class;
       if(t.m_type == TokenType::T_IDENTIFIER){
-	super_class = GetClassFromEnv(t.m_lex, envs);
+	super_class = GetInterfaceFromEnv(t.m_lex, envs);
       }else{
 	super_class = m_packages->GetQualified(t.m_lex);
       }
