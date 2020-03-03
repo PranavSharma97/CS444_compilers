@@ -189,7 +189,7 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
 
   // Check if java.lang is on demanded
   std::string javalang = "java.lang";
-  std::map<std::string,bool> on_demand_imported;
+  std::map<std::string,bool> imported;
   for(Token& c: cun->m_generated_tokens){
     TokenType node_type = c.m_type;
     // Search for all import declarations, try to import them to local env
@@ -207,14 +207,13 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
 	is_on_demand = true;
 	std::cout<<"ON DEMAND PACKAGE"<<std::endl;
 	// On demand import should be imported only once
-	if(on_demand_imported.find(pack_name) == on_demand_imported.end()){
-	  on_demand_imported[pack_name] = true;
+	if(imported.find(pack_name) == imported.end()){
 	  pack_env = m_packages->GetAll(pack_name);
 	}else continue;
       }else{
-	CYAN();
-	DEFAULT();
-	pack_env = m_packages->Search(pack_name);
+	if(imported.find(pack_name) == imported.end()){
+	  pack_env = m_packages->Search(pack_name);
+	}else continue;
       }
 	
       if(pack_env == nullptr){
@@ -225,6 +224,9 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
 	DEFAULT();
 	return false;
       }
+
+      // Mark the class is imported
+      imported[pack_name] = true;
       // Merge the environment with corresponding package
       bool result;
       if(is_on_demand){
@@ -266,7 +268,7 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
   }
 
   // Import java lang if we've not yet
-  if(on_demand_imported.find(javalang) == on_demand_imported.end()){
+  if(imported.find(javalang) == imported.end()){
     environment* JL = m_packages->GetAll(javalang);
     if(JL == nullptr){
       RED();

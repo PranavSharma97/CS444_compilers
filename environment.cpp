@@ -142,10 +142,19 @@ bool environment::merge(environment src,Token** clash_token){
       //std::cout<<","<<kv_pair.second->m_lex<<"]"<<std::endl;
       interfaces[kv_pair.first] = kv_pair.second;
     }else{
+      if(clash_token!=nullptr){
+	if(classes.find(kv_pair.first) != classes.end()){
+	  *clash_token = src.classes[kv_pair.first];
+	}else{
+	  *clash_token = src.interfaces[kv_pair.first];
+	}
+      }
+      /*
       RED();
       std::cerr<<"TYPE LINKER ERROR: Interface: "<<kv_pair.first;
       std::cerr<<" already defined"<<std::endl;
       DEFAULT();
+      */
       return false;
     }
   }
