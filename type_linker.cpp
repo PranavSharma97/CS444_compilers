@@ -318,7 +318,11 @@ bool TypeLinker::Link(){
     
     //if(!ResolveType(CUN,&local_env)) return false;
     
-    //if(!ResolveInheritance(n,envs)) return false;
+    if(!ResolveInheritance(n,envs)) return false;
+    CYAN();
+    std::cout<<"INHERITANCE Resolved"<<std::endl;
+    DEFAULT();
+    
   }
   return true;
 }
@@ -366,10 +370,43 @@ bool TypeLinker::DoLinkType(Token* id, environment** envs){
 }
 
 bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& duplicate, environment** envs){
-  // If no more class to inherit from return true.
-  if(super==nullptr || super->Inherited) {
+  CYAN();
+  std::cout<<"DO INHERIT CLASS:("<<*sub<<","<<sub->m_lex<<")"<<std::endl;
+  if(super!=nullptr){
+    std::cout<<"From:("<<*super<<","<<super->m_lex<<")"<<std::endl;
+  }
+  DEFAULT();
+  // If no more class to inherit from, try to inherit from java.lang.Object
+  if(super == nullptr){
+    
+    CYAN();
+    std::cout<<"NO MORE CLASS INHERITANCE"<<std::endl;
+    DEFAULT();
+    
+    duplicate[sub] = true;
+    // Try to inherit from java lang
+    Token* java_lang_obj = m_packages->GetQualified("java.lang.Object");
+    if(java_lang_obj == nullptr){
+      RED();
+      std::cerr<<"Inheritance ERROR: cannot find java.lang.Object"<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    //If cannot inherit
+    if(java_lang_obj!= sub &&!DoInheritClass(sub,java_lang_obj,duplicate,envs)){
+      RED();
+      std::cerr<<"Inheritance ERROR: cannot inherit java.lang.Object"<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    sub->Inherited = true;
     return true;
   }
+  // If this class is inherited, return ;
+  if(sub->Inherited) {
+    return true;
+  }
+  
   // check for cycle
   if(duplicate.find(super) != duplicate.end()){
     RED();
@@ -381,7 +418,7 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
   // check for final class
   if(super->type() == TokenType::ClassDeclaration){
     Token* final_node = super->m_generated_tokens[0].SearchByTypeBFS(TokenType::T_FINAL);
-    if(final_node == nullptr){
+    if(final_node != nullptr){
       RED();
       std::cerr<<"ERROR: final class cannot be inherited"<<std::endl;
       DEFAULT();
@@ -391,22 +428,26 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
 
   // Inherit or declare the default java.lang.object;
   
-  Token *extend, *implement;
+  Token *extend, *implement,*super_class;
   extend = super->SearchOneChild(TokenType::Super);
-  implement = super->SearchOneChild(TokenType::Interfaces); 
-  
-  //  handle class implements interfaces
-  if(!DoInheritInterface(super,implement,duplicate,envs)) return false;
-  
-  // resolve for extend class
+  implement = super->SearchOneChild(TokenType::Interfaces);
+
+   // resolve for extend class
   if(extend != nullptr){
     // try to get the name, it's either qualified or simple
     Token* name_node = extend->SearchByTypeBFS(TokenType::QualifiedName);
     if(name_node == nullptr){
-      extend->SearchOneChild(TokenType::T_IDENTIFIER);
+      name_node=extend->SearchOneChild(TokenType::T_IDENTIFIER);
     }
+    CYAN();
+    std::cout<<"SUPER INHERITS FROM:"<<name_node->m_lex<<std::endl;
+    DEFAULT();
     // try to get super class
-    Token* super_class = GetClassFromEnv(name_node->m_lex, envs);
+    if(name_node->m_type == TokenType::T_IDENTIFIER){
+      super_class = GetClassFromEnv(name_node->m_lex, envs);
+    }else{
+      super_class = m_packages->GetQualified(name_node->m_lex);
+    }
     
     // if didn't find the declaration, return false
     if(super_class == nullptr){
@@ -424,14 +465,35 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
     }
     
     // prepare for recursive check
+    //duplicate[super] = true;
+    //if(!DoInheritClass(super,super_class,duplicate,envs)) return false;
+    //CYAN();
+    //std::cout<<"successfully inherited from"<<name_node->m_lex<<std::endl;
+    //DEFAULT();
+    // merge super to me
+    //if(!sub->scope.replace_merge(super->scope)) return false;
+  } else {
+    // prepare for recursive check
+    CYAN();
+    std::cout<<"SUPER CLASS DOES NOT INHERIT FROM ANYTHING"<<std::endl;
+    DEFAULT();
+    super_class = nullptr;
+  }
     duplicate[super] = true;
     if(!DoInheritClass(super,super_class,duplicate,envs)) return false;
+    CYAN();
+    std::cout<<"successfully inherited"<<std::endl;
+    DEFAULT();
     // merge super to me
     if(!sub->scope.replace_merge(super->scope)) return false;
-  } else {
-    DoInheritClass(super,nullptr,duplicate,envs);
-  }
+  
+  //  handle class implements interfaces
+  if(implement!=nullptr && !DoInheritInterface(super,implement,duplicate,envs)) return false; 
+  
   sub->Inherited = true;
+  CYAN();
+  std::cout<<"Finished Inheritance"<<std::endl;
+  DEFAULT();
   return true;
 }
 
@@ -441,6 +503,13 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 				    std::map<Token*,bool>& duplicate,
 				    environment** envs)
 {
+  CYAN();
+  std::cout<<"DO INHERIT INT:("<<*sub<<","<<sub->m_lex<<")"<<std::endl;
+  if(interfaces!=nullptr){
+    std::cout<<"From:"<<*interfaces<<std::endl;
+  }
+  DEFAULT();
+  
   // If no more class to inherit from return true.
   if(interfaces==nullptr) {
     return true;
@@ -477,8 +546,12 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 	return false;
       }
       
-      Token* super_class = GetInterfaceFromEnv(t.m_lex, envs);
-      
+      Token* super_class;
+      if(t.m_type == TokenType::T_IDENTIFIER){
+	super_class = GetClassFromEnv(t.m_lex, envs);
+      }else{
+	super_class = m_packages->GetQualified(t.m_lex);
+      }
       // if didn't find the declaration, return false
       if(super_class == nullptr){
 	RED();
@@ -513,22 +586,39 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
   implement = node->SearchOneChild(TokenType::Interfaces);
   i_extend = node->SearchOneChild(TokenType::ExtendsInterfaces);
 
+
+  CYAN();
+  std::cout<<"DO INHERIT:("<<*node<<","<<node->m_lex<<")"<<std::endl;
+  DEFAULT();
+  
   if(node->Inherited) return true;
   
   std::map<Token*,bool> dup;
   dup[node] = true;
-  
-  // If class implements interface
-  if(node->type() == TokenType::ClassDeclaration){  
+  PURPLE();
+  std::cout<<"DO INHERIT: CHECK INHERITANCE OF CLASS, node = "<<node<<std::endl;
+  DEFAULT();
+  // If class exntends classes
+  if(node->type() == TokenType::ClassDeclaration){
     // try to get the class if it extends
     if(extend != nullptr){
       // try to get the name, it's either qualified or simple
       Token* name_node = extend->SearchByTypeBFS(TokenType::QualifiedName);
+      
       if(name_node == nullptr){
-	extend->SearchByTypeBFS(TokenType::T_IDENTIFIER);
+	name_node = extend->SearchByTypeBFS(TokenType::T_IDENTIFIER);
       }
+      std::cout<<"NAME NODE IS:"<<name_node<<std::endl;
+      CYAN();
+      std::cout<<"INHERIT FROM:"<<name_node->m_lex<<std::endl;
+      DEFAULT();
       // try to get super class
-      Token* super_class = GetClassFromEnv(name_node->m_lex, envs);
+      Token* super_class;
+      if(name_node->m_type == TokenType::T_IDENTIFIER){
+	super_class = GetClassFromEnv(name_node->m_lex, envs);
+      }else{
+	super_class = m_packages->GetQualified(name_node->m_lex);
+      }
       
       // if didn't find the declaration, return false
       if(super_class == nullptr){
@@ -547,11 +637,32 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
       // inherit from super class
       if(!DoInheritClass(node,super_class,dup,envs)) return false;
       if(!DoInheritInterface(node,implement,dup,envs)) return false;
-    } // else inherit from java lang
+    } 
   } else {
     DoInheritInterface(node,i_extend,dup,envs);
   }
+
+  CYAN();
+  std::cout<<"Try to inherit from java lang object"<<std::endl;
+  DEFAULT();
+  Token* java_lang_obj = m_packages->GetQualified("java.lang.Object");
+  if(java_lang_obj == nullptr){
+    RED();
+    std::cerr<<"Inheritance ERROR: cannot find java.lang.Object"<<std::endl;
+    DEFAULT();
+    return false;
+  }
+  if(java_lang_obj != node && !DoInheritClass(node,java_lang_obj,dup,envs)){
+    RED();
+    std::cerr<<"Inheritance ERROR: cannot inherit java.lang.Object"<<std::endl;
+    DEFAULT();
+    return false;
+  }
+  // Inherit from java lang object 
   node->Inherited = true;
+  CYAN();
+  std::cout<<"DO INHERIT FINISHED"<<std::endl;
+  DEFAULT();
   return true;
 }
 
@@ -567,27 +678,28 @@ bool TypeLinker::ResolveInheritance(Token* root, environment** envs){
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
 
-  if(HasEnv(t)){
-    switch(t){
-    case TokenType::CompilationUnit:
-      if(!(new_envs[0]->merge(root->scope))) return false;
-      break;
-    case TokenType::ClassDeclaration:
-    case TokenType::InterfaceDeclaration:
-      // Resolve inheritance
-      if(!DoInherit(root,new_envs)){
-	return false;
-      }
-      
-      // get this scope into then env stack
-      if(!new_envs[0]->merge(root->scope)){
-	return false;
-      }
-      break;
-      // The follwoing nodes has a scope and does declaration
-    default:
+  switch(t){
+  case TokenType::CompilationUnit:
+    if(!(new_envs[0]->merge(root->scope))) return false;
+    break;
+  case TokenType::ClassDeclaration:
+  case TokenType::InterfaceDeclaration:
+    // Resolve inheritance
+    if(!DoInherit(root,new_envs)){
       return false;
     }
+    CYAN();
+    std::cout<<"Resolved a class"<<std::endl;
+    DEFAULT();
+    
+    // get this scope into then env stack
+    if(!new_envs[0]->merge(root->scope)){
+      return false;
+    }
+    break;
+    // The follwoing nodes has a scope and does declaration
+  default:
+    break;
   }
     
   for(Token& n: root->m_generated_tokens){
