@@ -61,8 +61,8 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       traverse(&(*it), &it->scope, true);
     }
     else if(it->m_type == FieldDeclaration){
-      Token identifierToken = *(it->m_generated_tokens.rbegin()+1);
-      string identifier = identifierToken.m_lex;
+      Token *identifierToken = it->m_generated_tokens.end()[-2].SearchByTypeDFS(T_IDENTIFIER);
+      string identifier = identifierToken->m_lex;
 
       addProtectedFlag(&(*it));
 
