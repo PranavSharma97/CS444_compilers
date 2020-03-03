@@ -164,8 +164,8 @@ bool environment::merge(environment src,Token** clash_token){
     if(valid_method(kv_pair)){
       for(Token* n: kv_pair.second){
 	
-	std::cout<<"METHOD ENV: Added ["<<kv_pair.first<<","<<(*n);
-	std::cout<<","<<n->m_lex<<"]"<<std::endl;
+	//std::cout<<"METHOD ENV: Added ["<<kv_pair.first<<","<<(*n);
+	//std::cout<<","<<n->m_lex<<"]"<<std::endl;
 	methods[kv_pair.first].emplace_back(n);
       }
     }else{
@@ -189,8 +189,8 @@ bool environment::merge(environment src,Token** clash_token){
     if(valid_ctor(kv_pair)){
       for(Token* n: kv_pair.second){
 	
-      std::cout<<"CTOR ENV: Added ["<<kv_pair.first<<","<<(*n);
-      std::cout<<","<<n->m_lex<<"]"<<std::endl;
+	//std::cout<<"CTOR ENV: Added ["<<kv_pair.first<<","<<(*n);
+	//std::cout<<","<<n->m_lex<<"]"<<std::endl;
 	constructors[kv_pair.first].emplace_back(n);
       }
     }else{
