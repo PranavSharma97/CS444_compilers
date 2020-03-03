@@ -174,9 +174,6 @@ environment* TypeLinker::GetCurrentPackage(Token* CUN){
     }
   }
   */
-  CYAN();
-  std::cout<<"Search For Package:"<<pack_name<<std::endl;
-  DEFAULT();
   pack_env = m_packages->GetPack(pack_name);
   if(pack_env == nullptr){
     RED();
@@ -208,12 +205,15 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
       // check if the on demand import 
       if(node_type == TokenType::TypeImportOnDemandDeclaration){
 	is_on_demand = true;
+	std::cout<<"ON DEMAND PACKAGE"<<std::endl;
 	// On demand import should be imported only once
 	if(on_demand_imported.find(pack_name) == on_demand_imported.end()){
 	  on_demand_imported[pack_name] = true;
 	  pack_env = m_packages->GetAll(pack_name);
 	}else continue;
       }else{
+	CYAN();
+	DEFAULT();
 	pack_env = m_packages->Search(pack_name);
       }
 	
@@ -361,7 +361,7 @@ bool TypeLinker::DoLinkType(Token* id, environment** envs){
 
 bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& duplicate, environment** envs){
   // If no more class to inherit from return true.
-  if(super==nullptr) {
+  if(super==nullptr || super->Inherited) {
     return true;
   }
   // check for cycle
@@ -425,7 +425,7 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
   } else {
     DoInheritClass(super,nullptr,duplicate,envs);
   }
-  
+  sub->Inherited = true;
   return true;
 }
 
@@ -479,7 +479,7 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 	std::cerr<<"Interface Inheritance ERROR:"<<t.m_lex<<" is not defined or ambiguous."<<std::endl;
 	DEFAULT();
 	return false;
-      }
+      } else if(super_class->Inherited) return true;
       
       // if the name is not binded return false
       if(t.declaration == nullptr){
@@ -497,6 +497,7 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
       if(!sub->scope.replace_merge(t.scope)) return false;
     }
   }
+  sub->Inherited = true;
   return true;
 }
 
@@ -505,13 +506,14 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
   extend = node->SearchOneChild(TokenType::Super);
   implement = node->SearchOneChild(TokenType::Interfaces);
   i_extend = node->SearchOneChild(TokenType::ExtendsInterfaces);
+
+  if(node->Inherited) return true;
   
   std::map<Token*,bool> dup;
   dup[node] = true;
   
   // If class implements interface
   if(node->type() == TokenType::ClassDeclaration){  
-    if(!DoInheritClass(node,implement,dup,envs)) return false;
     // try to get the class if it extends
     if(extend != nullptr){
       // try to get the name, it's either qualified or simple
@@ -538,11 +540,12 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
       }
       // inherit from super class
       if(!DoInheritClass(node,super_class,dup,envs)) return false;
+      if(!DoInheritInterface(node,implement,dup,envs)) return false;
     } // else inherit from java lang
   } else {
     DoInheritInterface(node,i_extend,dup,envs);
   }
-  
+  node->Inherited = true;
   return true;
 }
 

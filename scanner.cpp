@@ -89,18 +89,16 @@ TokenType getTokenKind(string lexeme, DFAStates lastState, map<DFAStates, TokenT
 
 vector<Token> scanner (string filename) {
   DEBUG_MSG("Reading from file: " + filename);
-
   //vector<pair<TokenType, string>> tokens;
   vector<Token> tokens;
   
   map<DFAStates, map<char, DFAStates>> transitions = DFAReader();
 
   map<DFAStates, TokenType> acceptingStates = TokenReader();
-
   DFAStates currentState = START;
   DFAStates lastState = START;
   string lexeme = "";
-
+  
   string line;
   ifstream javaFile (filename);
   if (javaFile.is_open()) {
@@ -172,6 +170,8 @@ vector<Token> scanner (string filename) {
     }
     
     javaFile.close();
+  } else {
+    throw logic_error("ERROR: cannot find " + filename);
   }
   return tokens;
 };

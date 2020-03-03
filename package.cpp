@@ -23,19 +23,29 @@ class Package{
 bool Package::AddToPackage(std::vector<std::string>& path, environment* src){
 
   std::string key = path[0];
-  std::vector<std::string> new_path;
-  for(int i = 1;i<path.size();i++){ new_path.emplace_back(path[i]);}
+  path.erase(path.begin());
+ 
   //std::cout<<package_name<<" Add "<<key<<std::endl;
   if(m_sub_packs.find(key) == m_sub_packs.end()){
-    /*PURPLE();
-    std::cout<<key<<"is not here yet"<<std::endl;
+    /*
+    PURPLE();
+    std::cout<<key<<" is not added to "<<package_name<<" yet"<<std::endl;
     DEFAULT();
     */
     Package* new_pack = new Package(key);
     m_sub_packs[key] = new_pack;
-    //std::cout<<"SRC: "<<src<<std::endl;
-    if(new_path.size()>0) return AddToPackage(new_path,src);
+    if(path.size()>0) return new_pack->AddToPackage(path,src);
+    new_pack->package_name = key;
     new_pack->m_env = new environment();
+    /*
+    PURPLE();
+    std::cout<<"ADD: ";
+    for(std::pair<std::string,Token*> kv:src->classes){
+      std::cout<<kv.first<<","<<*(kv.second)<<"|";
+    }
+    std::cout<<std::endl;
+    DEFAULT();*/
+    
     new_pack->m_env->merge(*src);
     return true;
   }else{
@@ -44,7 +54,7 @@ bool Package::AddToPackage(std::vector<std::string>& path, environment* src){
    
     DEFAULT();
     */
-    if(new_path.size()==0) {
+    if(path.size()==0) {
       if(m_sub_packs[key]->m_env==nullptr) {
 	/*	std::cout<<"PACK:"<<package_name<<"In side the env is:";
 	for(std::pair<std::string,Token*> kv:src->classes){
@@ -56,7 +66,7 @@ bool Package::AddToPackage(std::vector<std::string>& path, environment* src){
       }
       return m_sub_packs[key]->m_env->merge(*src);
     }
-    return m_sub_packs[key]->AddToPackage(new_path,src);
+    return m_sub_packs[key]->AddToPackage(path,src);
   }
 }
 
@@ -72,6 +82,11 @@ bool Package::AddToPackage(const std::string& path, environment* src){
 // adding things to package
 environment* Package::Search(std::vector<std::string>& path){
   std::string key = path[0];
+  /*
+  PURPLE();
+  std::cout<<"SEARCH "<<key<<std::endl;
+  DEFAULT();
+  */
   environment* pack = nullptr;
   if(path.size() > 1){
     if(m_sub_packs.find(key) != m_sub_packs.end()){
@@ -79,12 +94,12 @@ environment* Package::Search(std::vector<std::string>& path){
       pack = m_sub_packs[key]->Search(path);
     }
   }else{
-    if(m_env->classes.find(key) != m_env->classes.end()){
-      pack = new environment();
-      pack->classes[key] = m_env->classes[key];
-    }else if(m_env->interfaces.find(key) != m_env->interfaces.end()){
-      pack = new environment();
-      pack->interfaces[key] = m_env->interfaces[key];
+    Token* t= m_env->GetType(key);
+    pack = new environment();
+    if(t->m_type == TokenType::ClassDeclaration){
+      pack->classes[key] = t;
+    }else{
+      pack->interfaces[key] = t;
     }
   }
   return pack;
@@ -112,7 +127,24 @@ void Package::MergeAll(environment* dst){
 bool Package::GetAll(std::vector<std::string>& path, environment* dst){
   // verifys the last is * or I'm a package (I have sub packs)
   std::string key = path[0];
+  /*
+  PURPLE();
+  std::cout<<"ON DEMAND: key:"<< key<<",pack = "<<package_name<<std::endl;
+  if(path.size()!=0){
+    std::cout<<package_name<<" find KEY:"<<key<<" Exists?"<<(m_sub_packs.find(key) != m_sub_packs.end())<<std::endl;
+  }
+  DEFAULT();
+  
+  if(package_name == "ref"){
+    std::cout<<"REF HAS:";
+    for(std::pair<std::string, Token*> kv: m_env->classes){
+      std::cout<<kv.first<<","<<*(kv.second)<<"|";
+    }
+    std::cout<<std::endl;
+  }
+  */
   if(path.size()==0){
+    
     dst->overwrite_merge(*m_env);
     //for(std::pair<std::string, Package*> kv_pair: m_sub_packs){
       //kv_pair.MergeAll(dst);
