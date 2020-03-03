@@ -23,43 +23,32 @@ class Package{
 bool Package::AddToPackage(std::vector<std::string>& path, environment* src){
 
   std::string key = path[0];
-  path.erase(path.begin());
- 
-  //std::cout<<package_name<<" Add "<<key<<std::endl;
-  if(m_sub_packs.find(key) == m_sub_packs.end()){
-    /*
-    PURPLE();
-    std::cout<<key<<" is not added to "<<package_name<<" yet"<<std::endl;
+  // Check if prefix can be resolved to class
+  if(m_env != nullptr && m_env->GetType(key)!=nullptr){
+    RED();
+    std::cerr<<"Package Name ERROR: prefix"<<key<<" resolved to type"<<std::endl;
     DEFAULT();
-    */
+    return false;
+  }
+  path.erase(path.begin());
+  PURPLE();
+  std::cout<<package_name<<" Add "<<key<<std::endl;
+  PURPLE();
+  if(m_sub_packs.find(key) == m_sub_packs.end()){
+    // create sub package
     Package* new_pack = new Package(key);
     m_sub_packs[key] = new_pack;
     if(path.size()>0) return new_pack->AddToPackage(path,src);
     new_pack->package_name = key;
     new_pack->m_env = new environment();
-    /*
-    PURPLE();
-    std::cout<<"ADD: ";
-    for(std::pair<std::string,Token*> kv:src->classes){
-      std::cout<<kv.first<<","<<*(kv.second)<<"|";
-    }
-    std::cout<<std::endl;
-    DEFAULT();*/
     
     new_pack->m_env->merge(*src);
     return true;
   }else{
-    /*PURPLE();
-    std::cout<<key<<" is here"<<std::endl;
-   
-    DEFAULT();
-    */
+    //if this is the package
     if(path.size()==0) {
       if(m_sub_packs[key]->m_env==nullptr) {
-	/*	std::cout<<"PACK:"<<package_name<<"In side the env is:";
-	for(std::pair<std::string,Token*> kv:src->classes){
-	  std::cout<<kv.first<<":"<<*(kv.second)<<std::endl;
-	  }*/
+	
 	m_sub_packs[key]->m_env = new environment();
 	m_sub_packs[key]->m_env->merge(*src);
 	return true;
@@ -94,7 +83,17 @@ environment* Package::Search(std::vector<std::string>& path){
       pack = m_sub_packs[key]->Search(path);
     }
   }else{
+    CYAN();
+    std::cout<<"KEY:"<<key<<", env:"<<m_env<<std::endl;
+    DEFAULT();
     Token* t= m_env->GetType(key);
+    if(t == nullptr){
+      RED();
+      std::cerr<<"Package Search ERROR: cannot find "<<key<<" in "<<package_name;
+      std::cerr<<std::endl;
+      DEFAULT();
+      return nullptr;
+    }
     pack = new environment();
     if(t->m_type == TokenType::ClassDeclaration){
       pack->classes[key] = t;
@@ -125,36 +124,25 @@ void Package::MergeAll(environment* dst){
 
 // import pack.pack.*;
 bool Package::GetAll(std::vector<std::string>& path, environment* dst){
-  // verifys the last is * or I'm a package (I have sub packs)
+
   std::string key = path[0];
-  /*
+  path.erase(path.begin());
   PURPLE();
-  std::cout<<"ON DEMAND: key:"<< key<<",pack = "<<package_name<<std::endl;
-  if(path.size()!=0){
-    std::cout<<package_name<<" find KEY:"<<key<<" Exists?"<<(m_sub_packs.find(key) != m_sub_packs.end())<<std::endl;
-  }
+  std::cout<<"ON DEMAND: pack = "<<package_name<<" key = "<<key<<std::endl;
   DEFAULT();
-  
-  if(package_name == "ref"){
-    std::cout<<"REF HAS:";
-    for(std::pair<std::string, Token*> kv: m_env->classes){
-      std::cout<<kv.first<<","<<*(kv.second)<<"|";
-    }
-    std::cout<<std::endl;
-  }
-  */
   if(path.size()==0){
-    
-    dst->overwrite_merge(*m_env);
-    //for(std::pair<std::string, Package*> kv_pair: m_sub_packs){
-      //kv_pair.MergeAll(dst);
-      
-    //}
-    return true;
+    std::cout<<"CHECKED"<<std::endl;
+    if(m_sub_packs.find(key)!= m_sub_packs.end()){
+      environment* src_env = m_sub_packs[key]->m_env;
+      if(src_env == nullptr) return true;
+      dst->overwrite_merge(*src_env);
+      return true;
+    }
+    return false;
   } else {
     // Check key
     if(m_sub_packs.find(key) != m_sub_packs.end()){
-      path.erase(path.begin());
+      std::cout<<"RECURSE"<<std::endl;
       return m_sub_packs[key]->GetAll(path,dst);
     }
     return false;
@@ -166,7 +154,13 @@ environment* Package::GetAll(const std::string& path){
   environment* new_env = new environment();
   std::vector<std::string> v_path;
   string_split(path,'.',v_path);
-
+  PURPLE();
+  std::cout<<"On Demand Import:"<<path<<std::endl;
+  for(std::string& s:v_path){
+    std::cout<<s<<" ";
+  }
+  std::cout<<std::endl;
+  DEFAULT();
   if(!GetAll(v_path,new_env)){
     delete new_env;
     return nullptr;

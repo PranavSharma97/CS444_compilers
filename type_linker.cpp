@@ -251,13 +251,17 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
     // clashes with other components in the package envrionment i'm using
       
     environment temp_env(*envs[1]);
+    Token* clash_token;
     // check if single type clashes with local
-    if(!temp_env.merge(cun->scope)){
-      RED();
-      std::cerr<<"Type Linker ERROR: Compilation Unit "<<cun->m_lex;
-      std::cerr<<" clashes with single type import environment."<<std::endl;
-      DEFAULT();
-      return false;
+    if(!temp_env.merge(cun->scope,&clash_token)){
+      // Check for self import
+      if(!(cun->scope.check_exist(clash_token))){
+	RED();
+	std::cerr<<"Type Linker ERROR: Compilation Unit "<<cun->m_lex;
+	std::cerr<<" clashes with single type import environment."<<std::endl;
+	DEFAULT();
+	return false;
+      }
     }
   }
 
@@ -300,7 +304,7 @@ bool TypeLinker::Link(){
     
     if(!ResolvePackage(cun,envs)) return false;
     // check if any package name is a class name
-    if(!m_packages->CheckNames(envs)) return false;
+    //if(!m_packages->CheckNames(envs)) return false;
     CYAN();
     std::cout<<"PACKAGE NAMES CHECKED"<<std::endl;
     DEFAULT();

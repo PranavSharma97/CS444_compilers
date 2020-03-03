@@ -421,11 +421,24 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       DEFAULT();
       return false;
     }
-
+    
     // block implicit int constant cast
-    if(!search(node.m_generated_tokens[1],TokenType::T_INT) &&
-       search(node.m_generated_tokens[2],TokenType::INT_LITERAL)&&
-       !search(node.m_generated_tokens[2],TokenType::CastExpression)){
+    search_map.clear();
+    search_map[TokenType::ArrayCreationExpression] = 1;
+    search_map[TokenType::CastExpression] = 1;
+    search_map[TokenType::T_RETURN] = 1;
+    if(!search(node.m_generated_tokens[1],TokenType::T_INT) && 
+       !search_any(node.m_generated_tokens[2],search_map) &&
+       search(node.m_generated_tokens[2],TokenType::INT_LITERAL)){
+      CYAN();
+      for(Token &t:node.m_generated_tokens){
+	std::cout<<"("<<t<<","<<t.m_lex<<") ";
+      }
+      std::cout<<std::endl;
+      for(Token &t:node.m_generated_tokens[2].m_generated_tokens){
+	std::cout<<"("<<t<<","<<t.m_lex<<") ";
+      }
+      std::cout<<std::endl;
       RED();
       std::cerr<<"WEEDER ERROR: implicit int constant cast not allowed."<<std::endl;
       DEFAULT();
