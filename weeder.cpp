@@ -421,7 +421,7 @@ bool Weeder::weed(Token& node,std::map<TokenType,int>& conditions){
       DEFAULT();
       return false;
     }
-
+    
     // block implicit int constant cast
     if(!search(node.m_generated_tokens[1],TokenType::T_INT) &&
        search(node.m_generated_tokens[3],TokenType::INT_LITERAL)&&

@@ -91,7 +91,17 @@ bool environment::replace_merge(environment& src){
   return true;
 }
 
-bool environment::merge(environment src){
+// Check for self import
+bool environment::check_exist(Token* t){
+  for(std::pair<std::string, Token*> kv: classes){
+    if(kv.second == t) return true;
+  }
+  for(std::pair<std::string, Token*> kv: interfaces){
+    if(kv.second == t) return true;
+  }
+  return false;
+}
+bool environment::merge(environment src,Token** clash_token){
   // Merge classes
   int counter = 0;
   /*YELLOW();
@@ -108,6 +118,14 @@ bool environment::merge(environment src){
       //std::cout<<","<<*(kv_pair.second)<<"] "<<counter++<<std::endl;
       classes[kv_pair.first] = kv_pair.second;
     }else{
+      // Get the clashed token for caller to check for self import
+      if(clash_token!=nullptr){
+	if(classes.find(kv_pair.first) != classes.end()){
+	  *clash_token = src.classes[kv_pair.first];
+	}else{
+	  *clash_token = src.interfaces[kv_pair.first];
+	}
+      }
       //RED();
       //std::cerr<<"TYPE LINKER ERROR: Class: "<<kv_pair.first;
       //std::cerr<<" already defined"<<std::endl;
@@ -142,6 +160,13 @@ bool environment::merge(environment src){
 	methods[kv_pair.first].emplace_back(n);
       }
     }else{
+      if(clash_token!=nullptr){
+	if(classes.find(kv_pair.first) != classes.end()){
+	  *clash_token = src.classes[kv_pair.first];
+	}else{
+	  *clash_token = src.interfaces[kv_pair.first];
+	}
+      }
       RED();
       std::cerr<<"TYPE LINKER ERROR: method: "<<kv_pair.first;
       std::cerr<<" already declared"<<std::endl;

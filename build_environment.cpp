@@ -173,7 +173,7 @@ void BuildEnvironment(Token *token){
 void printHelper(string name, map<string,Token*> scopeList){
   cout << name;
   for(map<string,Token*>::iterator subit=scopeList.begin(); subit!=scopeList.end(); subit++){
-    cout << subit->first << " type: " << *(subit->second);
+    cout << subit->first << " type: " << *(subit->second)<<","<<subit->second;
     if (subit->second->Protected){
       cout << "(protected)";
     }
