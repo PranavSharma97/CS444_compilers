@@ -42,8 +42,9 @@ void addProtectedFlag(Token *token){
 
 void removeAbstractFlag(Token *token){
   Token *abstract = (*token).m_generated_tokens[0].SearchByTypeDFS(T_ABSTRACT);
+  Token *native = (*token).m_generated_tokens[0].SearchByTypeDFS(T_NATIVE);
   Token *block = (*token).SearchByTypeDFS(Block);
-  if (!abstract && block){
+  if ((!abstract && block) || native){
     token->Abstract = false;
   }
 }
