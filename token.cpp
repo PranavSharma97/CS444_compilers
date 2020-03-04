@@ -592,6 +592,10 @@ void Token::BindCompilationUnit(){
     Token* t = queue[start];
     if(t->m_type == TokenType::CompilationUnit) cun = t;
     t->compilation_unit = cun;
+    if(t->m_type == TokenType::ClassDeclaration ||
+       t->m_type == TokenType::InterfaceDeclaration){
+      t->scope.build_declared_set();
+    }
     start ++;
     for(Token& child: t->m_generated_tokens){
       queue.emplace_back(&child);
