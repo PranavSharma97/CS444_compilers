@@ -244,7 +244,7 @@ AssignmentOperator
 Expression
 ConstantExpression
 Goal
-229
+230
 Goal BOF CompilationUnit EOF
 Literal INT_LITERAL
 Literal FLOAT_LITERAL
@@ -370,6 +370,7 @@ StatementWithoutTrailingSubstatement Block
 StatementWithoutTrailingSubstatement EmptyStatement
 StatementWithoutTrailingSubstatement ExpressionStatement
 StatementWithoutTrailingSubstatement ReturnStatement
+StatementWithoutTrailingSubstatement ThrowStatement
 EmptyStatement T_SEMICOLON
 ExpressionStatement StatementExpression T_SEMICOLON
 StatementExpression Assignment
