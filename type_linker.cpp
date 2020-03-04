@@ -299,19 +299,22 @@ bool TypeLinker::Link(){
   int file_count = m_asts.size();
   environment local_envs[file_count];
   environment single_types[file_count];
+  environment* pack_envs[file_count];
   environment on_demands[file_count];
   int file_index = 0;
   // Link for each
   for(Token* n: m_asts){
     environment* envs[4];
-    environment local_env,single_type,on_demand;
-    envs[0] = &local_env[file_index];
-    envs[1] = &single_type[file_index];
-    envs[3] = &on_demand[file_index];
+    envs[0] = &(local_envs[file_index]);
+    envs[1] = &(single_types[file_index]);
+    envs[3] = &(on_demands[file_index]);
     Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
-    file_index ++;
     
     if(!ResolvePackage(cun,envs)) return false;
+
+    pack_envs[file_index] = envs[2];
+    file_index ++;
+    
     // check if any package name is a class name
     //if(!m_packages->CheckNames(envs)) return false;
     CYAN();
@@ -323,9 +326,16 @@ bool TypeLinker::Link(){
     std::cout<<"AST Type Linked"<<std::endl;
     DEFAULT();
   }
-  
+
+  file_index = 0;
   for(Token* n: m_asts){
     //if(!ResolveType(CUN,&local_env)) return false;
+    environment* envs[4];
+    envs[0] = &local_envs[file_index];
+    envs[1] = &single_types[file_index];
+    envs[2] = pack_envs[file_index];
+    envs[3] = &on_demands[file_index];
+    file_index ++;
     
     if(!ResolveInheritance(n,envs)) return false;
     CYAN();
