@@ -961,12 +961,6 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
   // TODO: create addToScope similar to merge that does not merge classes and interfaces
   // MAYBE NOT since if it is A.b.c where A is a class I might need classes and interfaces
   envs[0]->overwrite_merge(root->scope);
-
-  std::string test = "test";
-  /*if (envs[0]->fields.size() > 0){
-    std::cout << "HHHHHHHELP" << std::endl;
-    envs[0]->GetDeclaration(test);
-  }*/
  
   for(std::map<std::string,Token*>::iterator it=envs[0]->fields.begin(); it!=envs[0]->fields.end(); it++){
     //if (it->first){
@@ -976,7 +970,7 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
   
   std::cout << "TYPE OF NODE IS: " << root->m_display_name << std::endl;
 
-  if (t == FieldAccess || t == QualifiedName || 
+  /*if (t == FieldAccess || t == QualifiedName || 
      (t == MethodInvocation && root->m_generated_tokens[1].m_type == T_DOT)) {
     Token* firstIdentifier = root->SearchByTypeDFS(T_IDENTIFIER);
     std::cout << "Identifier: " << firstIdentifier->m_lex << std::endl;
@@ -988,7 +982,7 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
     else{
       std::cout << "Identifier must be a type, will resolve later?" << std::endl;
     }
-  }
+  }*/
 
   for(Token& n: root->m_generated_tokens){
     ResolveNameSpaces(&n, envs);
