@@ -65,6 +65,7 @@ Token* GetNodeByType(std::vector<Token*>& nodes, TokenType type){
   return nullptr;
 }
 
+/*
 bool environment::valid_method(std::pair<std::string,std::vector<Token* >>& kv){
   if(methods.find(kv.first) == methods.end()){
     return true;
@@ -75,7 +76,7 @@ bool environment::valid_method(std::pair<std::string,std::vector<Token* >>& kv){
   }
   return false;
 }
-
+*/
 bool environment::valid_ctor(std::pair<std::string,std::vector<Token* >>& kv){
   if(constructors.find(kv.first) == constructors.end()){
     return true;
@@ -86,9 +87,11 @@ bool environment::valid_ctor(std::pair<std::string,std::vector<Token* >>& kv){
   return false;
 }
 
+/*
 bool environment::replace_merge(environment& src){
   return true;
 }
+*/
 
 // Check for self import
 bool environment::check_exist(Token* t){
@@ -160,7 +163,8 @@ bool environment::merge(environment src,Token** clash_token){
   
   // Merge methods, current doesn't check the methods with same parameters
   for(std::pair<std::string, std::vector<Token*>> kv_pair: src.methods){
-    if(valid_method(kv_pair)){
+    //if(valid_method(kv_pair)){
+    if(true){
       for(Token* n: kv_pair.second){
 	
 	//std::cout<<"METHOD ENV: Added ["<<kv_pair.first<<","<<(*n);
@@ -266,8 +270,9 @@ void environment::overwrite_merge(environment& src){
   
   // Merge methods, current doesn't check the methods with same parameters
   for(std::pair<std::string, std::vector<Token*>> kv_pair: src.methods){
-    if(valid_method(kv_pair)){
-      for(Token* n: kv_pair.second){
+    //if(valid_method(kv_pair)){
+    if(true){
+    for(Token* n: kv_pair.second){
 	methods[kv_pair.first].emplace_back(n);
       }
     }else{
