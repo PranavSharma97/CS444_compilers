@@ -77,11 +77,19 @@ int main(int argc, char *argv[]) {
   }
 
   
-  
   // convert parse_trees to token pointers
   /* for(int i = 0;i<parse_trees.size();i++){
     tree_ptrs.emplace_back(&parse_trees[i]);
   }*/
+  // Bind Compilation Unit
+  for(Token* t: tree_ptrs){
+    t->BindCompilationUnit();
+  }
+  /*
+  for(Token* t: tree_ptrs){
+    t->SearchByTypeBFS(TokenType::TOKEN_FAILURE);
+    }*/
+  
   TypeLinker TPLink(tree_ptrs);
   if(!TPLink.Link()) return 42;
   /*
