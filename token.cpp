@@ -1,16 +1,41 @@
 #include "token.h"
+#include <iostream>
 
 Token::Token():
   m_type(TokenType::TOKEN_EMPTY)
 {
+  declaration = nullptr;
+  Protected = false;
+  Abstract = true;
+  Inherited = false;
   m_rule = -1;
   m_display_name = "TOKEN_EMPTY";
 }
+
+/*
+Token::Token(const Token& t):
+  m_type(t.m_type),
+  m_lex(t.m_lex),
+  m_display_name(t.m_display_name),
+  m_rule(t.m_rule),
+  scope(t.scope),
+  declaration(t.declaration),
+  compilation_unit(t.compilation_unit),
+  Protected(t.Protected),
+  Abstract(t.Abstract),
+  Inherited(t.Inherited),
+  m_generated_tokens(t.m_generated_tokens)
+{}
+*/
 
 Token::Token(TokenType type, std::string lex):
   m_type(type),
   m_lex(lex)
 {
+  declaration = nullptr;
+  Protected = false;
+  Inherited = false;
+  Abstract = true;
   m_rule = -1;
   // Determine the display name
   int type_int = static_cast<int>(type);
@@ -557,17 +582,46 @@ void Token::clear(){
 
 TokenType Token::type() const { return m_type; }
 
-//
+void Token::BindCompilationUnit(){
+  std::vector<Token*> queue;
+  queue.emplace_back(this);
+  int start = 0;
+  int end = queue.size();
+  Token* cun; 
+  while(end-start > 0){
+    Token* t = queue[start];
+    if(t->m_type == TokenType::CompilationUnit) cun = t;
+    t->compilation_unit = cun;
+    start ++;
+    for(Token& child: t->m_generated_tokens){
+      queue.emplace_back(&child);
+      end++;
+    }
+    
+  }
+}
+
 Token* Token::SearchByTypeBFS(TokenType type){
-  Token* res = nullptr;
-  for(Token& t: m_generated_tokens){
-    if(t.m_type == type) return &t;
+  std::vector<Token*> queue;
+  queue.emplace_back(this);
+  int start = 0;
+  int end = queue.size();
+  while(end-start > 0){
+    Token* t = queue[start];
+    /*if(t->compilation_unit == ((Token*) 1) ||
+       t->compilation_unit == nullptr){
+      std::cerr<<*t<<","<<t->m_lex<<",cun"<<t->compilation_unit<<std::endl;
+      }*/
+    start ++;
+    if(t->m_type == type) return t;
+    for(Token& child: t->m_generated_tokens){
+      queue.emplace_back(&child);
+      end++;
+    }
+    
+    //queue.erase(queue.begin());
   }
-  for(Token& t: m_generated_tokens){
-    res = t.SearchByTypeBFS(type);
-    if(res!=nullptr) break;
-  }
-  return res;
+  return nullptr;
 }
 
 Token* Token::SearchByTypeDFS(TokenType type){

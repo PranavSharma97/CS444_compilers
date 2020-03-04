@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <exception>
+#include <utility>
 
 // Alphabetical order
 #include "debugger.h"
@@ -11,54 +12,109 @@
 #include "token.h"
 #include "weeder.h"
 #include "build_environment.h"
+#include "type_linker.h"
+#include "color_print.h"
+
 
 using namespace std;
 
+
 int main(int argc, char *argv[]) {
-  string file(argv[1]);
-  cout << file << endl;
 
-  vector<Token> result;
+  vector<Token> parse_trees;
+  vector<Token*> tree_ptrs;
+  for(int i = 1;i<argc;i++){
 
-  try{
-    result = extraTokenLogic(scanner(file));
-  } catch (std::exception& e){
-    cout << "Scanner failed" << endl;
-    return 42;
-  }
-  
-  for(Token& t: result){
-    DEBUG_MSG('['<<t<<","<<t.m_lex<<"] ");
-  }
+    string file(argv[i]);
+    cout << "Compiling:"<<file << endl;
 
-  Token parse_tree;
+    vector<Token> result;
 
-  try{
-    ParseTable PT = ParseTable();
-    bool valid = PT.parse(result);
-    if(!valid) {
-      cout << "Invalid parsing" << endl;
+    try{
+      result = extraTokenLogic(scanner(file));
+    } catch (std::exception& e){
+      cout << "Scanner failed" << endl;
       return 42;
     }
-    parse_tree = PT.parse_tree;
-  } catch (std::exception& e){
-    return 42;
-  }
+  
+    for(Token& t: result){
+      DEBUG_MSG('['<<t<<","<<t.m_lex<<"] ");
+    }
 
-  Token weeded_tree;
-  try{
-    Weeder W(file,parse_tree);
-    bool valid = W.weed();
-    if(!valid){
-      cout << "Invalid weeding" << endl;
+    Token parse_tree;
+
+    try{
+      ParseTable PT = ParseTable();
+      bool valid = PT.parse(result);
+      if(!valid) {
+	cout << "Invalid parsing" << endl;
+	return 42;
+      }
+      parse_tree = PT.parse_tree;
+    } catch (std::exception& e){
       return 42;
     }
-    weeded_tree = W.m_parse_tree;
-  } catch (std::exception& e){
-    return 42;
+
+    try{
+      Weeder W(file,parse_tree);
+      bool valid = W.weed();
+      if(!valid){
+	cout << "Invalid weeding" << endl;
+	return 42;
+      }
+      parse_trees.emplace_back(W.m_ast_tree);
+    } catch (std::exception& e){
+      return 42;
+    }
   }
+    
+  for(int i = 0; i<parse_trees.size();i++){
+    BuildEnvironment(&parse_trees[i]);
+    tree_ptrs.emplace_back((&parse_trees[i]));
+    vector<int> levels{0};
+    printEnvironments(levels,&parse_trees[i]);
+    //printEnvironments(levels,&parse_trees[i-1],1);
+  }
+
   
-  BuildEnvironment(&weeded_tree);
+  // convert parse_trees to token pointers
+  /* for(int i = 0;i<parse_trees.size();i++){
+    tree_ptrs.emplace_back(&parse_trees[i]);
+  }*/
+  // Bind Compilation Unit
+  for(Token* t: tree_ptrs){
+    t->BindCompilationUnit();
+  }
+  /*
+  for(Token* t: tree_ptrs){
+    t->SearchByTypeBFS(TokenType::TOKEN_FAILURE);
+    }*/
+  
+  TypeLinker TPLink(tree_ptrs);
+  if(!TPLink.Link()) return 42;
+  /*
+  for(Token* ti: tree_ptrs){
+    vector<Token*> queue;
+    int counter = 0;
+    queue.emplace_back(ti);
+    counter = 1;
+    int layer = 0;
+    while(queue.size()>0){
+      Token* t = queue[0];
+      if(t->declaration != nullptr){
+	cerr<<"("<<*t<<","<<t->m_lex<<"->"<<*(t->declaration)<<") | ";
+      } else {
+	cerr<<"("<<*t<<","<<t->m_lex<<"-> No) | ";
+      }
+      queue.erase(queue.begin());
+      counter --;
+      for(Token& n:t->m_generated_tokens){
+	queue.emplace_back(&n);
+      }
+    
+      if(counter == 0) { layer += 1; counter = queue.size(); cerr<<endl; }
+    } 
+    }*/
   
   cout << "Parsing successful" << endl;
   return 0;

@@ -1,4 +1,5 @@
 #include "token.h"
+#include <vector>
 
-Token BuildEnvironment(Token* token);
-void printEnvironments(Token token);
+void BuildEnvironment(Token* token);
+void printEnvironments(std::vector<int> level, Token* token);
