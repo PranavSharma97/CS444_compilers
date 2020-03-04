@@ -34,7 +34,6 @@ void Flatten(Token& node, TokenType victim){
 
 void Weeder::BuildAST(Token& node){
   bool do_cut = true;
-  //std::cerr<<"Start:"<<node<<" ... ";
   // 
   while(node.m_generated_tokens.size() == 1){
     switch(node.m_type){

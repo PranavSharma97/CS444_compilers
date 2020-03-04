@@ -187,6 +187,14 @@ environment* TypeLinker::GetCurrentPackage(Token* CUN){
 
 bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
 
+  // Get the package environment first
+    environment* p_env = GetCurrentPackage(cun);
+    if(p_env == nullptr) return false;
+    envs[2] = p_env;
+    CYAN();
+    std::cout<<"ENVIRONMENT READY"<<std::endl;
+    DEFAULT();
+  
   // Check if java.lang is on demanded
   std::string javalang = "java.lang";
   std::map<std::string,bool> imported;
@@ -291,18 +299,12 @@ bool TypeLinker::Link(){
   // Link for each
   for(Token* n: m_asts){
     environment* envs[4];
-    Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
     environment local_env,single_type,on_demand;
-    // Get the package environment first
-    environment* p_env = GetCurrentPackage(cun);
-    if(p_env == nullptr) return false;
     envs[0] = &local_env;
     envs[1] = &single_type;
-    envs[2] = p_env;
     envs[3] = &on_demand;
-    CYAN();
-    std::cout<<"ENVIRONMENT READY"<<std::endl;
-    DEFAULT();
+    Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
+    
     
     if(!ResolvePackage(cun,envs)) return false;
     // check if any package name is a class name
@@ -443,6 +445,7 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
     std::cout<<"SUPER INHERITS FROM:"<<name_node->m_lex<<std::endl;
     DEFAULT();
     // try to get super class
+    
     if(name_node->m_type == TokenType::T_IDENTIFIER){
       super_class = GetClassFromEnv(name_node->m_lex, envs);
     }else{
@@ -479,13 +482,36 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
     DEFAULT();
     super_class = nullptr;
   }
-    duplicate[super] = true;
-    if(!DoInheritClass(super,super_class,duplicate,envs)) return false;
-    CYAN();
-    std::cout<<"successfully inherited"<<std::endl;
+
+  // Construct compile time environment for super class
+  
+  environment* new_envs[4];
+  environment local_env,single_type,on_demand;
+  if(super_class != nullptr){
+    new_envs[0] = &local_env;
+    new_envs[1] = &single_type;
+    new_envs[3] = &on_demand;
+    Token* cun = super_class->compilation_unit;
+    YELLOW();
     DEFAULT();
-    // merge super to me
-    if(!sub->scope.replace_merge(super->scope)) return false;
+    if(!ResolvePackage(cun,new_envs)){
+      RED();
+      std::cerr<<"Inheritance ERROR: cannot construct package environment for";
+      std::cerr<<" super class or interface."<<std::endl;
+      return false;
+      DEFAULT();
+    }
+  }else{
+    new_envs[2] = envs[2];
+  }
+    
+  duplicate[super] = true;
+  if(!DoInheritClass(super,super_class,duplicate,new_envs)) return false;
+  CYAN();
+  std::cout<<"successfully inherited"<<std::endl;
+  DEFAULT();
+  // merge super to me
+  if(!sub->scope.replace_merge(super->scope)) return false;
   
   //  handle class implements interfaces
   if(implement!=nullptr && !DoInheritInterface(super,implement,duplicate,envs)) return false; 
@@ -567,11 +593,26 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 	DEFAULT();
 	return false;
       }
+
+      // Consturct superclass environment
+      environment* new_envs[4];
+      environment local_env,single_type,on_demand;
+      new_envs[0] = &local_env;
+      new_envs[1] = &single_type;
+      new_envs[3] = &on_demand;
+      Token* cun = super_class->compilation_unit;
+      if(!ResolvePackage(cun,new_envs)){
+	RED();
+	std::cerr<<"Inheritance ERROR: cannot construct package environment for";
+	std::cerr<<" super class or interface."<<std::endl;
+	return false;
+	DEFAULT();
+      }
       
       // prepare for recursive check
       duplicate[&t] = true;
       Token* implement = t.SearchOneChild(TokenType::ExtendsInterfaces); 
-      if(!DoInheritInterface(&t,implement,duplicate,envs)) return false;
+      if(!DoInheritInterface(&t,implement,duplicate,new_envs)) return false;
       // merge super to me
       if(!sub->scope.replace_merge(t.scope)) return false;
     }
@@ -598,6 +639,15 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
   PURPLE();
   std::cout<<"DO INHERIT: CHECK INHERITANCE OF CLASS, node = "<<node<<std::endl;
   DEFAULT();
+
+  // Construct compile time environment for super class
+  environment* new_envs[4];
+  environment local_env,single_type,on_demand;
+  new_envs[0] = &local_env;
+  new_envs[1] = &single_type;
+  new_envs[3] = &on_demand;
+  Token* cun;
+  
   // If class exntends classes
   if(node->type() == TokenType::ClassDeclaration){
     // try to get the class if it extends
@@ -619,6 +669,9 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
       }else{
 	super_class = m_packages->GetQualified(name_node->m_lex);
       }
+      YELLOW();
+      std::cout<<"super_calss is:"<<super_class<<std::endl;
+      DEFAULT();
       
       // if didn't find the declaration, return false
       if(super_class == nullptr){
@@ -627,6 +680,7 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
 	DEFAULT();
 	return false;
       }
+      std::cout<<"super class is not null"<<std::endl;
       // if the name is not binded return false
       if(name_node->declaration == nullptr){
 	RED();
@@ -634,9 +688,24 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
 	DEFAULT();
 	return false;
       }
+      std::cout<<" name class declaration is not null"<<std::endl;
+      // Get the super class environment
+      cun = super_class->compilation_unit;
+      YELLOW();
+      std::cout<<"SUPER CLASS"<<*super_class<<" its CUN is:"<<cun<<std::endl;
+      //<<*cun<<","<<cun->m_lex<<std::endl;
+      DEFAULT();
+      if(!ResolvePackage(cun,new_envs)){
+	RED();
+	std::cerr<<"Inheritance ERROR: cannot construct package environment for";
+	std::cerr<<" super class or interface."<<std::endl;
+	return false;
+	DEFAULT();
+      }
+      
       // inherit from super class
-      if(!DoInheritClass(node,super_class,dup,envs)) return false;
-      if(!DoInheritInterface(node,implement,dup,envs)) return false;
+      if(!DoInheritClass(node,super_class,dup,new_envs)) return false;
+      if(!DoInheritInterface(node,implement,dup,new_envs)) return false;
     } 
   } else {
     DoInheritInterface(node,i_extend,dup,envs);

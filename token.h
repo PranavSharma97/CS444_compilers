@@ -15,6 +15,7 @@ class Token{
 
   environment scope;
   Token* declaration;
+  Token* compilation_unit;
   bool Protected;
   bool Abstract;
   bool Inherited;
@@ -28,6 +29,7 @@ class Token{
   TokenType type() const;
   // Get the first token with the same type as type, not including itself.
   Token* SearchByTypeBFS(TokenType type);
+  void BindCompilationUnit();
   // Get the first token with the same type as type, including itself
   Token* SearchByTypeDFS(TokenType type);
   // Get the one direct child that matches type
