@@ -36,5 +36,7 @@ class environment {
   std::map<std::string,Token*> formalParameters;
   std::map<std::string,std::vector<Token*>> constructors;
   std::map<std::string,std::map<std::string,std::vector<Token*>>> methodsWithSignatures;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> methodsWithSignaturesDeclared;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> methodsWithSignaturesInherited;
   std::map<std::string,std::map<std::string,std::vector<Token*>>> constructorsWithSignatures;
 };

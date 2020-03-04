@@ -407,7 +407,29 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
             // Check if src method is public, current is public
             // Check src method is not final
             
-            if(srcSignature.second[0]->searchByTypeDFS(Modifiers
+            // Staticness
+            if(srcSignature.second[0]->searchByTypeDFS(T_STATIC)) {
+              if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+                return false;
+              }
+            }
+            else {
+              if(methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+                return false;
+              }
+            }
+
+            // Check public
+            if(srcSignature.second[0]->searchByTypeDFS(T_PUBLIC)) {
+              if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_PUBLIC)) {
+                return false;
+              }
+            }
+            
+            // Check finalness
+            if(!srcSignature.second[0]->searchByTypeDFS(T_FINAL)) {
+              return false;
+            }
 
             // Check for return types
             Token* srcArrayType = srcSignature.second[0]->searchByTypeDFS(ArrayType);
@@ -512,38 +534,76 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
     // Check for both static or non static
     // Check if src method is public, current is public
     // Check src method is not final
-  }
+    
 
-  if(methodsWithSignatures.find(srcMethod.first) != methodsWithSignatures.end()){
-    for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
-      if(methodsWithSignatures[srcMethod.first].find(srcSignature.first) != methodsWithSignatures[srcMethod.first].end()) {
-        if(srcSignature.second[0].abstract && srcSignature.second[0].m_type == AbstractMethodHeader && !methodsWithSignatures[srcMethod.first][srcSignature.first][0].abstract && methodsWithSignatures[srcMethod.first][srcSignature.first][0].m_type == MethodDeclaration) {
-        // Do nothing
-          if(inheritedClassMethod == true) {
-            // check return types (for replacing method)
-          }
-        }
-        else if(srcSignature.second[0].abstract && srcSignature.second[0].m_type == AbstractMethodHeader && methodsWithSignatures[srcMethod.first][srcSignature.first][0].m_type == AbstractMethodHeader) {
-        // Check return types
+    // Staticness
+    if(srcSignature.second[0]->searchByTypeDFS(T_STATIC)) {
+      if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+        return false;
+      }
+    }
+    else {
+      if(methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+        return false;
+      }
+    }
 
+    // Check public
+    if(srcSignature.second[0]->searchByTypeDFS(T_PUBLIC)) {
+      if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_PUBLIC)) {
+        return false;
+      }
+    }
+    
+    // Check finalness
+    if(!srcSignature.second[0]->searchByTypeDFS(T_FINAL)) {
+      return false;
+    }
+
+    // Check for return types
+    Token* srcArrayType = srcSignature.second[0]->searchByTypeDFS(ArrayType);
+    Token* currentArrayType = methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(ArrayType);
+    if(srcArrayType || currentArrayType) {
+      if(currentArrayType == nullptr) {
+        return false;
+      }
+      if(srcArrayType == nullptr) {
+        return false;
+      }
+      Token* srcQualifiedName = srcArrayType->searchByTypeDFS(QualifiedName);
+      Token* currentQualifiedName = currentArrayType->searchByTypeDFS(QualifiedName);
+      if(srcQualifiedName || currentQualifiedName) {
+        if(!currentQualifiedName) { return false; }
+        if(!srcQualifiedName) { return false; }
+        if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
+          return false;
         }
-        else if(srcSignature.second[0].abstract && srcSignature.second[0].m_type == AbstractMethodHeader && methodsWithSignatures[srcMethod.first][srcSignature.first][0].m_type == MethodDeclaration && flag == on) {
-          // check return types (for inherited abstract methods)
-        }
-        else {
-          // check both static or non static
-          // check src method is not final
-          // check return types
-          // check if src method is public, current is public
+      }
+      else {
+        if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
+          return false;
         }
       }
     }
-  } else { 
-    // If method was methodDeclaration and abstract, then flag = on, so check for return types for inherited AbstractMethodDeclaration
-    // Put method in inherited methods
-    return true;
+    else {
+      Token* srcQualifiedName = srcSignature.second[0]->searchByTypeDFS(QualifiedName);
+      Token* currentQualifiedName = methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(QualifiedName);
+      if(srcQualifiedName || currentQualifiedName) {
+        if(!currentQualifiedName) { return false; }
+        if(!srcQualifiedName) { return false; }
+        if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
+          return false;
+        }
+      }
+      else {
+        if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
+          return false;
+        }
+      }
+    }
   }
-  return false;
+
+  return true;
 }
 
 bool environment::replace_merge(environment& src){
