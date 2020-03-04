@@ -105,7 +105,6 @@ Weeder::Weeder(const std::string& file_name, const Token& parse_tree):
   m_parse_tree(parse_tree),
   m_ast_tree(parse_tree)
 {
-  current_compilation_unit = (Token*) 1;
   std::vector<std::string> slash_vec;
   //std::vector<std::string> dot_vec;
   string_split(file_name,'/',slash_vec);
