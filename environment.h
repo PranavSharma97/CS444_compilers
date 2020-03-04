@@ -34,6 +34,7 @@ class environment {
   
   // Used for inheritance;
   bool replace_merge(environment& src);
+  void build_declared_set();
   void clear();
   
   std::map<std::string,Token*> classes;
