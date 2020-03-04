@@ -8,11 +8,17 @@ class Token;
 
 class environment {
 
-  // Hierarchy checking on methods
-  bool valid_method(std::pair<std::string,std::vector<Token*>>& kv);
-
   // Hierarchy checking on constructors
   bool valid_ctor(std::pair<std::string,std::vector<Token*>>& kv);
+
+  bool environment::valid_method(std::map<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod);
+
+  bool environment::checkMethods();
+
+  bool environment::checkConstructors();
+
+  bool check_return_types(Token* src, Token* current);
+
  public:
   environment() = default;
   environment(const environment& other);
@@ -37,4 +43,8 @@ class environment {
   std::map<std::string,Token*> localVariables;
   std::map<std::string,Token*> formalParameters;
   std::map<std::string,std::vector<Token*>> constructors;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> methodsWithSignatures;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> methodsWithSignaturesDeclared;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> methodsWithSignaturesInherited;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> constructorsWithSignatures;
 };
