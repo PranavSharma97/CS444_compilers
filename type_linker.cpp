@@ -296,15 +296,20 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
 bool TypeLinker::Link(){
   // Construct packages
   if(!ConstructPackage()) return false;
+  int file_count = m_asts.size();
+  environment local_envs[file_count];
+  environment single_types[file_count];
+  environment on_demands[file_count];
+  int file_index = 0;
   // Link for each
   for(Token* n: m_asts){
     environment* envs[4];
     environment local_env,single_type,on_demand;
-    envs[0] = &local_env;
-    envs[1] = &single_type;
-    envs[3] = &on_demand;
+    envs[0] = &local_env[file_index];
+    envs[1] = &single_type[file_index];
+    envs[3] = &on_demand[file_index];
     Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
-    
+    file_index ++;
     
     if(!ResolvePackage(cun,envs)) return false;
     // check if any package name is a class name
@@ -317,14 +322,15 @@ bool TypeLinker::Link(){
     CYAN();
     std::cout<<"AST Type Linked"<<std::endl;
     DEFAULT();
-    
+  }
+  
+  for(Token* n: m_asts){
     //if(!ResolveType(CUN,&local_env)) return false;
     
     if(!ResolveInheritance(n,envs)) return false;
     CYAN();
     std::cout<<"INHERITANCE Resolved"<<std::endl;
     DEFAULT();
-    
   }
   return true;
 }
@@ -492,8 +498,6 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
     new_envs[1] = &single_type;
     new_envs[3] = &on_demand;
     Token* cun = super_class->compilation_unit;
-    YELLOW();
-    DEFAULT();
     if(!ResolvePackage(cun,new_envs)){
       RED();
       std::cerr<<"Inheritance ERROR: cannot construct package environment for";
@@ -560,6 +564,7 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
   }
   
   //  handle class implements interfaces
+  
   for(Token& t: interface_lists->m_generated_tokens){
     if(t.m_type == TokenType::QualifiedName || t.m_type==TokenType::T_IDENTIFIER){
       // Check for duplicate
@@ -571,7 +576,9 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 	DEFAULT();
 	return false;
       }
-      
+      YELLOW();
+      std::cout<<t<<","<<t.m_lex<<std::endl;
+      DEFAULT();
       Token* super_class;
       if(t.m_type == TokenType::T_IDENTIFIER){
 	super_class = GetInterfaceFromEnv(t.m_lex, envs);
