@@ -11,14 +11,7 @@ class environment {
   // Hierarchy checking on constructors
   bool valid_ctor(std::pair<std::string,std::vector<Token*>>& kv);
 
-  bool valid_method(std::map<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod);
-
-  bool checkMethods();
-
-  bool checkConstructors();
-
-  bool check_return_types(Token* src, Token* current);
-
+  bool valid_method(std::pair<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod);
  public:
   environment() = default;
   environment(const environment& other);
@@ -35,6 +28,16 @@ class environment {
   // Used for inheritance;
   bool replace_merge(environment& src);
   void build_declared_set();
+     
+  bool checkMethods();
+
+  bool checkConstructors();
+
+  bool check_return_types(Token* src, Token* current);
+
+  void postProcessMethodMap();
+
+  void postProcessConstructorMap();
   void clear();
   
   std::map<std::string,Token*> classes;

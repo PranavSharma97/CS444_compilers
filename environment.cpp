@@ -4,6 +4,7 @@
 #include <utility>
 #include <iostream>
 #include <sstream>
+#include <string>
 
 /*
  * Copy CTOR
@@ -358,7 +359,7 @@ void environment::clear(){
 void environment::postProcessMethodMap() {
   for(std::pair<std::string, std::vector<Token*>> kv_pair: methods){
     for(Token* n: kv_pair.second){
-      string signature = "";
+      std::string signature = "";
       Token* parameterList = n->SearchByTypeBFS(FormalParameterList);
       if (parameterList == nullptr) {
         methodsWithSignatures[kv_pair.first][signature].push_back(n);
@@ -415,7 +416,7 @@ void environment::postProcessMethodMap() {
 void environment::postProcessConstructorMap() {
   for(std::pair<std::string, std::vector<Token*>> kv_pair: constructors){
     for(Token* n: kv_pair.second){
-      string signature = "";
+      std::string signature = "";
       Token* parameterList = n->SearchByTypeBFS(FormalParameterList);
       if (parameterList == nullptr) {
         constructorsWithSignatures[kv_pair.first][signature].push_back(n);
@@ -470,32 +471,31 @@ void environment::postProcessConstructorMap() {
 }
 
 bool environment::checkMethods() {
-  for(std::map<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: methodsWithSignatures){
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: methodsWithSignatures){
     for(std::pair<std::string, std::vector<Token*>> signatureToDeclarations: kv_pair.second) {
       if (signatureToDeclarations.second.size() > 1) {
         return false;
       }
     }
+  }
 
-  
-  
   return true;
 }
 
 bool environment::checkConstructors() {
-  for(std::map<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: constructorsWithSignatures){
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: constructorsWithSignatures){
     for(std::pair<std::string, std::vector<Token*>> signatureToDeclarations: kv_pair.second) {
       if (signatureToDeclarations.second.size() > 1) {
         return false;
       }
     }
-    
+  }
     return true;
 }
 
-bool check_return_types(Token* src, Token* current) {  
-  Token* srcArrayType = src->searchByTypeDFS(ArrayType);
-  Token* currentArrayType = current->searchByTypeDFS(ArrayType);
+bool environment::check_return_types(Token* src, Token* current) {  
+  Token* srcArrayType = src->SearchByTypeDFS(ArrayType);
+  Token* currentArrayType = current->SearchByTypeDFS(ArrayType);
   if(srcArrayType || currentArrayType) {
     if(currentArrayType == nullptr) {
       return false;
@@ -503,8 +503,8 @@ bool check_return_types(Token* src, Token* current) {
     if(srcArrayType == nullptr) {
       return false;
     }
-    Token* srcQualifiedName = srcArrayType->searchByTypeDFS(QualifiedName);
-    Token* currentQualifiedName = currentArrayType->searchByTypeDFS(QualifiedName);
+    Token* srcQualifiedName = srcArrayType->SearchByTypeDFS(QualifiedName);
+    Token* currentQualifiedName = currentArrayType->SearchByTypeDFS(QualifiedName);
     if(srcQualifiedName || currentQualifiedName) {
       if(!currentQualifiedName) { return false; }
       if(!srcQualifiedName) { return false; }
@@ -519,8 +519,8 @@ bool check_return_types(Token* src, Token* current) {
     }
   }
   else {
-    Token* srcQualifiedName = src->searchByTypeDFS(QualifiedName);
-    Token* currentQualifiedName = current->searchByTypeDFS(QualifiedName);
+    Token* srcQualifiedName = src->SearchByTypeDFS(QualifiedName);
+    Token* currentQualifiedName = current->SearchByTypeDFS(QualifiedName);
     if(srcQualifiedName || currentQualifiedName) {
       if(!currentQualifiedName) { return false; }
       if(!srcQualifiedName) { return false; }
@@ -538,7 +538,7 @@ bool check_return_types(Token* src, Token* current) {
   return true;
 }
 
-bool environment::valid_method(std::map<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod){
+bool environment::valid_method(std::pair<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod){
   // If method is not in declare set
   if(methodsWithSignaturesDeclared.find(srcMethod.first) == methodsWithSignaturesDeclared.end()){
     // Check if method is in inherited set
@@ -558,32 +558,32 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
             // Check src method is not final
             
             // Staticness
-            if(srcSignature.second[0]->searchByTypeDFS(T_STATIC)) {
-              if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+            if(srcSignature.second[0]->SearchByTypeDFS(T_STATIC)) {
+              if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->SearchByTypeDFS(T_STATIC)) {
                 return false;
               }
             }
             else {
-              if(methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+              if(methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->SearchByTypeDFS(T_STATIC)) {
                 return false;
               }
             }
 
             // Check public
-            if(srcSignature.second[0]->searchByTypeDFS(T_PUBLIC)) {
-              if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_PUBLIC)) {
+            if(srcSignature.second[0]->SearchByTypeDFS(T_PUBLIC)) {
+              if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->SearchByTypeDFS(T_PUBLIC)) {
                 return false;
               }
             }
             
             // Check finalness
-            if(!srcSignature.second[0]->searchByTypeDFS(T_FINAL)) {
+            if(!srcSignature.second[0]->SearchByTypeDFS(T_FINAL)) {
               return false;
             }
 
             // Check for return types
             
-            if(!check_return_types(srcSignature.second[0], methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]) {
+            if(!this->check_return_types(srcSignature.second[0], methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0])) {
               return false;
             }
           }
@@ -591,7 +591,7 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
           else if(srcSignature.second[0]->Abstract && methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->Abstract) {
             // Check for return types
 
-            if(!check_return_types(srcSignature.second[0], methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]) {
+            if(!this->check_return_types(srcSignature.second[0], methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0])) {
               return false;
             }
 
@@ -601,10 +601,10 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
 
       // If signatures don't match but names match for inherited methods, it means an overloaded superclass method
       // add to inherit set
-       for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
+      for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
         methodsWithSignaturesInherited[srcMethod.first][srcSignature.first] = srcSignature.second;
       }
-      return true
+      return true;
     }
 
     // add to inherit set
@@ -625,31 +625,31 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
       if(methodsWithSignaturesDeclared[srcMethod.first].find(srcSignature.first) != methodsWithSignaturesDeclared[srcMethod.first].end()) {
     
         // Check Staticness
-        if(srcSignature.second[0]->searchByTypeDFS(T_STATIC)) {
-          if(!methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+        if(srcSignature.second[0]->SearchByTypeDFS(T_STATIC)) {
+          if(!methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]->SearchByTypeDFS(T_STATIC)) {
             return false;
           }
         }
         else {
-          if(methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+          if(methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]->SearchByTypeDFS(T_STATIC)) {
             return false;
           }
         }
 
         // Check public
-        if(srcSignature.second[0]->searchByTypeDFS(T_PUBLIC)) {
-          if(!methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_PUBLIC)) {
+        if(srcSignature.second[0]->SearchByTypeDFS(T_PUBLIC)) {
+          if(!methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]->SearchByTypeDFS(T_PUBLIC)) {
             return false;
           }
         }
 
         // Check finalness
-        if(!srcSignature.second[0]->searchByTypeDFS(T_FINAL)) {
+        if(!srcSignature.second[0]->SearchByTypeDFS(T_FINAL)) {
           return false;
         }
         
         // Check return types
-        if(!check_return_types(srcSignature.second[0], methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]) {
+        if(!this->check_return_types(srcSignature.second[0], methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0])) {
           return false;
         }
       }
@@ -659,12 +659,24 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
   return true;
 }
 
+void environment::build_declared_set() {
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: methodsWithSignatures){
+    for(std::pair<std::string, std::vector<Token*>> srcSignature: kv_pair.second) {
+      for(Token* t: srcSignature.second) {
+        methodsWithSignaturesDeclared[kv_pair.first][srcSignature.first].emplace_back(t);
+      }
+    }
+  }
+}
+
 bool environment::replace_merge(environment& src){
   // Merge methods, current doesn't check the methods with same parameters
-  for(std::map<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: src.methodsWithSignatures){
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: src.methodsWithSignatures){
     if(valid_method(kv_pair)){
-      for(Token* n: kv_pair.second){
-        methods[kv_pair.first].emplace_back(n);
+      for(std::pair<std::string, std::vector<Token*>> srcSignature: kv_pair.second) {
+        for(Token* t: srcSignature.second) {
+          methodsWithSignatures[kv_pair.first][srcSignature.first].emplace_back(t);    
+        }
       }
     }else{
       // Return error
@@ -676,8 +688,7 @@ bool environment::replace_merge(environment& src){
   for(std::pair<std::string, Token*> kv_pair: src.fields){
     if(fields.find(kv_pair.first) == fields.end()){
       fields[kv_pair.first] = kv_pair.second;
+    }
   }
-
   return true;
 }
-
