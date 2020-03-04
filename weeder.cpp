@@ -34,7 +34,6 @@ void Flatten(Token& node, TokenType victim){
 
 void Weeder::BuildAST(Token& node){
   bool do_cut = true;
-  //std::cerr<<"Start:"<<node<<" ... ";
   // 
   while(node.m_generated_tokens.size() == 1){
     switch(node.m_type){
@@ -106,6 +105,7 @@ Weeder::Weeder(const std::string& file_name, const Token& parse_tree):
   m_parse_tree(parse_tree),
   m_ast_tree(parse_tree)
 {
+  current_compilation_unit = (Token*) 1;
   std::vector<std::string> slash_vec;
   //std::vector<std::string> dot_vec;
   string_split(file_name,'/',slash_vec);
