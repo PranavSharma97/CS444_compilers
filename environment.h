@@ -40,6 +40,9 @@ class environment {
   void postProcessConstructorMap();
   void clear();
   
+  // Used to resolve names
+  Token* GetDeclaration(std::string& name);
+
   std::map<std::string,Token*> classes;
   std::map<std::string,Token*> interfaces;
   std::map<std::string,Token*> fields;
