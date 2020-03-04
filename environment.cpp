@@ -374,7 +374,9 @@ bool environment::checkMethods() {
       }
     }
 
-    return true;
+  
+  
+  return true;
 }
 
 bool environment::checkConstructors() {
@@ -388,6 +390,51 @@ bool environment::checkConstructors() {
     return true;
 }
 
+bool check_return_types(Token* src, Token* current) {  
+  Token* srcArrayType = src->searchByTypeDFS(ArrayType);
+  Token* currentArrayType = current->searchByTypeDFS(ArrayType);
+  if(srcArrayType || currentArrayType) {
+    if(currentArrayType == nullptr) {
+      return false;
+    }
+    if(srcArrayType == nullptr) {
+      return false;
+    }
+    Token* srcQualifiedName = srcArrayType->searchByTypeDFS(QualifiedName);
+    Token* currentQualifiedName = currentArrayType->searchByTypeDFS(QualifiedName);
+    if(srcQualifiedName || currentQualifiedName) {
+      if(!currentQualifiedName) { return false; }
+      if(!srcQualifiedName) { return false; }
+      if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
+        return false;
+      }
+    }
+    else {
+      if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
+        return false;
+      }
+    }
+  }
+  else {
+    Token* srcQualifiedName = src->searchByTypeDFS(QualifiedName);
+    Token* currentQualifiedName = current->searchByTypeDFS(QualifiedName);
+    if(srcQualifiedName || currentQualifiedName) {
+      if(!currentQualifiedName) { return false; }
+      if(!srcQualifiedName) { return false; }
+      if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
+        return false;
+      }
+    }
+    else {
+      if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 bool environment::valid_method(std::map<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod){
   // If method is not in declare set
   if(methodsWithSignaturesDeclared.find(srcMethod.first) == methodsWithSignaturesDeclared.end()){
@@ -398,7 +445,7 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
         // Check if signatures match
         if(methodsWithSignaturesInherited[srcMethod.first].find(srcSignature.first) != methodsWithSignaturesInherited[srcMethod.first].end()) {
           // If src method is abstract, but inherited method is not  
-          if(srcSignature.second[0].abstract && !methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0].abstract) {
+          if(srcSignature.second[0]->Abstract && !methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->Abstract) {
             // Check for return types (belongs to replace set)
             // This means method is replacing superclass method
             // So:
@@ -432,100 +479,35 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
             }
 
             // Check for return types
-            Token* srcArrayType = srcSignature.second[0]->searchByTypeDFS(ArrayType);
-            Token* currentArrayType = methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(ArrayType);
-            if(srcArrayType || currentArrayType) {
-              if(currentArrayType == nullptr) {
-                return false;
-              }
-              if(srcArrayType == nullptr) {
-                return false;
-              }
-              Token* srcQualifiedName = srcArrayType->searchByTypeDFS(QualifiedName);
-              Token* currentQualifiedName = currentArrayType->searchByTypeDFS(QualifiedName);
-              if(srcQualifiedName || currentQualifiedName) {
-                if(!currentQualifiedName) { return false; }
-                if(!srcQualifiedName) { return false; }
-                if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
-                  return false;
-                }
-              }
-              else {
-                if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
-                  return false;
-                }
-              }
+            
+            if(!check_return_types(srcSignature.second[0], methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]) {
+              return false;
             }
-            else {
-              Token* srcQualifiedName = srcSignature.second[0]->searchByTypeDFS(QualifiedName);
-              Token* currentQualifiedName = methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(QualifiedName);
-              if(srcQualifiedName || currentQualifiedName) {
-                if(!currentQualifiedName) { return false; }
-                if(!srcQualifiedName) { return false; }
-                if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
-                  return false;
-                }
-              }
-              else {
-                if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
-                  return false;
-                }
-              }
-            }
-
           }
           // If both src and inherited methods are abstract
-          else if(srcSignature.second[0].abstract && methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0].abstract) {
+          else if(srcSignature.second[0]->Abstract && methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->Abstract) {
             // Check for return types
-            Token* srcArrayType = srcSignature.second[0]->searchByTypeDFS(ArrayType);
-            Token* currentArrayType = methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(ArrayType);
-            if(srcArrayType || currentArrayType) {
-              if(currentArrayType == nullptr) {
-                return false;
-              }
-              if(srcArrayType == nullptr) {
-                return false;
-              }
-              Token* srcQualifiedName = srcArrayType->searchByTypeDFS(QualifiedName);
-              Token* currentQualifiedName = currentArrayType->searchByTypeDFS(QualifiedName);
-              if(srcQualifiedName || currentQualifiedName) {
-                if(!currentQualifiedName) { return false; }
-                if(!srcQualifiedName) { return false; }
-                if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
-                  return false;
-                }
-              }
-              else {
-                if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
-                  return false;
-                }
-              }
+
+            if(!check_return_types(srcSignature.second[0], methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]) {
+              return false;
             }
-            else {
-              Token* srcQualifiedName = srcSignature.second[0]->searchByTypeDFS(QualifiedName);
-              Token* currentQualifiedName = methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(QualifiedName);
-              if(srcQualifiedName || currentQualifiedName) {
-                if(!currentQualifiedName) { return false; }
-                if(!srcQualifiedName) { return false; }
-                if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
-                  return false;
-                }
-              }
-              else {
-                if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
-                  return false;
-                }
-              }    
-            }
+
           }
         }
       }
 
-      // Default case, if signatures don't match but names match for inherited methods
+      // If signatures don't match but names match for inherited methods, it means an overloaded superclass method
       // add to inherit set
+       for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
+        methodsWithSignaturesInherited[srcMethod.first][srcSignature.first] = srcSignature.second;
+      }
       return true
     }
+
     // add to inherit set
+    for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
+      methodsWithSignaturesInherited[srcMethod.first][srcSignature.first] = srcSignature.second;
+    }
     return true;
   } else {
     // This means method is replacing superclass method
@@ -534,80 +516,48 @@ bool environment::valid_method(std::map<std::string,std::map<std::string,std::ve
     // Check for both static or non static
     // Check if src method is public, current is public
     // Check src method is not final
+   
+    for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
+      // Check if signatures match
+      if(methodsWithSignaturesDeclared[srcMethod.first].find(srcSignature.first) != methodsWithSignaturesDeclared[srcMethod.first].end()) {
     
+        // Check Staticness
+        if(srcSignature.second[0]->searchByTypeDFS(T_STATIC)) {
+          if(!methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+            return false;
+          }
+        }
+        else {
+          if(methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
+            return false;
+          }
+        }
 
-    // Staticness
-    if(srcSignature.second[0]->searchByTypeDFS(T_STATIC)) {
-      if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
-        return false;
-      }
-    }
-    else {
-      if(methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_STATIC)) {
-        return false;
-      }
-    }
+        // Check public
+        if(srcSignature.second[0]->searchByTypeDFS(T_PUBLIC)) {
+          if(!methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_PUBLIC)) {
+            return false;
+          }
+        }
 
-    // Check public
-    if(srcSignature.second[0]->searchByTypeDFS(T_PUBLIC)) {
-      if(!methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(T_PUBLIC)) {
-        return false;
-      }
-    }
-    
-    // Check finalness
-    if(!srcSignature.second[0]->searchByTypeDFS(T_FINAL)) {
-      return false;
-    }
-
-    // Check for return types
-    Token* srcArrayType = srcSignature.second[0]->searchByTypeDFS(ArrayType);
-    Token* currentArrayType = methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(ArrayType);
-    if(srcArrayType || currentArrayType) {
-      if(currentArrayType == nullptr) {
-        return false;
-      }
-      if(srcArrayType == nullptr) {
-        return false;
-      }
-      Token* srcQualifiedName = srcArrayType->searchByTypeDFS(QualifiedName);
-      Token* currentQualifiedName = currentArrayType->searchByTypeDFS(QualifiedName);
-      if(srcQualifiedName || currentQualifiedName) {
-        if(!currentQualifiedName) { return false; }
-        if(!srcQualifiedName) { return false; }
-        if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
+        // Check finalness
+        if(!srcSignature.second[0]->searchByTypeDFS(T_FINAL)) {
+          return false;
+        }
+        
+        // Check return types
+        if(!check_return_types(srcSignature.second[0], methodsWithSignaturesDeclared[srcMethod.first][srcSignature.first][0]) {
           return false;
         }
       }
-      else {
-        if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
-          return false;
-        }
-      }
-    }
-    else {
-      Token* srcQualifiedName = srcSignature.second[0]->searchByTypeDFS(QualifiedName);
-      Token* currentQualifiedName = methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->searchByTypeDFS(QualifiedName);
-      if(srcQualifiedName || currentQualifiedName) {
-        if(!currentQualifiedName) { return false; }
-        if(!srcQualifiedName) { return false; }
-        if(srcQualifiedName->declaration != currentQualifiedName->declaration) {
-          return false;
-        }
-      }
-      else {
-        if(srcArrayType->m_generated_tokens[0].m_lex != currentArrayType->m_generated_tokens[0].m_lex) {
-          return false;
-        }
-      }
-    }
+    } 
   }
 
   return true;
 }
 
 bool environment::replace_merge(environment& src){
-   // Merge methods, current doesn't check the methods with same parameters
+  // Merge methods, current doesn't check the methods with same parameters
   for(std::map<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: src.methodsWithSignatures){
     if(valid_method(kv_pair)){
       for(Token* n: kv_pair.second){
@@ -615,8 +565,7 @@ bool environment::replace_merge(environment& src){
       }
     }else{
       // Return error
-      std::vector<Token*> new_vec;
-      methods[kv_pair.first] = new_vec;
+      return false;
     }
   }
   

@@ -17,6 +17,8 @@ class environment {
 
   bool environment::checkConstructors();
 
+  bool check_return_types(Token* src, Token* current);
+
  public:
   environment() = default;
   environment(const environment& other);
