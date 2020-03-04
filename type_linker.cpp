@@ -191,9 +191,9 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
     environment* p_env = GetCurrentPackage(cun);
     if(p_env == nullptr) return false;
     envs[2] = p_env;
-    CYAN();
-    std::cout<<"ENVIRONMENT READY"<<std::endl;
-    DEFAULT();
+    //CYAN();
+    //std::cout<<"ENVIRONMENT READY"<<std::endl;
+    //DEFAULT();
   
   // Check if java.lang is on demanded
   std::string javalang = "java.lang";

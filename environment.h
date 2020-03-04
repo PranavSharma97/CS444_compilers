@@ -11,11 +11,11 @@ class environment {
   // Hierarchy checking on constructors
   bool valid_ctor(std::pair<std::string,std::vector<Token*>>& kv);
 
-  bool environment::valid_method(std::map<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod);
+  bool valid_method(std::map<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod);
 
-  bool environment::checkMethods();
+  bool checkMethods();
 
-  bool environment::checkConstructors();
+  bool checkConstructors();
 
   bool check_return_types(Token* src, Token* current);
 
