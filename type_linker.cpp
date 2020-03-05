@@ -987,8 +987,9 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
     }
   }
 
+  // SHOULD I BE PASSING new_env????????
   for(Token& n: root->m_generated_tokens){
-    ResolveNameSpaces(&n, new_envs);
+    ResolveNameSpaces(&n, envs);
   }
 
   return true;
