@@ -1039,7 +1039,7 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
   
-  std::cout << "TOKEN TYPE: " << root.m_display_name << std::endl;
+  std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
 
   if (t == T_IDENTIFIER && !root->declaration){
     Token* declaration;
