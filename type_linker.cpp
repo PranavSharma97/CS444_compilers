@@ -956,42 +956,61 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
 
 bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
   TokenType t = root->type();
-  // Copy the environment to stack
-  // environment next_local_env;
-  // TODO: create addToScope similar to merge that does not merge classes and interfaces
-  // MAYBE NOT since if it is A.b.c where A is a class I might need classes and interfaces
-  envs[0]->overwrite_merge(root->scope);
+
+  envs[0]->merge(root->scope);
+  environment next_local_env(*(envs[0]));
+
+  environment* new_envs[4];
+
+  new_envs[0] = &next_local_env;
+  new_envs[1] = envs[1];
+  new_envs[2] = envs[2];
+  new_envs[3] = envs[3];
  
-  for(std::map<std::string,Token*>::iterator it=envs[0]->fields.begin(); it!=envs[0]->fields.end(); it++){
-    //if (it->first){
-      std::cout << it->first << " , " << it->second << std::endl;
-    //}
-  }
-  
   std::cout << "TYPE OF NODE IS: " << root->m_display_name << std::endl;
 
-  /*if (t == FieldAccess || t == QualifiedName || 
+  if (t == FieldAccess || t == QualifiedName || 
      (t == MethodInvocation && root->m_generated_tokens[1].m_type == T_DOT)) {
     Token* firstIdentifier = root->SearchByTypeDFS(T_IDENTIFIER);
     std::cout << "Identifier: " << firstIdentifier->m_lex << std::endl;
     Token* declaration = envs[0]->GetDeclaration(firstIdentifier->m_lex);
     if (declaration){
       root->declaration = declaration;
-      std::cout << "Linking " << root->m_display_name << " to " << declaration->m_display_name << std::endl;
+      CYAN();
+      std::cout<<"Linking " << root->m_display_name << " to " << declaration->m_display_name << std::endl;
+      DEFAULT();
     }
     else{
-      std::cout << "Identifier must be a type, will resolve later?" << std::endl;
+      CYAN();
+      std::cout << "Identifier: " << root->m_display_name << " must be a type, will resolve later?" << std::endl;
+      DEFAULT();
     }
-  }*/
+  }
 
   for(Token& n: root->m_generated_tokens){
-    ResolveNameSpaces(&n, envs);
+    ResolveNameSpaces(&n, new_envs);
   }
 
   return true;
 }
 
 bool TypeLinker::ResolveExpressions(Token* root, environment** envs){
+  /*TokenType t = root->type();
+
+  environment next_local_env;
+  next_local_env.merge(*(envs[0]));
+
+  if (!next_local_env.mergeNames(root->scope)){
+    std:cerr << "Shadowing of local variables not allowed" << std::endl;
+    return false;
+  };
+
+  environment* new_envs[4];
+
+  new_envs[0] = &next_local_env;
+  new_envs[1] = envs[1];
+  new_envs[2] = envs[2];
+  new_envs[3] = envs[3];*/
 }
 
 /*

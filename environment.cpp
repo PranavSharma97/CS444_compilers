@@ -369,13 +369,6 @@ Token* environment::GetDeclaration(std::string& name){
   else if(fields.find(name) != fields.end()) declaration = fields[name];
   else if(formalParameters.find(name) != formalParameters.end()) declaration = fields[name];
 
-  if (fields.find(name) != fields.end()){
-    std::cout << "found name" << fields[name] << std::endl;
-    declaration = localVariables[name];
-  }
-  if (fields[name] == nullptr){
-    std::cout << "fields[name] is a nullptr" << std::endl;
-  }
   return declaration;
 }
 
