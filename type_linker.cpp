@@ -344,13 +344,7 @@ bool TypeLinker::Link(){
   }
   
   file_index = 0;
-  environment* envs[4];
-  envs[0] = &local_envs[file_index];
-  envs[1] = &single_types[file_index];
-  envs[2] = pack_envs[file_index];
-  envs[3] = &on_demands[file_index];
-  ResolveNameSpaces(m_asts[0],envs);
-  /*for(Token* n: m_asts){
+  for(Token* n: m_asts){
     //if(!ResolveType(CUN,&local_env)) return false;
     environment* envs[4];
     envs[0] = &local_envs[file_index];
@@ -362,8 +356,25 @@ bool TypeLinker::Link(){
     if(!ResolveNameSpaces(n,envs)) return false;
     CYAN();
     std::cout<<"NameSpaces Resolved"<<std::endl;
+    DEFAULT(); 
+  }
+
+  file_index = 0;
+  for(Token* n: m_asts){
+    //if(!ResolveType(CUN,&local_env)) return false;
+    environment* envs[4];
+    envs[0] = &local_envs[file_index];
+    envs[1] = &single_types[file_index];
+    envs[2] = pack_envs[file_index];
+    envs[3] = &on_demands[file_index];
+    file_index ++;
+
+    if(!ResolveExpressions(n,envs,false)) return false;
+    CYAN();
+    std::cout<<"Expressions Resolved"<<std::endl;
     DEFAULT();
-  }*/
+  }
+
   
   return true;
 }
@@ -956,8 +967,24 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
 
 bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
   TokenType t = root->type();
+  
+  if (t != ClassDeclaration && t != InterfaceDeclaration){
+    if (!envs[0]->merge(root->scope)){
+      RED();
+      std::cerr << "Error: Shadowing of local variables not allowed" << std::endl;
+      DEFAULT();
+      return false;
+    }
+  }
 
-  envs[0]->merge(root->scope);
+  /*
+  std::cout << "TYPE OF NODE IS: " << root->m_display_name << std::endl;
+  std::cout << "Local variables: " << std::endl;  
+  for(std::pair<std::string, Token*> kv_pair: envs[0]->localVariables){
+    std::cout << kv_pair.first << kv_pair.second << ", ";
+  }
+  std::cout << std::endl;*/
+
   environment next_local_env(*(envs[0]));
 
   environment* new_envs[4];
@@ -966,52 +993,92 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
   new_envs[1] = envs[1];
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
- 
-  std::cout << "TYPE OF NODE IS: " << root->m_display_name << std::endl;
 
   if (t == FieldAccess || t == QualifiedName || 
      (t == MethodInvocation && root->m_generated_tokens[1].m_type == T_DOT)) {
     Token* firstIdentifier = root->SearchByTypeDFS(T_IDENTIFIER);
-    std::cout << "Identifier: " << firstIdentifier->m_lex << std::endl;
+
     Token* declaration = envs[0]->GetDeclaration(firstIdentifier->m_lex);
+    if (!declaration) declaration = envs[1]->GetDeclaration(firstIdentifier->m_lex);
+    if (!declaration) declaration = envs[2]->GetDeclaration(firstIdentifier->m_lex);
+    if (!declaration) declaration = envs[3]->GetDeclaration(firstIdentifier->m_lex);
     if (declaration){
       root->declaration = declaration;
+      firstIdentifier->declaration = declaration;
       CYAN();
       std::cout<<"Linking " << root->m_display_name << " to " << declaration->m_display_name << std::endl;
       DEFAULT();
     }
     else{
       CYAN();
-      std::cout << "Identifier: " << root->m_display_name << " must be a type, will resolve later?" << std::endl;
+      std::cout << "Could not link \"" << firstIdentifier->m_lex << "\" possibly a type" << std::endl;
       DEFAULT();
     }
   }
 
-  // SHOULD I BE PASSING new_env????????
+  bool result = true;
   for(Token& n: root->m_generated_tokens){
-    ResolveNameSpaces(&n, envs);
+    if (t == LocalVariableDeclarationStatement){
+      if (!ResolveNameSpaces(&n, envs)) return false;
+    } else {
+      if (!ResolveNameSpaces(&n, new_envs)) return false;
+    }
   }
 
   return true;
 }
 
-bool TypeLinker::ResolveExpressions(Token* root, environment** envs){
-  /*TokenType t = root->type();
+bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool methodOrConstructor){
+  TokenType t = root->type();
 
-  environment next_local_env;
-  next_local_env.merge(*(envs[0]));
-
-  if (!next_local_env.mergeNames(root->scope)){
-    std:cerr << "Shadowing of local variables not allowed" << std::endl;
-    return false;
-  };
-
+  environment next_local_env(*(envs[0]));
   environment* new_envs[4];
 
   new_envs[0] = &next_local_env;
   new_envs[1] = envs[1];
   new_envs[2] = envs[2];
-  new_envs[3] = envs[3];*/
+  new_envs[3] = envs[3];
+  
+  std::cout << "TOKEN TYPE: " << root.m_display_name << std::endl;
+
+  if (t == T_IDENTIFIER && !root->declaration){
+    Token* declaration;
+    if (methodOrConstructor){
+      std::vector<Token*> declarations = envs[0]->GetInvocationDeclaration(root->m_lex);
+      if (declarations.size() == 0) {
+        std::cerr << "Error: cannot find method or constructor identifier: " << root->m_lex << std::endl;
+        return false;
+      }
+      else if (declarations.size() == 1) declaration = declarations[0];
+      else {
+        std::cout << "method is overloaded, will have to do after type checking" << std::endl;
+      }
+    }
+    else {
+      Token* declaration = envs[0]->GetDeclaration(root->m_lex);
+      if (!declaration) {
+        std::cerr << "Error: cannot find variable: " << root->m_lex << std::endl;
+        return false;
+      }
+    }
+    root->declaration = declaration;
+    CYAN();
+    std::cout << "Linked " << root->m_lex << " to " << declaration->m_display_name << std::endl;
+    DEFAULT();
+  }
+
+  for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
+    if (t == ExplicitConstructorInvocation || MethodInvocation){
+      methodOrConstructor = true;
+    }
+
+    if (t == LocalVariableDeclarationStatement){
+      if (!ResolveExpressions(&(*it), envs, methodOrConstructor)) return false;
+    } else {
+      if (!ResolveExpressions(&(*it), new_envs, methodOrConstructor)) return false;
+    }
+  }
+  return true;
 }
 
 /*

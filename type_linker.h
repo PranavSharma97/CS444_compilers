@@ -39,7 +39,7 @@ class TypeLinker{
 
   // Resolving names
   bool ResolveNameSpaces(Token* node,environment** envs);
-  bool ResolveExpressions(Token* node, environment** envs);
+  bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor);
 
   public:
   TypeLinker(const std::vector<Token*>& asts);

@@ -347,28 +347,22 @@ Token* environment::GetInterface(std::string& name){
   return interfaces[name];
 }
 
-void printList(std::map<std::string, Token*> list){
-  for(std::pair<std::string, Token*> kv_pair: list){
-    std::cout << kv_pair.first << kv_pair.second << ", ";
-  }
-  std::cout << std::endl;
-}
-
 Token* environment::GetDeclaration(std::string& name){
-  Token *declaration = nullptr; 
-  
-  std::cout << "Looking for: " << name << std::endl;
-  std::cout << "localVariables: ";
-  printList(localVariables);
-  std::cout << "fields: ";
-  printList(fields);
-  std::cout << "formalParameters: ";
-  printList(formalParameters);
+  Token *declaration = nullptr;
   
   if(localVariables.find(name) != localVariables.end()) declaration = localVariables[name];
   else if(fields.find(name) != fields.end()) declaration = fields[name];
   else if(formalParameters.find(name) != formalParameters.end()) declaration = fields[name];
 
+  return declaration;
+}
+
+std::vector<Token*> environment::GetInvocationDeclaration(std::string& name){
+  std::vector<Token*> declaration;
+
+  if(methods.find(name) != methods.end()) declaration = methods[name];
+  else if(constructors.find(name) != constructors.end()) declaration = constructors[name];
+  
   return declaration;
 }
 

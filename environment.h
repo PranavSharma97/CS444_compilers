@@ -42,6 +42,7 @@ class environment {
   
   // Used to resolve names
   Token* GetDeclaration(std::string& name);
+  std::vector<Token*> GetInvocationDeclaration(std::string& name);
 
   std::map<std::string,Token*> classes;
   std::map<std::string,Token*> interfaces;
