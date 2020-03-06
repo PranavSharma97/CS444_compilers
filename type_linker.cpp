@@ -1122,7 +1122,7 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
   std::cout << std::endl;*/
 
   if (t == T_IDENTIFIER && !root->declaration){
-    Token* declaration;
+    Token* declaration = nullptr;
     if (methodOrConstructor){
       std::vector<Token*> declarations = new_envs[0]->GetInvocationDeclaration(root->m_lex);
       if (declarations.size() == 0) {
@@ -1162,7 +1162,7 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
       if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression || t == MethodDeclarator){
         methodOrConstructor = true;
       }
-      if (t == FormalParameter){
+      if (t == FormalParameter || t == ArgumentList){
         methodOrConstructor = false;
       }
       
@@ -1171,9 +1171,13 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
         new_envs[0]->merge(root->scope);
       }
 
-      if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator || t == MethodHeader){
+      if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
+          t == MethodHeader || t == ConstructorDeclarator){
         if (!ResolveExpressions(&(*it), envs, methodOrConstructor)) return false;
-      } else if (t != TypeImportOnDemandDeclaration && t != PackageDeclaration && t != ArrayType) {
+      }
+      // imports, ArrayType, CastExpression are all types that will be resolved later
+      if (t != SingleTypeImportDeclaration && t != TypeImportOnDemandDeclaration && t != PackageDeclaration &&
+          t != ArrayType && t != CastExpression) {
         if (!ResolveExpressions(&(*it), new_envs, methodOrConstructor)) return false;
       }
     }
