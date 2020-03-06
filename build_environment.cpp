@@ -71,7 +71,8 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       it->scope.fields = addToSelf(it->scope.fields, identifier, &(*it));
     }
     else if (it->m_type == MethodDeclaration){
-      Token *identifierToken = it->m_generated_tokens[0].SearchByTypeDFS(T_IDENTIFIER);
+      Token *methodDeclarator = it->m_generated_tokens[0].SearchByTypeDFS(MethodDeclarator);
+      Token *identifierToken = methodDeclarator->SearchByTypeDFS(T_IDENTIFIER);
       string identifier = identifierToken->m_lex;
 
       addProtectedFlag(&(*it));
