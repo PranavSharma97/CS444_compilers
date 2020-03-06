@@ -1056,6 +1056,22 @@ bool TypeLinker::ResolveFieldDeclarations(Token* root, environment** envs){
   new_envs[3] = envs[3];
 
   if (t == FieldDeclaration){
+    // check there is no reference to self in FieldDeclaration
+    Token *identifierToken = root->SearchByTypeDFS(T_IDENTIFIER);
+    std::string identifier = identifierToken->m_lex;
+
+    Token *rightHandToken = root->SearchByTypeDFS(VariableDeclarator);
+    Token mostRightToken;
+    if (rightHandToken) mostRightToken = rightHandToken->m_generated_tokens.back();
+    Token *rightHandIdentifier;
+
+    if (rightHandToken) rightHandIdentifier = mostRightToken.SearchByTypeDFS(T_IDENTIFIER);
+    if (rightHandIdentifier && rightHandIdentifier->m_lex == identifier){
+      RED();
+      std::cout << "Error cannot use field name \"" << identifier <<  "\" in self declaration" << std::endl;
+      DEFAULT();
+      return false;
+    }
     if (!ResolveExpressions(root, new_envs, false)) return false;
   }
   for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
