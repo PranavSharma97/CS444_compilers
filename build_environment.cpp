@@ -132,7 +132,8 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       traverse(&(*it), &it->scope, true);
     }
     else if (it->m_type == AbstractMethodDeclaration){
-      Token *identifierToken = it->m_generated_tokens[0].SearchByTypeDFS(T_IDENTIFIER);
+      Token *methodDeclarator = it->m_generated_tokens[0].SearchByTypeDFS(MethodDeclarator);
+      Token *identifierToken = methodDeclarator->SearchByTypeDFS(T_IDENTIFIER);
       string identifier = identifierToken->m_lex;
       scope->methods[identifier].push_back(&(*it));
       it->scope.methods[identifier].push_back(&(*it));
