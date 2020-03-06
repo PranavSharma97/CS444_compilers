@@ -11,6 +11,7 @@ class TypeLinker{
   const std::string default_package_name;
   // Need to be freed
   Package*  m_packages;
+  Token* java_lang_object_interface;
   std::vector<Token*> m_asts;
 
   bool ConstructPackage();
@@ -39,4 +40,5 @@ class TypeLinker{
   TypeLinker(const std::vector<Token*>& asts);
   ~TypeLinker();
   bool Link();
+  void set_object_interface(Token* t);
 };

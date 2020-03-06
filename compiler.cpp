@@ -23,9 +23,16 @@ int main(int argc, char *argv[]) {
 
   vector<Token> parse_trees;
   vector<Token*> tree_ptrs;
-  for(int i = 1;i<argc;i++){
-
-    string file(argv[i]);
+  Token object_interface;
+  for(int i = 0;i<argc;i++){
+    // compile the interface version of java lang object
+    string file;
+    if(i == 0){
+      file = "data/java/ObjectINTERFACE.java";
+    } else {
+      string s(argv[i]);
+      file = s;
+    }
     cout << "Compiling:"<<file << endl;
 
     vector<Token> result;
@@ -62,7 +69,14 @@ int main(int argc, char *argv[]) {
 	cout << "Invalid weeding" << endl;
 	return 42;
       }
-      parse_trees.emplace_back(W.m_ast_tree);
+      // 0 is the parse interface version of java object
+      if(i!=0){
+	parse_trees.emplace_back(W.m_ast_tree);
+      } else {
+	// Record the object version of interface 
+	object_interface = W.m_ast_tree;
+      }
+      
     } catch (std::exception& e){
       return 42;
     }
@@ -75,6 +89,8 @@ int main(int argc, char *argv[]) {
     printEnvironments(levels,&parse_trees[i]);
     //printEnvironments(levels,&parse_trees[i-1],1);
   }
+  BuildEnvironment(&object_interface);
+  
 
   
   // convert parse_trees to token pointers
@@ -85,12 +101,16 @@ int main(int argc, char *argv[]) {
   for(Token* t: tree_ptrs){
     t->BindCompilationUnit();
   }
+  object_interface.BindCompilationUnit();
+
+  
   /*
   for(Token* t: tree_ptrs){
     t->SearchByTypeBFS(TokenType::TOKEN_FAILURE);
     }*/
   
   TypeLinker TPLink(tree_ptrs);
+  TPLink.set_object_interface(&object_interface);
   if(!TPLink.Link()) return 42;
   /*
   for(Token* ti: tree_ptrs){

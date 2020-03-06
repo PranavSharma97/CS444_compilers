@@ -34,7 +34,7 @@ done < "$positive"
 
 negative="negative.txt"
 while IFS= read -r file; do
-    if [[ -d "$file" ]]; then
+    if [[ -f "$file" ]]; then
 	if ./test_file "$file" >> negative.out;then
 	    # NEG_FAILED = $((NEG_FAILED + 1))
 	    let "NEG_FAILED = NEG_FAILED + 1"
