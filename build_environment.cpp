@@ -136,6 +136,7 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       string identifier = identifierToken->m_lex;
       scope->methods[identifier].push_back(&(*it));
       it->scope.methods[identifier].push_back(&(*it));
+      traverse(&(*it), &it->scope);
     }
     else if (it->m_type == BlockStatement){
       traverse(&(*it), &it->scope);
