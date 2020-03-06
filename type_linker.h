@@ -39,6 +39,7 @@ class TypeLinker{
 
   // Resolving names
   bool ResolveNameSpaces(Token* node,environment** envs);
+  bool ResolveFieldDeclarations(Token* root, environment** envs);
   bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor);
 
   public:

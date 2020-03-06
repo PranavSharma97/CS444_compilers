@@ -357,6 +357,21 @@ bool TypeLinker::Link(){
     std::cout<<"NameSpaces Resolved"<<std::endl;
     DEFAULT(); 
   //}
+  
+  file_index = 0;
+  // for(Token* n: m_asts){
+    // environment* envs[4];
+    envs[0] = &local_envs[file_index];
+    envs[1] = &single_types[file_index];
+    envs[2] = pack_envs[file_index];
+    envs[3] = &on_demands[file_index];
+    // file_index ++;
+
+    if(!ResolveFieldDeclarations(m_asts[file_index],envs)) return false;
+    CYAN();
+    std::cout<<"Field Expressions Resolved"<<std::endl;
+    DEFAULT();
+  // }
 
   file_index = 0;
   // for(Token* n: m_asts){
@@ -372,7 +387,6 @@ bool TypeLinker::Link(){
     std::cout<<"Expressions Resolved"<<std::endl;
     DEFAULT();
   // }
-
   
   return true;
 }
@@ -1028,12 +1042,32 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
   return true;
 }
 
+bool TypeLinker::ResolveFieldDeclarations(Token* root, environment** envs){
+  TokenType t = root->type();
+  if (t != ClassDeclaration && t!= InterfaceDeclaration){
+    envs[0]->merge(root->scope);
+  }
+  environment next_local_env(*(envs[0]));
+  environment* new_envs[4];
+
+  new_envs[0] = &next_local_env;
+  new_envs[1] = envs[1];
+  new_envs[2] = envs[2];
+  new_envs[3] = envs[3];
+
+  if (t == FieldDeclaration){
+    if (!ResolveExpressions(root, new_envs, false)) return false;
+  }
+  for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
+    if (!ResolveFieldDeclarations(&(*it), new_envs)) return false;
+  }
+  return true;
+}
+
 bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool methodOrConstructor){
   TokenType t = root->type();
 
-  if (t != ClassDeclaration && t != InterfaceDeclaration){
-    envs[0]->merge(root->scope);
-  }
+  envs[0]->merge(root->scope);
 
   environment next_local_env(*(envs[0]));
   environment* new_envs[4];
@@ -1043,15 +1077,19 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
   
-  // std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
+  /*std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
   
-  /*std::cout << "constructors: ";
+  std::cout << "constructors: ";
   for(std::pair<std::string, std::vector<Token*>> kv_pair: new_envs[0]->constructors){
     std::cout << kv_pair.first;
   }
   std::cout << std::endl;
   std::cout << "fields: ";
   for(std::pair<std::string, Token*> kv_pair: new_envs[0]->fields){
+    std::cout << kv_pair.first;
+  }
+  std::cout << "localVariables: ";
+  for(std::pair<std::string, Token*> kv_pair: new_envs[0]->localVariables){
     std::cout << kv_pair.first;
   }
   std::cout << std::endl;*/
@@ -1092,6 +1130,11 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
     for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
       if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression){
         methodOrConstructor = true;
+      }
+      
+      // constructor declarator blocks need to have access to all variables, fields, methods inside its parent class
+      if (t == ConstructorDeclaration){
+        new_envs[0]->merge(root->scope);
       }
 
       if (t == LocalVariableDeclarationStatement){
