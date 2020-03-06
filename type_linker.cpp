@@ -989,8 +989,8 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
     }
   }
 
-  /*
-  std::cout << "TYPE OF NODE IS: " << root->m_display_name << std::endl;
+  
+  /*std::cout << "TYPE OF NODE IS: " << root->m_display_name << std::endl;
   std::cout << "Local variables: " << std::endl;  
   for(std::pair<std::string, Token*> kv_pair: envs[0]->localVariables){
     std::cout << kv_pair.first << kv_pair.second << ", ";
@@ -1045,7 +1045,7 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
 bool TypeLinker::ResolveFieldDeclarations(Token* root, environment** envs){
   TokenType t = root->type();
   if (t != ClassDeclaration && t!= InterfaceDeclaration){
-    envs[0]->merge(root->scope);
+    envs[0]->force_merge(root->scope);
   }
   environment next_local_env(*(envs[0]));
   environment* new_envs[4];
@@ -1083,7 +1083,7 @@ bool TypeLinker::ResolveFieldDeclarations(Token* root, environment** envs){
 bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool methodOrConstructor){
   TokenType t = root->type();
 
-  envs[0]->merge(root->scope);
+  envs[0]->force_merge(root->scope);
 
   environment next_local_env(*(envs[0]));
   environment* new_envs[4];
@@ -1100,12 +1100,23 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
     std::cout << kv_pair.first;
   }
   std::cout << std::endl;
+  std::cout << "methods: ";
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: new_envs[0]->methods){
+    std::cout << kv_pair.first;
+  }
+  std::cout << std::endl;
   std::cout << "fields: ";
   for(std::pair<std::string, Token*> kv_pair: new_envs[0]->fields){
     std::cout << kv_pair.first;
   }
+  std::cout << std::endl;
   std::cout << "localVariables: ";
   for(std::pair<std::string, Token*> kv_pair: new_envs[0]->localVariables){
+    std::cout << kv_pair.first;
+  }
+  std::cout << std::endl;
+  std::cout << "formalParameters: ";
+  for(std::pair<std::string, Token*> kv_pair: new_envs[0]->formalParameters){
     std::cout << kv_pair.first;
   }
   std::cout << std::endl;*/
@@ -1123,9 +1134,10 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
       else if (declarations.size() == 1) declaration = declarations[0];
       else {
         CYAN();
-        std::cout << "method " << root->m_lex << " is overloaded, will have to do after type checking" << std::endl;
+        std::cout << "method \"" << root->m_lex << "\" is overloaded, will have to do after type checking" << std::endl;
         DEFAULT();
       }
+      methodOrConstructor = false;
     }
     else {
       declaration = new_envs[0]->GetDeclaration(root->m_lex);
@@ -1144,8 +1156,14 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
     }
   } else if (t!=QualifiedName) {
     for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
-      if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression){
+      if (it->type() == T_DOT){
+        break;
+      }
+      if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression || t == MethodDeclarator){
         methodOrConstructor = true;
+      }
+      if (t == FormalParameter){
+        methodOrConstructor = false;
       }
       
       // constructor declarator blocks need to have access to all variables, fields, methods inside its parent class
@@ -1153,9 +1171,9 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
         new_envs[0]->merge(root->scope);
       }
 
-      if (t == LocalVariableDeclarationStatement){
+      if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator || t == MethodHeader){
         if (!ResolveExpressions(&(*it), envs, methodOrConstructor)) return false;
-      } else {
+      } else if (t != TypeImportOnDemandDeclaration && t != PackageDeclaration && t != ArrayType) {
         if (!ResolveExpressions(&(*it), new_envs, methodOrConstructor)) return false;
       }
     }

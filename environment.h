@@ -17,6 +17,7 @@ class environment {
   environment(const environment& other);
   ~environment() = default;
   bool merge(environment src,Token** clash_token = nullptr);
+  void force_merge(environment src,Token** clash_token = nullptr);
   void overwrite_merge(environment& src);
   // used for checking self import
   bool check_exist(Token* t);
