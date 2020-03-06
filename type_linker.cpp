@@ -345,6 +345,10 @@ bool TypeLinker::Link(){
   return true;
 }
 
+void TypeLinker::set_object_interface(Token* t){
+  java_lang_object_interface = t;
+}
+
 bool TypeLinker::HasEnv(TokenType t){
   switch(t){
   case TokenType::CompilationUnit:
@@ -552,14 +556,21 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
   
   // If no more class to inherit from return true.
   if(interfaces==nullptr) {
+    // Try to inherit from java_lang_object_interface
+    if(sub == java_lang_object_interface){
+      sub->Inherited = true;
+      return true;
+    }
+    // If I'm not java_lang_object_interface, get the interface declaration and replace_merge
+    Token* the_interface = java_lang_object_interface->SearchByTypeBFS(TokenType::InterfaceDeclaration);
+    if(!sub->scope.replace_merge(the_interface->scope)){
+      RED();
+      std::cerr<<"Interface Inheritance ERROR: cannot get the abstract version of object methods."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    sub->Inherited = true;
     return true;
-  }
-  // check for cycle
-  if(duplicate.find(interfaces) != duplicate.end()){
-    RED();
-    std::cerr<<"ERROR: inheritance is not acyclic"<<std::endl;
-    DEFAULT();
-    return false;
   }
 
   // Inherit or declare the default java.lang.object;
@@ -601,7 +612,18 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 	std::cerr<<"Interface Inheritance ERROR:"<<t.m_lex<<" is not defined or ambiguous."<<std::endl;
 	DEFAULT();
 	return false;
-      } else if(super_class->Inherited) return true;
+      } else {
+	
+	// Check for acyclic inheritance
+	if(duplicate.find(super_class) != duplicate.end()){
+	  RED();
+	  std::cerr<<"Interface Inheritance ERROR: inheritance is not acyclic"<<std::endl;
+	  DEFAULT();
+	  return false;
+	}
+	// If super interface is inherited continue
+      }
+      if(super_class->Inherited) continue;
       
       // if the name is not binded return false
       if(t.declaration == nullptr){
@@ -627,11 +649,18 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
       }
       
       // prepare for recursive check
-      duplicate[&t] = true;
-      Token* implement = t.SearchOneChild(TokenType::ExtendsInterfaces); 
-      if(!DoInheritInterface(&t,implement,duplicate,new_envs)) return false;
+      duplicate[super_class] = true;
+      YELLOW();
+      for(std::pair<Token*,bool> kv:duplicate){
+	std::cout<<kv.first<<" ";
+      }
+      std::cout<<std::endl;
+      DEFAULT();
+      //duplicate[super_class] = true;
+      Token* implement = super_class->SearchOneChild(TokenType::ExtendsInterfaces); 
+      if(!DoInheritInterface(super_class,implement,duplicate,new_envs)) return false;
       // merge super to me
-      if(!sub->scope.replace_merge(t.scope)) return false;
+      if(!sub->scope.replace_merge(super_class->scope)) return false;
     }
   }
   sub->Inherited = true;
@@ -725,7 +754,7 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
       if(!DoInheritInterface(node,implement,dup,new_envs)) return false;
     } 
   } else {
-    DoInheritInterface(node,i_extend,dup,envs);
+    if(!DoInheritInterface(node,i_extend,dup,envs)) return false;
   }
 
   CYAN();
