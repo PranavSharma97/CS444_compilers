@@ -532,7 +532,9 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
   if(!sub->scope.replace_merge(super->scope)) return false;
   
   //  handle class implements interfaces
-  if(implement!=nullptr && !DoInheritInterface(super,implement,duplicate,envs)) return false; 
+  
+  std::map<Token*,bool> interface_dup;
+  if(implement!=nullptr && !DoInheritInterface(super,implement,interface_dup,envs)) return false; 
   
   sub->Inherited = true;
   CYAN();
@@ -681,6 +683,7 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
   if(node->Inherited) return true;
   
   std::map<Token*,bool> dup;
+  std::map<Token*,bool> interface_dup;
   dup[node] = true;
   PURPLE();
   std::cout<<"DO INHERIT: CHECK INHERITANCE OF CLASS, node = "<<node<<std::endl;
@@ -751,10 +754,10 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
       
       // inherit from super class
       if(!DoInheritClass(node,super_class,dup,new_envs)) return false;
-      if(!DoInheritInterface(node,implement,dup,new_envs)) return false;
+      if(!DoInheritInterface(node,implement,interface_dup,new_envs)) return false;
     } 
   } else {
-    if(!DoInheritInterface(node,i_extend,dup,envs)) return false;
+    if(!DoInheritInterface(node,i_extend,interface_dup,envs)) return false;
   }
 
   CYAN();
