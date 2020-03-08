@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
       }
       // 0 is the parse interface version of java object
       //if(i!=0){
-	parse_trees.emplace_back(W.m_ast_tree);
+      parse_trees.emplace_back(W.m_ast_tree);
 	/*} else {
 	// Record the object version of interface 
 	object_interface = W.m_ast_tree;
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     printEnvironments(levels,&parse_trees[i]);
     //printEnvironments(levels,&parse_trees[i-1],1);
   }
-  BuildEnvironment(&object_interface);
+  //BuildEnvironment(&object_interface);
   
   
   
