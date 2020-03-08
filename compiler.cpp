@@ -61,7 +61,7 @@ int main(int argc, char *argv[]) {
     } catch (std::exception& e){
       return 42;
     }
-
+    
     try{
       Weeder W(file,parse_tree);
       bool valid = W.weed();
@@ -70,12 +70,12 @@ int main(int argc, char *argv[]) {
 	return 42;
       }
       // 0 is the parse interface version of java object
-      if(i!=0){
-	parse_trees.emplace_back(W.m_ast_tree);
-      } else {
+      //if(i!=0){
+      parse_trees.emplace_back(W.m_ast_tree);
+	/*} else {
 	// Record the object version of interface 
 	object_interface = W.m_ast_tree;
-      }
+	}*/
       
     } catch (std::exception& e){
       return 42;
@@ -89,9 +89,9 @@ int main(int argc, char *argv[]) {
     printEnvironments(levels,&parse_trees[i]);
     //printEnvironments(levels,&parse_trees[i-1],1);
   }
-  BuildEnvironment(&object_interface);
+  //BuildEnvironment(&object_interface);
   
-
+  
   
   // convert parse_trees to token pointers
   /* for(int i = 0;i<parse_trees.size();i++){
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
   for(Token* t: tree_ptrs){
     t->BindCompilationUnit();
   }
-  object_interface.BindCompilationUnit();
+  //object_interface.BindCompilationUnit();
 
   
   /*
@@ -110,7 +110,8 @@ int main(int argc, char *argv[]) {
     }*/
   
   TypeLinker TPLink(tree_ptrs);
-  TPLink.set_object_interface(&object_interface);
+  TPLink.set_object_interface(tree_ptrs[0]);
+  // TPLink.set_object_interface(&object_interface);
   if(!TPLink.Link()) return 42;
   /*
   for(Token* ti: tree_ptrs){
