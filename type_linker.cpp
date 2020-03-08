@@ -393,9 +393,9 @@ bool TypeLinker::DoLinkType(Token* id, environment** envs){
 
 bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& duplicate, environment** envs){
   CYAN();
-  std::cout<<"DO INHERIT CLASS:("<<*sub<<","<<sub->m_lex<<")"<<std::endl;
+  std::cout<<"DO INHERIT CLASS:("<<*sub<<","<<sub->m_generated_tokens[2].m_lex<<")"<<std::endl;
   if(super!=nullptr){
-    std::cout<<"From:("<<*super<<","<<super->m_lex<<")"<<std::endl;
+    std::cout<<"From:("<<*super<<","<<super->m_generated_tokens[2].m_lex<<")"<<std::endl;
   }
   DEFAULT();
   // If no more class to inherit from, try to inherit from java.lang.Object
@@ -550,7 +550,7 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 				    environment** envs)
 {
   CYAN();
-  std::cout<<"DO INHERIT INT:("<<*sub<<","<<sub->m_lex<<")"<<std::endl;
+  std::cout<<"DO INHERIT INT:("<<*sub<<","<<sub->m_generated_tokens[2].m_lex<<")"<<std::endl;
   if(interfaces!=nullptr){
     std::cout<<"From:"<<*interfaces<<std::endl;
   }
@@ -677,7 +677,7 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
 
 
   CYAN();
-  std::cout<<"DO INHERIT:("<<*node<<","<<node->m_lex<<")"<<std::endl;
+  std::cout<<"DO INHERIT:("<<*node<<","<<node->m_generated_tokens[2].m_lex<<")"<<std::endl;
   DEFAULT();
   
   if(node->Inherited) return true;
@@ -754,28 +754,30 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
       
       // inherit from super class
       if(!DoInheritClass(node,super_class,dup,new_envs)) return false;
-      if(!DoInheritInterface(node,implement,interface_dup,new_envs)) return false;
-    } 
+    } else {
+      CYAN();
+      std::cout<<node->m_generated_tokens[2].m_lex<<" Try to inherit from java lang object"<<std::endl;
+      DEFAULT();
+      Token* java_lang_obj = m_packages->GetQualified("java.lang.Object");
+      if(java_lang_obj == nullptr){
+	RED();
+	std::cerr<<"Inheritance ERROR: cannot find java.lang.Object"<<std::endl;
+	DEFAULT();
+	return false;
+      }
+      if(java_lang_obj != node && !DoInheritClass(node,java_lang_obj,dup,envs)){
+	RED();
+	std::cerr<<"Inheritance ERROR: cannot inherit java.lang.Object"<<std::endl;
+	DEFAULT();
+	return false;
+      }
+    }
+    // Inherit from interface
+    if(!DoInheritInterface(node,implement,interface_dup,new_envs)) return false;
   } else {
     if(!DoInheritInterface(node,i_extend,interface_dup,envs)) return false;
   }
-
-  CYAN();
-  std::cout<<"Try to inherit from java lang object"<<std::endl;
-  DEFAULT();
-  Token* java_lang_obj = m_packages->GetQualified("java.lang.Object");
-  if(java_lang_obj == nullptr){
-    RED();
-    std::cerr<<"Inheritance ERROR: cannot find java.lang.Object"<<std::endl;
-    DEFAULT();
-    return false;
-  }
-  if(java_lang_obj != node && !DoInheritClass(node,java_lang_obj,dup,envs)){
-    RED();
-    std::cerr<<"Inheritance ERROR: cannot inherit java.lang.Object"<<std::endl;
-    DEFAULT();
-    return false;
-  }
+  
   // Inherit from java lang object 
   node->Inherited = true;
   CYAN();
