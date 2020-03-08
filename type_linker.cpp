@@ -599,9 +599,13 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 	DEFAULT();
 	return false;
       }
-      YELLOW();
+      /*YELLOW();
       std::cout<<t<<","<<t.m_lex<<std::endl;
-      DEFAULT();
+      std::cout<<envs[2]<<std::endl;
+      for(std::pair<std::string,Token*> kv:envs[2]->interfaces){
+	std::cout<<kv.first<<","<<kv.second<<","<<*kv.second<<std::endl;
+      }
+      DEFAULT();*/
       Token* super_class;
       if(t.m_type == TokenType::T_IDENTIFIER){
 	super_class = GetInterfaceFromEnv(t.m_lex, envs);
@@ -652,12 +656,12 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
       
       // prepare for recursive check
       duplicate[super_class] = true;
-      YELLOW();
+      /*YELLOW();
       for(std::pair<Token*,bool> kv:duplicate){
 	std::cout<<kv.first<<" ";
       }
       std::cout<<std::endl;
-      DEFAULT();
+      DEFAULT();*/
       //duplicate[super_class] = true;
       Token* implement = super_class->SearchOneChild(TokenType::ExtendsInterfaces); 
       if(!DoInheritInterface(super_class,implement,duplicate,new_envs)) return false;
@@ -773,7 +777,7 @@ bool TypeLinker::DoInherit(Token* node, environment** envs){
       }
     }
     // Inherit from interface
-    if(!DoInheritInterface(node,implement,interface_dup,new_envs)) return false;
+    if(!DoInheritInterface(node,implement,interface_dup,envs)) return false;
   } else {
     if(!DoInheritInterface(node,i_extend,interface_dup,envs)) return false;
   }
