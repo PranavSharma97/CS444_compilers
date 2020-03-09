@@ -559,7 +559,10 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
   // If no more class to inherit from return true.
   if(interfaces==nullptr) {
     // Try to inherit from java_lang_object_interface
-    if(sub == java_lang_object_interface){
+    
+    Token* java_lang_obj = m_packages->GetQualified("java.lang.Object");
+    if(sub == java_lang_object_interface ||
+       sub == java_lang_obj){
       sub->Inherited = true;
       return true;
     }
