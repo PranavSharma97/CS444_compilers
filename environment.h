@@ -8,11 +8,10 @@ class Token;
 
 class environment {
 
-  // Hierarchy checking on methods
-  bool valid_method(std::pair<std::string,std::vector<Token*>>& kv);
-
   // Hierarchy checking on constructors
   bool valid_ctor(std::pair<std::string,std::vector<Token*>>& kv);
+
+  bool valid_method(std::pair<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod);
  public:
   environment() = default;
   environment(const environment& other);
@@ -28,6 +27,17 @@ class environment {
   
   // Used for inheritance;
   bool replace_merge(environment& src);
+  void build_declared_set();
+     
+  bool checkMethods();
+
+  bool checkConstructors();
+
+  bool check_return_types(Token* src, Token* current);
+
+  void postProcessMethodMap();
+
+  void postProcessConstructorMap();
   void clear();
   
   std::map<std::string,Token*> classes;
@@ -37,4 +47,8 @@ class environment {
   std::map<std::string,Token*> localVariables;
   std::map<std::string,Token*> formalParameters;
   std::map<std::string,std::vector<Token*>> constructors;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> methodsWithSignatures;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> methodsWithSignaturesDeclared;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> methodsWithSignaturesInherited;
+  std::map<std::string,std::map<std::string,std::vector<Token*>>> constructorsWithSignatures;
 };

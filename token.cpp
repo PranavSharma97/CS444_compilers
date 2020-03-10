@@ -582,6 +582,40 @@ void Token::clear(){
 
 TokenType Token::type() const { return m_type; }
 
+bool Token::BuildDeclaredSet(){
+  std::vector<Token*> queue;
+  queue.emplace_back(this);
+  int start = 0;
+  int end = queue.size();
+  while(end-start > 0){
+    Token* t = queue[start];
+    if(t->m_type == TokenType::ClassDeclaration ||
+       t->m_type == TokenType::InterfaceDeclaration){
+      t->scope.postProcessMethodMap();
+      t->scope.postProcessConstructorMap();
+      t->scope.build_declared_set();
+
+      //if(t->m_generated_tokens[2].m_lex == "Object") {
+      //  std::cerr<<"Is Object class"<<std::endl;
+      //}
+
+      if(!t->scope.checkMethods() || !t->scope.checkConstructors()) {
+        std::cerr<<"Methods or Constructors error"<<std::endl;
+        return false;
+      }
+    }
+    start ++;
+    for(Token& child: t->m_generated_tokens){
+      queue.emplace_back(&child);
+      end++;
+    }
+
+  }
+
+  return true;
+}
+
+
 void Token::BindCompilationUnit(){
   std::vector<Token*> queue;
   queue.emplace_back(this);

@@ -29,6 +29,7 @@ class Token{
   TokenType type() const;
   // Get the first token with the same type as type, not including itself.
   Token* SearchByTypeBFS(TokenType type);
+  bool BuildDeclaredSet();
   void BindCompilationUnit();
   // Get the first token with the same type as type, including itself
   Token* SearchByTypeDFS(TokenType type);
