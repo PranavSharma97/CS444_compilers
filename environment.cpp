@@ -251,60 +251,42 @@ bool environment::merge(environment src,Token** clash_token){
 }
 
 void environment::force_merge(environment src,Token** clash_token){
-  int counter = 0;
+  // Merge classes
   for(std::pair<std::string, Token*> kv_pair: src.classes){
-    if(classes.find(kv_pair.first) == classes.end() &&
-       interfaces.find(kv_pair.first) == interfaces.end()){
-        classes[kv_pair.first] = kv_pair.second;
-    }
+    classes[kv_pair.first] = kv_pair.second;
   }
   // Merge interfaces
   for(std::pair<std::string, Token*> kv_pair: src.interfaces){
-    if(classes.find(kv_pair.first) == classes.end() &&
-       interfaces.find(kv_pair.first) == interfaces.end()){
-        interfaces[kv_pair.first] = kv_pair.second;
-    }
+    interfaces[kv_pair.first] = kv_pair.second;
   }
 
   // Merge methods, current doesn't check the methods with same parameters
   for(std::pair<std::string, std::vector<Token*>> kv_pair: src.methods){
-    if(valid_method(kv_pair)){
-      for(Token* n: kv_pair.second){
-	       methods[kv_pair.first].emplace_back(n);
-      }
+    for(Token* n: kv_pair.second){
+	    methods[kv_pair.first].emplace_back(n);
     }
   }
 
   // Merge Ctors
   for(std::pair<std::string, std::vector<Token*>> kv_pair: src.constructors){
-    if(valid_ctor(kv_pair)){
-      for(Token* n: kv_pair.second){
-	      constructors[kv_pair.first].emplace_back(n);
-      }
+    for(Token* n: kv_pair.second){
+	    constructors[kv_pair.first].emplace_back(n);
     }
   }
 
-  // Merge formal Parameters
+  // Merge Formal Parameters
   for(std::pair<std::string, Token*> kv_pair: src.formalParameters){
-    if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
-       localVariables.find(kv_pair.first) == localVariables.end()){
-        formalParameters[kv_pair.first] = kv_pair.second;
-    }
+    formalParameters[kv_pair.first] = kv_pair.second;
   }
 
-  // Merge fields
+  // Merge Fields
   for(std::pair<std::string, Token*> kv_pair: src.fields){
-    if(fields.find(kv_pair.first) == fields.end()){
-      fields[kv_pair.first] = kv_pair.second;
-    }
+    fields[kv_pair.first] = kv_pair.second;
   }
 
   // Merge localVariables
   for(std::pair<std::string, Token*> kv_pair: src.localVariables){
-    if(formalParameters.find(kv_pair.first) == formalParameters.end() &&
-       localVariables.find(kv_pair.first) == localVariables.end()){
-      localVariables[kv_pair.first] = kv_pair.second;
-    }
+    localVariables[kv_pair.first] = kv_pair.second;
   }
 }
 
