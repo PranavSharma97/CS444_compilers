@@ -101,6 +101,12 @@ int main(int argc, char *argv[]) {
   for(Token* t: tree_ptrs){
     t->BindCompilationUnit();
   }
+
+  for(Token* t: tree_ptrs){
+    if(!t->BuildDeclaredSet()) {
+      return 42;
+    }
+  }
   //object_interface.BindCompilationUnit();
 
   
