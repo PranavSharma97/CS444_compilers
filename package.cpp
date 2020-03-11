@@ -19,6 +19,8 @@ class Package{
 };
 */
 
+static const std::string default_package_name = "THE DEFAULT PACKAGE";
+static const std::string root_package_name = "THIS IS THE ROOT PACK";
 
 bool Package::AddToPackage(std::vector<std::string>& path, environment* src){
 
@@ -168,20 +170,61 @@ environment* Package::GetAll(const std::string& path){
   return new_env;
 }
 
-bool Package::CheckNames(environment** envs){
-  if( envs[0]->classes.find(package_name) == envs[0]->classes.end() &&
-      envs[0]->interfaces.find(package_name) == envs[0]->interfaces.end() &&
-      envs[1]->classes.find(package_name) == envs[1]->classes.end() &&
-      envs[1]->interfaces.find(package_name) == envs[1]->interfaces.end()&&
-      envs[3]->classes.find(package_name) == envs[3]->classes.end() &&
-      envs[3]->interfaces.find(package_name) == envs[3]->interfaces.end()){
+bool Package::CheckNames(environment** envs, const std::string& parent_name, Package* root){
+  std::string prefix = parent_name + "." + package_name;
+  if(parent_name.length() <= 0){
+    prefix = package_name;
+  }
+  if(envs[0]->GetType(prefix) == nullptr &&
+     envs[1]->GetType(prefix) == nullptr &&
+     envs[2]->GetType(prefix) == nullptr &&
+     envs[3]->GetType(prefix) == nullptr ){
+
+    if(package_name.compare(default_package_name) == 0 ||
+       package_name.compare(root_package_name) == 0) prefix = "";
     for(std::pair<std::string,Package*> kv_pair: m_sub_packs){
-      if(!kv_pair.second->CheckNames(envs)) return false;
+      std::cout<<"Checking...("<<prefix<<") in"<<kv_pair.first<<std::endl;
+      if(!kv_pair.second->CheckNames(envs,prefix,root)) return false;
+    }
+    // If prefix is not zero, try to get by qualified name
+    if(prefix.length() > 0){
+      // if cannot get, return true, otherwise return false
+      if(root->GetQualified(prefix) == nullptr) return true;
+      RED();
+      std::cerr<<"ERROR: Package "<<prefix<<" clashes with a class";
+      std::cerr<<" or an interface name"<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    // if prefix is empty, non of the children search broke, return true
+    return true;
+  }else {
+    RED();
+    std::cerr<<"ERROR: Package "<<prefix<<" clashes with a class";
+    std::cerr<<" or an interface name"<<std::endl;
+    DEFAULT();
+    return false;
+  }
+}
+bool Package::CheckNames(environment** envs){
+  std::string prefix = package_name;
+  if(package_name.compare(default_package_name) == 0 ||
+     package_name.compare(root_package_name) == 0) prefix = "";
+  if(envs[0]->GetType(prefix) == nullptr &&
+     envs[1]->GetType(prefix) == nullptr &&
+     envs[2]->GetType(prefix) == nullptr &&
+     envs[3]->GetType(prefix) == nullptr ){
+    // skip the default and root package names
+    for(std::pair<std::string,Package*> kv_pair: m_sub_packs){
+      CYAN();
+      std::cout<<"Checking...("<<prefix<<") in"<<kv_pair.first<<std::endl;
+      DEFAULT();
+      if(!kv_pair.second->CheckNames(envs,prefix,this)) return false;
     }
     return true;
   }else {
     RED();
-    std::cerr<<"ERROR: Package "<<package_name<<" clashes with a class";
+    std::cerr<<"ERROR: Package "<<prefix<<" clashes with a class";
     std::cerr<<" or an interface name"<<std::endl;
     DEFAULT();
     return false;
@@ -196,6 +239,7 @@ Token* Package::GetQualified(std::vector<std::string>& path){
       return m_sub_packs[key]->GetQualified(path);
     }
   }else{
+    if(m_env == nullptr) return nullptr;
     if(m_env->classes.find(key) != m_env->classes.end()){
       return m_env->classes[key];
     }else if(m_env->interfaces.find(key) != m_env->interfaces.end()){
@@ -206,9 +250,10 @@ Token* Package::GetQualified(std::vector<std::string>& path){
 }
 
 Token* Package::GetQualified(const std::string& name){
+  if(name.length()<=0) return nullptr;
   std::vector<std::string> v_path;
   string_split(name,'.',v_path);
-
+  
   return GetQualified(v_path);
   
 }
@@ -246,12 +291,14 @@ environment* Package::GetPack(const std::string& pack_name){
 Package::Package():
   m_env(nullptr),
   package_name("")
-{}
+{
+}
 
 Package::Package(const std::string& pack_name):
   m_env(nullptr),
   package_name(pack_name)
-{}
+{
+}
 
 Package::Package(const std::string& path, environment* src):
   m_env(nullptr),

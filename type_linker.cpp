@@ -316,7 +316,7 @@ bool TypeLinker::Link(){
     file_index ++;
     
     // check if any package name is a class name
-    //if(!m_packages->CheckNames(envs)) return false;
+    if(!m_packages->CheckNames(envs)) return false;
     CYAN();
     std::cout<<"PACKAGE NAMES CHECKED"<<std::endl;
     DEFAULT();
