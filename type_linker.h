@@ -36,7 +36,13 @@ class TypeLinker{
   bool DoInheritInterface(Token* sub,Token* interfaces,
 			  std::map<Token*,bool>& duplicate,
 			  environment** envs);
- public:
+
+  // Resolving names
+  bool ResolveNameSpaces(Token* node,environment** envs);
+  bool ResolveFieldDeclarations(Token* root, environment** envs);
+  bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor);
+
+  public:
   TypeLinker(const std::vector<Token*>& asts);
   ~TypeLinker();
   bool Link();

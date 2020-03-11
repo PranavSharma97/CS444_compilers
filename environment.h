@@ -17,6 +17,7 @@ class environment {
   environment(const environment& other);
   ~environment() = default;
   bool merge(environment src,Token** clash_token = nullptr);
+  void force_merge(environment src,Token** clash_token = nullptr);
   void overwrite_merge(environment& src);
   // used for checking self import
   bool check_exist(Token* t);
@@ -40,6 +41,10 @@ class environment {
   void postProcessConstructorMap();
   void clear();
   
+  // Used to resolve names
+  Token* GetDeclaration(std::string& name);
+  std::vector<Token*> GetInvocationDeclaration(std::string& name);
+
   std::map<std::string,Token*> classes;
   std::map<std::string,Token*> interfaces;
   std::map<std::string,Token*> fields;

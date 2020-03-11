@@ -250,6 +250,46 @@ bool environment::merge(environment src,Token** clash_token){
   return true;
 }
 
+void environment::force_merge(environment src,Token** clash_token){
+  // Merge classes
+  for(std::pair<std::string, Token*> kv_pair: src.classes){
+    classes[kv_pair.first] = kv_pair.second;
+  }
+  // Merge interfaces
+  for(std::pair<std::string, Token*> kv_pair: src.interfaces){
+    interfaces[kv_pair.first] = kv_pair.second;
+  }
+
+  // Merge methods, current doesn't check the methods with same parameters
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src.methods){
+    for(Token* n: kv_pair.second){
+	    methods[kv_pair.first].emplace_back(n);
+    }
+  }
+
+  // Merge Ctors
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: src.constructors){
+    for(Token* n: kv_pair.second){
+	    constructors[kv_pair.first].emplace_back(n);
+    }
+  }
+
+  // Merge Formal Parameters
+  for(std::pair<std::string, Token*> kv_pair: src.formalParameters){
+    formalParameters[kv_pair.first] = kv_pair.second;
+  }
+
+  // Merge Fields
+  for(std::pair<std::string, Token*> kv_pair: src.fields){
+    fields[kv_pair.first] = kv_pair.second;
+  }
+
+  // Merge localVariables
+  for(std::pair<std::string, Token*> kv_pair: src.localVariables){
+    localVariables[kv_pair.first] = kv_pair.second;
+  }
+}
+
 void environment::overwrite_merge(environment& src){
   // Merge classes
   for(std::pair<std::string, Token*> kv_pair: src.classes){
@@ -345,6 +385,25 @@ Token* environment::GetClass(std::string & name){
 Token* environment::GetInterface(std::string& name){
   if(interfaces.find(name) == interfaces.end()) return nullptr;
   return interfaces[name];
+}
+
+Token* environment::GetDeclaration(std::string& name){
+  Token *declaration = nullptr;
+  
+  if(localVariables.find(name) != localVariables.end()) declaration = localVariables[name];
+  else if(fields.find(name) != fields.end()) declaration = fields[name];
+  else if(formalParameters.find(name) != formalParameters.end()) declaration = formalParameters[name];
+
+  return declaration;
+}
+
+std::vector<Token*> environment::GetInvocationDeclaration(std::string& name){
+  std::vector<Token*> declaration;
+
+  if(methods.find(name) != methods.end()) declaration = methods[name];
+  else if(constructors.find(name) != constructors.end()) declaration = constructors[name];
+  
+  return declaration;
 }
 
 void environment::clear(){
