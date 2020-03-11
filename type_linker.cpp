@@ -344,49 +344,55 @@ bool TypeLinker::Link(){
   }
   
   file_index = 0;
-  //for(Token* n: m_asts){
+  for(Token* n: m_asts){
+    if (file_count - file_index - 16 <= 0) break; 
+    std::cout << "name" << file_index << std::endl;
     environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
     envs[2] = pack_envs[file_index];
     envs[3] = &on_demands[file_index];
-    //file_index ++;
+    file_index ++;
 
     if(!ResolveNameSpaces(m_asts[file_index],envs)) return false;
     CYAN();
     std::cout<<"NameSpaces Resolved"<<std::endl;
     DEFAULT(); 
-  //}
+  }
   
   file_index = 0;
-  // for(Token* n: m_asts){
-    // environment* envs[4];
+  for(Token* n: m_asts){
+    if (file_count - file_index - 16 <= 0) break;
+    std::cout << "field" << file_index << std::endl;
+    environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
     envs[2] = pack_envs[file_index];
     envs[3] = &on_demands[file_index];
-    // file_index ++;
+    file_index ++;
 
     if(!ResolveFieldDeclarations(m_asts[file_index],envs)) return false;
     CYAN();
     std::cout<<"Field Expressions Resolved"<<std::endl;
     DEFAULT();
-  // }
+  }
 
   file_index = 0;
-  // for(Token* n: m_asts){
-    // environment* envs[4];
+  for(Token* n: m_asts){
+    if (file_count - file_index - 16 <= 0) break;
+    std::cout << "expression" << file_index << std::endl;
+    environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
     envs[2] = pack_envs[file_index];
     envs[3] = &on_demands[file_index];
-    // file_index ++;
+    file_index ++;
 
     if(!ResolveExpressions(m_asts[file_index],envs,false)) return false;
     CYAN();
     std::cout<<"Expressions Resolved"<<std::endl;
     DEFAULT();
-  // }
+  }
   
   return true;
 }
@@ -1063,7 +1069,7 @@ bool TypeLinker::ResolveFieldDeclarations(Token* root, environment** envs){
     Token *rightHandToken = root->SearchByTypeDFS(VariableDeclarator);
     Token mostRightToken;
     if (rightHandToken) mostRightToken = rightHandToken->m_generated_tokens.back();
-    Token *rightHandIdentifier;
+    Token *rightHandIdentifier = nullptr;
 
     if (rightHandToken) rightHandIdentifier = mostRightToken.SearchByTypeDFS(T_IDENTIFIER);
     if (rightHandIdentifier && rightHandIdentifier->m_lex == identifier){
