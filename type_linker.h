@@ -26,6 +26,7 @@ class TypeLinker{
   bool ResolvePackage(Token* cun, environment** envs);
   bool ResolveAST(Token* root, environment** envs);
   bool DoLinkType(Token* id, environment** envs);
+  bool CheckName(std::string& name,environment** envs,bool ondemand = false);
 
   // Hierarchy Checking
   bool ResolveInheritance(Token* node,environment** envs);

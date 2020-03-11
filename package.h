@@ -9,6 +9,7 @@ class Package{
   bool GetAll(std::vector<std::string>& path,environment* dst);
   void MergeAll(environment* dst);
   environment* GetPack(std::vector<std::string>& path);
+  bool CheckNames(environment** envs, const std::string& parent_name,Package* root);
  public:
   
   std::map<std::string,Package*> m_sub_packs;

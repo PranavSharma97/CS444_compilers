@@ -1,6 +1,6 @@
 #include <iostream>
 #include "type_linker.h"
-
+#include "helper_functions.h"
 #include "color_print.h"
 
 
@@ -185,28 +185,96 @@ environment* TypeLinker::GetCurrentPackage(Token* CUN){
   return pack_env;
 }
 
+bool TypeLinker::CheckName(std::string& name, environment** envs, bool ondemand){
+  // Check if any prefix of the name can be resolved to types
+  if(name.length() > 0){
+    std::vector<std::string> prefixes;
+    string_split(name,'.',prefixes);
+    int len = prefixes.size();
+    if(ondemand)len++;
+    std::string prefix = "";
+    for(int i = 0; i< len-1;i++){
+      if(prefix.length()==0){
+	prefix = prefixes[i];
+      } else {
+	prefix += '.' + prefixes[i];
+      }
+      // try to get it in local
+      if(envs[0]->GetType(prefix)!=nullptr){
+	RED();
+	std::cerr<<"Type Linker ERROR: prefix "<<prefix<<" clashes with types";
+	std::cerr<<" in local environment"<<std::endl;
+	DEFAULT();
+	return false;
+      }
+      // try to get it in single type import
+      if(envs[1]->GetType(prefix)!=nullptr){
+	RED();
+	std::cerr<<"Type Linker ERROR: prefix "<<prefix<<" clashes with types";
+	std::cerr<<" in single type import"<<std::endl;
+	DEFAULT();
+	return false;
+      }
+      // try to get it in current package
+      if(envs[2]!= nullptr && envs[2]->GetType(prefix)!=nullptr){
+	RED();
+	std::cerr<<"Type Linker ERROR: prefix "<<prefix<<" clashes with types";
+	std::cerr<<" in current package"<<std::endl;
+	DEFAULT();
+	return false;
+      }
+      // try to get it in ondemand import
+      if(envs[3]->GetType(prefix)!=nullptr){
+	RED();
+	std::cerr<<"Type Linker ERROR: prefix "<<prefix<<" clashes with types";
+	std::cerr<<" in on demand package"<<std::endl;
+	DEFAULT();
+	return false;
+      }
+      // try to get it by qualified name
+      Token* debug = m_packages->GetQualified(name);
+      if(m_packages->GetQualified(prefix)!=nullptr){
+	RED();
+	std::cerr<<"Type Linker ERROR: prefix "<<prefix<<" resolves to";
+	std::cerr<<" Qualified types "<<debug<<","<<*debug<<","<<debug->m_generated_tokens[2].m_lex<<std::endl;
+	DEFAULT();
+	return false;
+      }
+    }
+  }
+  return true;
+}
+
 bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
 
   // Get the package environment first
-    environment* p_env = GetCurrentPackage(cun);
-    if(p_env == nullptr) return false;
-    envs[2] = p_env;
-    //CYAN();
-    //std::cout<<"ENVIRONMENT READY"<<std::endl;
-    //DEFAULT();
+  envs[2] = nullptr;
+  //CYAN();
+  //std::cout<<"ENVIRONMENT READY"<<std::endl;
+  //DEFAULT();
   
   // Check if java.lang is on demanded
   std::string javalang = "java.lang";
   std::map<std::string,bool> imported;
+  
   for(Token& c: cun->m_generated_tokens){
     TokenType node_type = c.m_type;
+    if(node_type == TokenType::PackageDeclaration){
+      std::string pack_name = c.m_generated_tokens[1].m_lex;
+      //if(!CheckName(pack_name,envs)) return false;
+      
+      environment* p_env = GetCurrentPackage(cun);
+      if(p_env == nullptr) return false;
+      envs[2] = p_env;
+    }
     // Search for all import declarations, try to import them to local env
-    if(node_type == TokenType::SingleTypeImportDeclaration ||
+    else if(node_type == TokenType::SingleTypeImportDeclaration ||
        node_type == TokenType::TypeImportOnDemandDeclaration){
       CYAN();
       std::cout<<"Package Environment Building"<<std::endl;
       DEFAULT();
       std::string pack_name = c.m_generated_tokens[1].m_lex;
+      
       // get the envrionment from the pack
       environment* pack_env;
       bool is_on_demand = false;
@@ -216,10 +284,12 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
 	std::cout<<"ON DEMAND PACKAGE"<<std::endl;
 	// On demand import should be imported only once
 	if(imported.find(pack_name) == imported.end()){
+	  //if(!CheckName(pack_name,envs,true)) return false;
 	  pack_env = m_packages->GetAll(pack_name);
 	}else continue;
       }else{
 	if(imported.find(pack_name) == imported.end()){
+	  //if(!CheckName(pack_name,envs)) return false;
 	  pack_env = m_packages->Search(pack_name);
 	}else continue;
       }
@@ -288,8 +358,13 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
     envs[3]->overwrite_merge(*JL);
     delete JL;
   }
-  
-  std::cout<<std::endl;
+
+  // Get the current package if current package is still empty
+  if(envs[2]==nullptr){
+    environment* p_env = GetCurrentPackage(cun);
+    if(p_env == nullptr) return false;
+    envs[2] = p_env;
+  }
   return true;
 }
 
@@ -896,6 +971,8 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
   next_local_env.merge(*(envs[0]));
   environment* new_envs[4];
 
+  std::string name_use="";
+  
   new_envs[0] = &next_local_env;
   new_envs[1] = envs[1];
   new_envs[2] = envs[2];
@@ -914,11 +991,12 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
     if(root->m_generated_tokens.size() > 0 &&
        root->m_generated_tokens[2].type() == TokenType::T_IDENTIFIER ||
        root->m_generated_tokens[2].type() == TokenType::QualifiedName){
-      CYAN();
+      //CYAN();
       //std::cout<<"Link: "<<(*root)<<","<<root->m_lex<<std::endl;
-      DEFAULT();
+      //DEFAULT();
       if(!DoLinkType(&(root->m_generated_tokens[2]),new_envs)) return false;
     }
+    name_use = (root->m_generated_tokens[2].m_type == TokenType::QualifiedName)? root->m_generated_tokens[2].m_lex:"";
     break;
     // for these types, if the second child is id, then it's a class name
     // need to be resolved.
@@ -937,6 +1015,8 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
       */      
       if(!DoLinkType(&(root->m_generated_tokens[1]),new_envs)) return false;
     }
+    
+    name_use = (root->m_generated_tokens[1].m_type == TokenType::QualifiedName)? root->m_generated_tokens[1].m_lex:"";
     break;
     // for these types, if the first child is id, then it's a class name
     // need to be resolved.
@@ -953,6 +1033,7 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
       */      
       if(!DoLinkType(&(root->m_generated_tokens[0]),new_envs)) return false;
     }
+    name_use = (root->m_generated_tokens[0].m_type == TokenType::QualifiedName)? root->m_generated_tokens[0].m_lex:"";
     break;
     //link the list of interfaces or classes
   case TokenType::InterfaceTypeList:
@@ -969,6 +1050,8 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
 	    
 	if(!DoLinkType(&child,new_envs)) return false;
       }
+      std::string interface_name = (child.type() == TokenType::QualifiedName)? child.m_lex:"";
+      if(!CheckName(interface_name,new_envs)) return false;
     }
     
     break;
@@ -976,7 +1059,8 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
   default:
     break;
   }
-  
+
+  if(!CheckName(name_use,new_envs)) return false;
   for(Token& n: root->m_generated_tokens){
     if(!ResolveAST(&n,new_envs)) return false;
   }
