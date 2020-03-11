@@ -984,8 +984,7 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
 }
 
 bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
-  TokenType t = root->type();
-  
+  TokenType t = root->type();  
   if (t != ClassDeclaration && t != InterfaceDeclaration){
     if (!envs[0]->merge(root->scope)){
       RED();
@@ -996,10 +995,31 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
   }
 
   
-  /*std::cout << "TYPE OF NODE IS: " << root->m_display_name << std::endl;
-  std::cout << "Local variables: " << std::endl;  
+  /*std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
+
+  std::cout << "constructors: ";
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: envs[0]->constructors){
+    std::cout << kv_pair.first;
+  }
+  std::cout << std::endl;
+  std::cout << "methods: ";
+  for(std::pair<std::string, std::vector<Token*>> kv_pair: envs[0]->methods){
+    std::cout << kv_pair.first;
+  }
+  std::cout << std::endl;
+  std::cout << "fields: ";
+  for(std::pair<std::string, Token*> kv_pair: envs[0]->fields){
+    std::cout << kv_pair.first;
+  }
+  std::cout << std::endl;
+  std::cout << "localVariables: ";
   for(std::pair<std::string, Token*> kv_pair: envs[0]->localVariables){
-    std::cout << kv_pair.first << kv_pair.second << ", ";
+    std::cout << kv_pair.first;
+  }
+  std::cout << std::endl;
+  std::cout << "formalParameters: ";
+  for(std::pair<std::string, Token*> kv_pair: envs[0]->formalParameters){
+    std::cout << kv_pair.first;
   }
   std::cout << std::endl;*/
 
@@ -1038,7 +1058,8 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
 
   bool result = true;
   for(Token& n: root->m_generated_tokens){
-    if (t == LocalVariableDeclarationStatement){
+    if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
+        t == MethodHeader || t == ConstructorDeclarator){
       if (!ResolveNameSpaces(&n, envs)) return false;
     } else {
       if (!ResolveNameSpaces(&n, new_envs)) return false;
@@ -1168,7 +1189,7 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
       if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression || t == MethodDeclarator){
         methodOrConstructor = true;
       }
-      if (t == FormalParameter || t == ArgumentList){
+      if (t == FormalParameter || t == ArgumentList || (it-1)->type() == T_LEFT_ROUND_BRACKET){
         methodOrConstructor = false;
       }
       
