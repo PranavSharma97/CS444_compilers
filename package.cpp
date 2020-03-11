@@ -177,8 +177,22 @@ bool Package::CheckNames(environment** envs, const std::string& parent_name, Pac
   }
   if(envs[0]->GetType(prefix) == nullptr &&
      envs[1]->GetType(prefix) == nullptr &&
-     envs[2]->GetType(prefix) == nullptr &&
      envs[3]->GetType(prefix) == nullptr ){
+
+    // check if it's in the default pacakge
+    if(root->m_sub_packs.find(default_package_name) !=
+       root->m_sub_packs.end()){
+      // check if it's not my env,not my current package env
+      environment* default_env = root->m_sub_packs[default_package_name]->m_env;
+      if(default_env != m_env && default_env != envs[2] &&
+	 default_env->GetType(prefix) != nullptr){
+	RED();
+	std::cerr<<"ERROR: Package "<<prefix<<" clashes with a class";
+	std::cerr<<" or an interface name"<<std::endl;
+	DEFAULT();
+	return false;
+      }
+    }
 
     if(package_name.compare(default_package_name) == 0 ||
        package_name.compare(root_package_name) == 0) prefix = "";
@@ -212,9 +226,23 @@ bool Package::CheckNames(environment** envs){
      package_name.compare(root_package_name) == 0) prefix = "";
   if(envs[0]->GetType(prefix) == nullptr &&
      envs[1]->GetType(prefix) == nullptr &&
-     envs[2]->GetType(prefix) == nullptr &&
      envs[3]->GetType(prefix) == nullptr ){
-    // skip the default and root package names
+    
+    // Check the default package
+    if(m_sub_packs.find(default_package_name) !=
+       m_sub_packs.end()){
+      environment* default_env = m_sub_packs[default_package_name]->m_env;
+      // It's not my env, it's not the current package env
+      if(default_env != m_env && default_env != envs[2] && 
+	 default_env->GetType(prefix) != nullptr){
+	RED();
+	std::cerr<<"ERROR: Package "<<prefix<<" clashes with a class";
+	std::cerr<<" or an interface name"<<std::endl;
+	DEFAULT();
+	return false;
+      }
+    }
+    
     for(std::pair<std::string,Package*> kv_pair: m_sub_packs){
       CYAN();
       std::cout<<"Checking...("<<prefix<<") in"<<kv_pair.first<<std::endl;
