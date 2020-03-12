@@ -39,12 +39,6 @@ class TypeLinker{
   bool DoInheritInterface(Token* sub,Token* interfaces,
 			  std::map<Token*,bool>& duplicate,
 			  environment** envs);
-
-  // Resolving names
-  bool ResolveNameSpaces(Token* node,environment** envs);
-  bool ResolveFieldDeclarations(Token* root, environment** envs);
-  bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor);
-
   
   void init_name_checker(environment* local,environment* single,
 			 environment** pack,environment* ondemand,size_t file_count);

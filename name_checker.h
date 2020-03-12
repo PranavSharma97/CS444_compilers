@@ -14,7 +14,11 @@ class NameChecker{
   environment* on_demand;
 
   std::vector<Token *> m_asts;
-  
+
+  bool ResolveNameSpaces(Token* node,environment** envs);
+  bool ResolveFieldDeclarations(Token* root, environment** envs);
+  bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor);
+
   NameChecker();
   ~NameChecker();
   bool CheckNames();

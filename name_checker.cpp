@@ -1,4 +1,8 @@
 #include "name_checker.h"
+#include <iostream>
+#include "helper_functions.h"
+#include "type_linker.h"
+#include "color_print.h"
 
 /*
 class NameChecker{
@@ -42,16 +46,20 @@ bool NameChecker::CheckNames(){
   // Resolve Expressions
 
 
-  /*
+  
   // Everything Below is copied from type_linker.cpp
   // their corresponding methods and implementations are copied
   // here as well
   // but not declared in the .h file yet.
+  int file_count = m_asts.size();
+  int file_index = 0;
+  environment local_envs[file_count];
+  environment single_types[file_count];
+  environment* pack_envs[file_count];
+  environment on_demands[file_count];
 
-  file_index = 0;
   for(Token* n: m_asts){
     if (file_count - file_index - 16 <= 0) break; 
-    std::cout << "name" << file_index << std::endl;
     environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
@@ -68,7 +76,6 @@ bool NameChecker::CheckNames(){
   file_index = 0;
   for(Token* n: m_asts){
     if (file_count - file_index - 16 <= 0) break;
-    std::cout << "field" << file_index << std::endl;
     environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
@@ -78,14 +85,12 @@ bool NameChecker::CheckNames(){
 
     if(!ResolveFieldDeclarations(m_asts[file_index],envs)) return false;
     CYAN();
-    std::cout<<"Field Expressions Resolved"<<std::endl;
     DEFAULT();
   }
 
   file_index = 0;
   for(Token* n: m_asts){
     if (file_count - file_index - 16 <= 0) break;
-    std::cout << "expression" << file_index << std::endl;
     environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
@@ -98,14 +103,10 @@ bool NameChecker::CheckNames(){
     std::cout<<"Expressions Resolved"<<std::endl;
     DEFAULT();
   }
-  */
   return true;
-
 }
 
-/* ******************************************************************
-
-bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
+bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   TokenType t = root->type();  
   if (t != ClassDeclaration && t != InterfaceDeclaration){
     if (!envs[0]->merge(root->scope)){
@@ -116,7 +117,7 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
     }
   }
 
-  ********************** COMMENTS ********************************
+  /********************** COMMENTS *******************************
   std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
 
   std::cout << "constructors: ";
@@ -145,7 +146,7 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
   }
   std::cout << std::endl;
 
-   ****************************** COMMENTS END *********************
+  ***************************** COMMENTS END ********************/
   environment next_local_env(*(envs[0]));
 
   environment* new_envs[4];
@@ -162,9 +163,6 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
     Token* firstIdentifier = root->SearchByTypeDFS(T_IDENTIFIER);
 
     Token* declaration = envs[0]->GetDeclaration(firstIdentifier->m_lex);
-    if (!declaration) declaration = envs[1]->GetDeclaration(firstIdentifier->m_lex);
-    if (!declaration) declaration = envs[2]->GetDeclaration(firstIdentifier->m_lex);
-    if (!declaration) declaration = envs[3]->GetDeclaration(firstIdentifier->m_lex);
     if (declaration){
       root->declaration = declaration;
       firstIdentifier->declaration = declaration;
@@ -192,7 +190,7 @@ bool TypeLinker::ResolveNameSpaces(Token* root, environment** envs){
   return true;
 }
 
-bool TypeLinker::ResolveFieldDeclarations(Token* root, environment** envs){
+bool NameChecker::ResolveFieldDeclarations(Token* root, environment** envs){
   TokenType t = root->type();
   if (t != ClassDeclaration && t!= InterfaceDeclaration){
     envs[0]->force_merge(root->scope);
@@ -230,7 +228,7 @@ bool TypeLinker::ResolveFieldDeclarations(Token* root, environment** envs){
   return true;
 }
 
-bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool methodOrConstructor){
+bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool methodOrConstructor){
   TokenType t = root->type();
 
   envs[0]->force_merge(root->scope);
@@ -243,7 +241,7 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
 
-    ******************* COMMENTS ******************************
+  /******************** COMMENTS ******************************
   std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
   
   std::cout << "constructors: ";
@@ -272,7 +270,7 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
   }
   std::cout << std::endl;
 
-  ************************ COMMENTS END *******************
+  ************************ COMMENTS END *******************/
 
     
   if (t == T_IDENTIFIER && !root->declaration){
@@ -338,4 +336,4 @@ bool TypeLinker::ResolveExpressions(Token* root, environment** envs, bool method
   }
   return true;
 }
-*/
+
