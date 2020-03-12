@@ -10,7 +10,7 @@
  * Copy CTOR
  */
 using namespace std;
-
+/*
 environment::environment(const environment& other)/*:
   classes(other.classes.size()),
   interfaces(other.interfaces.size()),
@@ -18,7 +18,7 @@ environment::environment(const environment& other)/*:
   methods(other.methods.size()),
   localVariables(other.localVariables.size()),
   formalParameters(other.formalParameters.size()),
-  constructors(other.constructors.size())*/
+  constructors(other.constructors.size())
 {
   for(std::pair<std::string,Token*> kv_pair: other.classes){
     classes[kv_pair.first] = kv_pair.second;
@@ -55,10 +55,48 @@ environment::environment(const environment& other)/*:
       constructors[kv_pair.first].emplace_back(t);
     }
   }
-  
-  
-  
+
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv: other.methodsWithSignatures){
+    std::map<std::string, std::vector<Token*>> entry;
+    methodsWithSignatures[kv.first] = entry;
+    for(std::pair<std::string,std::vector<Token*>> kv_p: kv.second){
+      for(Token* t:kv_p.second){
+	methodsWithSignatures[kv.first][kv_p.first].emplace_back(t);
+      }
+    }
+  }
+
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv: other.methodsWithSignaturesDeclared){
+    std::map<std::string, std::vector<Token*>> entry;
+    methodsWithSignaturesDeclared[kv.first] = entry;
+    for(std::pair<std::string,std::vector<Token*>> kv_p: kv.second){
+      for(Token* t:kv_p.second){
+	methodsWithSignaturesDeclared[kv.first][kv_p.first].emplace_back(t);
+      }
+    }
+  }
+
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv: other.methodsWithSignaturesInherited){
+    std::map<std::string, std::vector<Token*>> entry;
+    methodsWithSignaturesInherited[kv.first] = entry;
+    for(std::pair<std::string,std::vector<Token*>> kv_p: kv.second){
+      for(Token* t:kv_p.second){
+	methodsWithSignaturesInherited[kv.first][kv_p.first].emplace_back(t);
+      }
+    }
+  }
+
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv: other.constructorsWithSignatures){
+    std::map<std::string, std::vector<Token*>> entry;
+    constructorsWithSignatures[kv.first] = entry;
+    for(std::pair<std::string,std::vector<Token*>> kv_p: kv.second){
+      for(Token* t:kv_p.second){
+	constructorsWithSignatures[kv.first][kv_p.first].emplace_back(t);
+      }
+    }
+  }
 }
+*/
 
 Token* GetNodeByType(std::vector<Token*>& nodes, TokenType type){
   for(Token* node: nodes){
@@ -407,13 +445,22 @@ std::vector<Token*> environment::GetInvocationDeclaration(std::string& name){
 }
 
 void environment::clear(){
+  // CYAN();
   classes.clear();
+  //cout<<"Class CLEAR"<<endl;
   interfaces.clear();
+  //cout<<"interface CLEAR"<<endl;
   fields.clear();
+  //cout<<"fields CLEAR"<<endl;
   methods.clear();
+  //cout<<"methods CLEAR"<<endl;
   localVariables.clear();
+  //cout<<"local var CLEAR"<<endl;
   formalParameters.clear();
+  //cout<<"formal CLEAR"<<endl;
   constructors.clear();
+  //cout<<"ctor CLEAR"<<endl;
+  //DEFAULT();
 }
 
 void environment::postProcessMethodMap() {

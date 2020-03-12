@@ -14,7 +14,7 @@ class environment {
   bool valid_method(std::pair<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod);
  public:
   environment() = default;
-  environment(const environment& other);
+  environment(const environment& other) = default;
   ~environment() = default;
   bool merge(environment src,Token** clash_token = nullptr);
   void force_merge(environment src,Token** clash_token = nullptr);

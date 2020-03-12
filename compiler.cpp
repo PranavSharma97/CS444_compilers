@@ -14,6 +14,7 @@
 #include "build_environment.h"
 #include "type_linker.h"
 #include "color_print.h"
+#include "name_checker.h"
 
 
 using namespace std;
@@ -114,11 +115,14 @@ int main(int argc, char *argv[]) {
   for(Token* t: tree_ptrs){
     t->SearchByTypeBFS(TokenType::TOKEN_FAILURE);
     }*/
-  
+  NameChecker NCheck;
+  NCheck.m_asts = tree_ptrs;
   TypeLinker TPLink(tree_ptrs);
-  TPLink.set_object_interface(tree_ptrs[0]);
+  TPLink.set_object_interface(tree_ptrs[0],&NCheck);
   // TPLink.set_object_interface(&object_interface);
   if(!TPLink.Link()) return 42;
+  if(!NCheck.CheckNames()) return 42;
+  
   /*
   for(Token* ti: tree_ptrs){
     vector<Token*> queue;

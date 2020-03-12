@@ -368,6 +368,7 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
   return true;
 }
 
+
 bool TypeLinker::Link(){
   // Construct packages
   if(!ConstructPackage()) return false;
@@ -417,7 +418,11 @@ bool TypeLinker::Link(){
     std::cout<<"INHERITANCE Resolved"<<std::endl;
     DEFAULT();
   }
-  
+  init_name_checker(local_envs,single_types,pack_envs,on_demands,m_asts.size());
+
+  // Everything Below Should be moved to name_checker.cpp, their
+  // Corresponding methods should be moved to name_checker.h
+  // and name_checker.cpp
   file_index = 0;
   for(Token* n: m_asts){
     if (file_count - file_index - 16 <= 0) break; 
@@ -472,8 +477,29 @@ bool TypeLinker::Link(){
   return true;
 }
 
-void TypeLinker::set_object_interface(Token* t){
+void TypeLinker::init_name_checker(environment* local,
+				   environment* single,
+				   environment** pack,
+				   environment* ondemand,
+				   size_t file_count)
+{
+  m_name_checker->m_packages = this->m_packages;
+  m_name_checker->local_envs = new environment[file_count];
+  m_name_checker->single_types = new environment[file_count];
+  m_name_checker->pack_envs = new environment*[file_count];
+  m_name_checker->on_demand = new environment[file_count];
+  // copy everything 
+  for(int i = 0; i< file_count; i++){
+    m_name_checker->local_envs[i] = local[i];
+    m_name_checker->single_types[i] = single[i];
+    m_name_checker->pack_envs[i] = pack[i];
+    m_name_checker->on_demand[i] = ondemand[i];
+  }
+}
+
+void TypeLinker::set_object_interface(Token* t,NameChecker* name_checker){
   java_lang_object_interface = t;
+  m_name_checker = name_checker;
 }
 
 bool TypeLinker::HasEnv(TokenType t){
