@@ -15,7 +15,7 @@ class environment {
  public:
   environment() = default;
   environment(const environment& other);
-  ~environment() = default;
+  ~environment();
   bool merge(environment src,Token** clash_token = nullptr);
   void force_merge(environment src,Token** clash_token = nullptr);
   void overwrite_merge(environment& src);
