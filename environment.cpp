@@ -10,10 +10,7 @@
  * Copy CTOR
  */
 using namespace std;
-
-environment::~environment(){
-  clear();
-}
+/*
 environment::environment(const environment& other)/*:
   classes(other.classes.size()),
   interfaces(other.interfaces.size()),
@@ -21,7 +18,7 @@ environment::environment(const environment& other)/*:
   methods(other.methods.size()),
   localVariables(other.localVariables.size()),
   formalParameters(other.formalParameters.size()),
-  constructors(other.constructors.size())*/
+  constructors(other.constructors.size())
 {
   for(std::pair<std::string,Token*> kv_pair: other.classes){
     classes[kv_pair.first] = kv_pair.second;
@@ -98,9 +95,8 @@ environment::environment(const environment& other)/*:
       }
     }
   }
-  
-  
 }
+*/
 
 Token* GetNodeByType(std::vector<Token*>& nodes, TokenType type){
   for(Token* node: nodes){
