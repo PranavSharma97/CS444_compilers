@@ -20,6 +20,7 @@ class Token{
   bool Abstract;
   bool Inherited;
   std::vector<Token> m_generated_tokens;
+  bool PostInheritanceCheck();
 
   Token();
   Token(TokenType type, std::string lex);

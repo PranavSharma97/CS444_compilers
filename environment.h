@@ -34,6 +34,8 @@ class environment {
 
   bool checkConstructors();
 
+  bool checkInheritedMethods();
+
   bool check_return_types(Token* src, Token* current);
 
   void postProcessMethodMap();

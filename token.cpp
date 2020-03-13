@@ -582,6 +582,31 @@ void Token::clear(){
 
 TokenType Token::type() const { return m_type; }
 
+bool Token::PostInheritanceCheck(){
+  std::vector<Token*> queue;
+  queue.emplace_back(this);
+  int start = 0;
+  int end = queue.size();
+  while(end-start > 0){
+    Token* t = queue[start];
+    if(t->m_type == TokenType::ClassDeclaration ||
+       t->m_type == TokenType::InterfaceDeclaration){
+      
+      if(!t->scope.checkInheritedMethods()) {
+        return false;
+      }
+    }
+    start ++;
+    for(Token& child: t->m_generated_tokens){
+      queue.emplace_back(&child);
+      end++;
+    }
+
+  }
+
+  return true;
+}
+
 bool Token::BuildDeclaredSet(){
   std::vector<Token*> queue;
   queue.emplace_back(this);

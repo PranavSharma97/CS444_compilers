@@ -525,7 +525,7 @@ void environment::postProcessMethodMap() {
             else {
               //cerr<<n->compilation_unit->SearchByTypeDFS(InterfaceDeclaration)->m_generated_tokens[2].m_lex<<"\n";
             }
-            if(address == nullptr) {
+            if(false) {
               //cerr<<"NULL";
               //cerr<<"Class is: ";
               if(n->compilation_unit->SearchByTypeDFS(ClassDeclaration)) {
@@ -548,7 +548,7 @@ void environment::postProcessMethodMap() {
             const void * address = static_cast<const void*>(qualifiedName->declaration);
             std::stringstream ss;
             ss << address;
-            if(address == nullptr) {
+            if(false) {
               //cerr<<"NULL";
               //cerr<<"Class is: ";
               if(n->compilation_unit->SearchByTypeDFS(ClassDeclaration)) {
@@ -650,7 +650,7 @@ void environment::postProcessConstructorMap() {
 
 bool environment::checkMethods() {
   //cerr<<"Size of declared set is....."<<methodsWithSignaturesDeclared.size()<<endl;
-  CYAN();
+  DEFAULT();
   cout<<"\nCHECKING METHODS\n";
   for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: methodsWithSignaturesDeclared){
     for(std::pair<std::string, std::vector<Token*>> signatureToDeclarations: kv_pair.second) {
@@ -673,6 +673,27 @@ bool environment::checkMethods() {
 
   return true;
 }
+
+bool environment::checkInheritedMethods() {
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: methodsWithSignaturesInherited){
+    for(std::pair<std::string, std::vector<Token*>> signatureToDeclarations: kv_pair.second) {
+      if(signatureToDeclarations.second[0]->Abstract == true) {
+        for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> constructor_pair: constructorsWithSignatures){
+          for(std::pair<std::string, std::vector<Token*>> constructorDeclarations: constructor_pair.second) {
+            if (constructorDeclarations.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[0].SearchByTypeBFS(T_ABSTRACT) == nullptr) {
+              cerr<<"Inherited ABSTRACT method, class not ABSTRACT"<<endl;
+              DEFAULT();
+              return false;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
 
 bool environment::checkConstructors() {
   CYAN();
@@ -827,20 +848,42 @@ bool environment::check_return_types(Token* src, Token* current) {
 
 bool environment::valid_method(std::pair<std::string,std::map<std::string,std::vector<Token*>>>& srcMethod){
   
-  for(std::pair<std::string, std::vector<Token*>> currentConstructor: constructors) {
-    if(currentConstructor.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)) {
-      //cerr<<"Class is: "<<currentConstructor.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex<<endl;
+  for(std::pair<std::string, std::vector<Token*>> currentMethod: methods) {
+    if(currentMethod.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)) {
+      //cerr<<"Class is: "<<currentMethod.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex<<endl;
+      if(currentMethod.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex == "Object") {
+        cerr<<"Yes class is object";
+        if(srcMethod.first == "equals") {
+          cerr<<"Yes method is EQUALS";
+        }
+      }
       //cerr<<"Src method is: "<<srcMethod.first<<endl;
       //cerr<<"Methods declared size is: "<<methodsWithSignaturesDeclared.size()<<endl;
+    }
+    else {
+      //cerr<<"Interface is: "<<currentMethod.second[0]->compilation_unit->SearchByTypeDFS(InterfaceDeclaration)->m_generated_tokens[2].m_lex<<endl;
+      if(currentMethod.second[0]->compilation_unit->SearchByTypeDFS(InterfaceDeclaration)->m_generated_tokens[2].m_lex == "ObjectINTERFACE") {
+        cerr<<"\nYes interface is object";
+        if(srcMethod.first == "equals") {
+          for(std::pair<std::string, std::vector<Token*>> srcMeth: srcMethod.second)
+          {
+            cerr<<"\nSrc method is: "<<srcMethod.first;
+            cerr<<"\nSuperclass size is: "<<srcMeth.second.size();
+            //->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex<<"\n";
+            cerr<<"\nYes method is EQUALS";
+          }
+        }
+      }
     }
   }
   
   if(methodsWithSignaturesDeclared.size() >= 0) {
-    // cerr<<"Methods declared size is: "<<methodsWithSignatures.size()<<endl;
-     for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: methodsWithSignaturesDeclared){
-        //cerr<<"Name of method is: "<<kv_pair.first<<endl;
+    //cerr<<"Methods declared size is: "<<methodsWithSignatures.size()<<endl;
+    for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: methodsWithSignaturesDeclared){
+      //cerr<<"Name of method is: "<<kv_pair.first<<endl;
     }
   }
+
   // If method is not in declare set
   if(methodsWithSignaturesDeclared.find(srcMethod.first) == methodsWithSignaturesDeclared.end()){
     cout<<"Method is not in declared set\n";
@@ -932,7 +975,27 @@ bool environment::valid_method(std::pair<std::string,std::map<std::string,std::v
               std::cerr<<"Abstract src, abstract current different return types"<<std::endl;
               return false;
             }
-
+          }
+          else if(!srcSignature.second[0]->Abstract && methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->Abstract) {
+              methodsWithSignaturesInherited[srcMethod.first][srcSignature.first].erase(methodsWithSignaturesInherited[srcMethod.first][srcSignature.first].begin() + 0);                  methodsWithSignaturesInherited[srcMethod.first][srcSignature.first].push_back(srcSignature.second[0]); 
+          }
+        }
+        else {
+          // Method is overloaded superclass method
+          // add to inherit set
+          for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
+            // If inherited method is abstract, class must be abstract
+            /*
+            if(srcSignature.second[0]->Abstract == true) {
+              //cerr<<"METHOD IS ABSTRACT, type of token is: "<<srcSignature.second[0]->m_type<<endl;
+              for(std::pair<std::string, std::vector<Token*>> currentConstructor: constructors) {
+                if(currentConstructor.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[0].SearchByTypeBFS(T_ABSTRACT) == nullptr) {
+                  std::cerr<<"Overloaded abstract method, class not ABSTRACT"<<std::endl;
+                  return false;
+                }
+              }
+            }*/
+            methodsWithSignaturesInherited[srcMethod.first][srcSignature.first] = srcSignature.second;
           }
         }
       }
@@ -964,22 +1027,27 @@ bool environment::valid_method(std::pair<std::string,std::map<std::string,std::v
       return true;
       */
     }
-
-    // add to inherit set
-    for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
-      // If inherited method is abstract, class must be abstract
-      if(srcSignature.second[0]->Abstract == true) {
-        //cerr<<"METHOD IS ABSTRACT, type of token is: "<<srcSignature.second[0]->m_type<<endl;
-        for(std::pair<std::string, std::vector<Token*>> currentConstructor: constructors) {
-          if(currentConstructor.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[0].SearchByTypeBFS(T_ABSTRACT) == nullptr) {
-            std::cerr<<"Inheriting ABSTRACT method, class not ABSTRACT"<<std::endl;
-            //return false;
+    else {
+      // add to inherit set
+      for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
+        // If inherited method is abstract, class must be abstract
+        /*
+        if(srcSignature.second[0]->Abstract == true) {
+          //cerr<<"METHOD IS ABSTRACT, type of token is: "<<srcSignature.second[0]->m_type<<endl;
+          for(std::pair<std::string, std::vector<Token*>> currentConstructor: constructors) {
+            if(currentConstructor.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[0].SearchByTypeBFS(T_ABSTRACT) == nullptr) {
+              cerr<<"METHOD IS ABSTRACT, type of token is: "<<srcSignature.second[0]->m_type<<endl;
+              std::cerr<<"Name of src Method: "<<srcMethod.first<<std::endl;
+              std::cerr<<"Token Types are: "<<srcSignature.second[0]->m_type<<" "<<methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->m_type<<std::endl;
+              std::cerr<<"Class names are: "<<srcSignature.second[0]->compilation_unit->SearchByTypeDFS(InterfaceDeclaration)->m_generated_tokens[2].m_lex<<" "<<methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex<<std::endl;
+              std::cerr<<"Inheriting ABSTRACT method, class not ABSTRACT"<<std::endl;
+              return false;
+            }
           }
-        }
+        }*/
+        methodsWithSignaturesInherited[srcMethod.first][srcSignature.first] = srcSignature.second;
       }
-      methodsWithSignaturesInherited[srcMethod.first][srcSignature.first] = srcSignature.second;
     }
-
     //if(!checkMethods()) { return false; }
     //if(!checkConstructors()) { return false; }
     return true;

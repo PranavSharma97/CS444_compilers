@@ -398,6 +398,9 @@ bool TypeLinker::Link(){
     DEFAULT();
     // resolve types out side of env in the ast
     if(!ResolveAST(cun,envs)) return false;
+    if(!n->BuildDeclaredSet()) {
+      return false;
+    }
     CYAN();
     std::cout<<"AST Type Linked"<<std::endl;
     DEFAULT();
@@ -414,6 +417,7 @@ bool TypeLinker::Link(){
     file_index ++;
     
     if(!ResolveInheritance(n,envs)) return false;
+    if(!n->PostInheritanceCheck()) return false;
     CYAN();
     std::cout<<"INHERITANCE Resolved"<<std::endl;
     DEFAULT();
