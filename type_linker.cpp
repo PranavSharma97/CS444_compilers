@@ -658,15 +658,17 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
   // If no more class to inherit from return true.
   if(interfaces==nullptr) {
     // Try to inherit from java_lang_object_interface
+
+    // Get the interface declaration of java_lang_object_interface
+    Token* the_interface = java_lang_object_interface->SearchByTypeBFS(TokenType::InterfaceDeclaration);
     
-    //Token* java_lang_obj = m_packages->GetQualified("java.lang.Object");
-    if(sub == java_lang_object_interface ||
+    if(sub == the_interface ||
        sub->m_type == TokenType::ClassDeclaration){
       sub->Inherited = true;
       return true;
     }
-    // If I'm not java_lang_object_interface, get the interface declaration and replace_merge
-    Token* the_interface = java_lang_object_interface->SearchByTypeBFS(TokenType::InterfaceDeclaration);
+
+    // If reached this part, I'm not ObjectInterface
     if(!sub->scope.replace_merge(the_interface->scope)){
       RED();
       std::cerr<<"Interface Inheritance ERROR: cannot get the abstract version of object methods."<<std::endl;
@@ -1000,10 +1002,15 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
        root->m_generated_tokens[0].type() == TokenType::QualifiedName){
       /*
       CYAN();
-      std::cout<<"Link: "<<(*root)<<std::endl;
+      std::cout<<"FormalParam: "<<root->m_generated_tokens<<std::endl;
       DEFAULT();
-      */      
+      */    
       if(!DoLinkType(&(root->m_generated_tokens[0]),new_envs)) return false;
+    }
+    if(root->m_generated_tokens[0].m_lex == "String"){
+      Token* dec = root->m_generated_tokens[0].declaration;
+      std::cout<<"STRING:"<<root->m_generated_tokens[0]<<",";
+      std::cout<<root->m_generated_tokens[0].declaration<<std::endl;
     }
     name_use = (root->m_generated_tokens[0].m_type == TokenType::QualifiedName)? root->m_generated_tokens[0].m_lex:"";
     break;
