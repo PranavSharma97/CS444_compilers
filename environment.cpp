@@ -464,12 +464,13 @@ void environment::clear(){
 }
 
 void environment::postProcessMethodMap() {
-  CYAN();;
-  cout<<"\nPost processing method map\n";
+  CYAN();
+  cout<<"\nPost processing method map, SIZE is: "<<methods.size()<<"\n";
   for(std::pair<std::string, std::vector<Token*>> kv_pair: methods){
+    cout<<"Name: "<<kv_pair.first<<"....SIZE at time of method post processing: "<<kv_pair.second.size()<<"\n";
     for(Token* n: kv_pair.second){
       std::string signature = "";
-      Token* parameterList = n->SearchByTypeBFS(FormalParameterList);
+      Token* parameterList = n->m_generated_tokens[0].m_generated_tokens[2].SearchByTypeBFS(FormalParameterList);
       if (parameterList == nullptr) {
         cout<<"Parameter list is empty\n";
         DEFAULT();
@@ -482,7 +483,7 @@ void environment::postProcessMethodMap() {
       DEFAULT();
       for(Token parameter: parameterList->m_generated_tokens) {
         if(parameter.m_type != FormalParameter) continue; 
-        Token* arrayType = parameter.SearchByTypeDFS(ArrayType);
+        Token* arrayType = parameter.m_generated_tokens[0].SearchByTypeDFS(ArrayType);
         if(arrayType) {
           cout<<"Type is arrayType\n";
           Token* id = arrayType->SearchByTypeDFS(T_IDENTIFIER);
@@ -511,23 +512,61 @@ void environment::postProcessMethodMap() {
           cout<<"Type is not arrayType\n";
           Token* id = parameter.m_generated_tokens[0].SearchByTypeDFS(T_IDENTIFIER);
           if(id) {
-            cout<<"Identifier type\n";
+            RED();
+            //cerr<<"Identifier type\n";
+            //cerr<<id->m_lex<<"\n";
             const void * address = static_cast<const void*>(id->declaration);
             std::stringstream ss;
-            ss << address;
-            signature += ss.str();
+            //cerr<<address<<"\n";
+            //cerr<<"Class is: ";
+            if(n->compilation_unit->SearchByTypeDFS(ClassDeclaration)) {
+              //cerr<<n->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex<<"\n";
+            }
+            else {
+              //cerr<<n->compilation_unit->SearchByTypeDFS(InterfaceDeclaration)->m_generated_tokens[2].m_lex<<"\n";
+            }
+            if(address == nullptr) {
+              //cerr<<"NULL";
+              //cerr<<"Class is: ";
+              if(n->compilation_unit->SearchByTypeDFS(ClassDeclaration)) {
+                //cerr<<n->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex<<"\n";
+                //cerr<<id->m_lex;
+              }
+              else {
+                //cerr<<n->compilation_unit->SearchByTypeDFS(InterfaceDeclaration)->m_generated_tokens[2].m_lex<<"\n";
+                //cerr<<id->m_lex; 
+              }
+              signature += id->m_lex;
+            }
+            else {
+              ss << address;
+              signature += ss.str();
+            }
           } else if(parameter.m_generated_tokens[0].SearchByTypeDFS(QualifiedName)) {
             cout<<"Qualified Name type\n";
-            Token* qualifiedName = parameter.SearchByTypeDFS(QualifiedName);
+            Token* qualifiedName = parameter.m_generated_tokens[0].SearchByTypeDFS(QualifiedName);
             const void * address = static_cast<const void*>(qualifiedName->declaration);
             std::stringstream ss;
             ss << address;
+            if(address == nullptr) {
+              //cerr<<"NULL";
+              //cerr<<"Class is: ";
+              if(n->compilation_unit->SearchByTypeDFS(ClassDeclaration)) {
+                //cerr<<n->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex<<"\n";
+                //cerr<<qualifiedName->m_lex;
+              }
+              else {
+                //cerr<<n->compilation_unit->SearchByTypeDFS(InterfaceDeclaration)->m_generated_tokens[2].m_lex<<"\n";
+                //cerr<<qualifiedName->m_lex;
+              }
+            }
             signature += ss.str();
           }
           else {
             cout<<"Primitive type\n";
             cout<<"Need to access child of parameter:\n\n";
             if (parameter.m_generated_tokens.size() == 0) cout<<"OOPS parameter is empty\n";
+            //cerr<<parameter.m_generated_tokens[0].m_lex;
             signature += parameter.m_generated_tokens[0].m_lex;
           }
         }
@@ -542,6 +581,8 @@ void environment::postProcessMethodMap() {
 
 void environment::postProcessConstructorMap() {
   for(std::pair<std::string, std::vector<Token*>> kv_pair: constructors){
+    RED();
+    cout<<"SIZE at time of constructor post processing: "<<kv_pair.second.size()<<"\n";
     for(Token* n: kv_pair.second){
       std::string signature = "";
       Token* parameterList = n->SearchByTypeBFS(FormalParameterList);
@@ -552,7 +593,7 @@ void environment::postProcessConstructorMap() {
       
       for(Token parameter: parameterList->m_generated_tokens) {
         if(parameter.m_type != FormalParameter) continue; 
-        Token* arrayType = parameter.SearchByTypeDFS(ArrayType);
+        Token* arrayType = parameter.m_generated_tokens[0].SearchByTypeDFS(ArrayType);
         if(arrayType) {
           Token* id = arrayType->SearchByTypeDFS(T_IDENTIFIER);
           if(id) {
@@ -574,13 +615,13 @@ void environment::postProcessConstructorMap() {
             signature += "[]";
           }
         } else {
-          Token* id = parameter.SearchByTypeDFS(T_IDENTIFIER);
+          Token* id = parameter.m_generated_tokens[0].SearchByTypeDFS(T_IDENTIFIER);
           if(id) {
             const void * address = static_cast<const void*>(id->declaration);
             std::stringstream ss;
             ss << address;
             signature += ss.str();
-          } else if(parameter.SearchByTypeDFS(QualifiedName)) {
+          } else if(parameter.m_generated_tokens[0].SearchByTypeDFS(QualifiedName)) {
             Token* qualifiedName = parameter.SearchByTypeDFS(QualifiedName);
             const void * address = static_cast<const void*>(qualifiedName->declaration);
             std::stringstream ss;
@@ -596,13 +637,27 @@ void environment::postProcessConstructorMap() {
       constructorsWithSignatures[kv_pair.first][signature].push_back(n);
     }
   }
+
+  RED();
+  cout<<"\n\n\nAfter post processing constructors size: "<<constructorsWithSignatures.size();
+  for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: constructorsWithSignatures) {
+    for(std::pair<std::string, std::vector<Token*>> signatureToDeclarations: kv_pair.second) {
+      cout<<"Size is: "<<signatureToDeclarations.second.size()<<"\n";
+    }
+  }
+
 }
 
 bool environment::checkMethods() {
   //cerr<<"Size of declared set is....."<<methodsWithSignaturesDeclared.size()<<endl;
+  CYAN();
+  cout<<"\nCHECKING METHODS\n";
   for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: methodsWithSignaturesDeclared){
     for(std::pair<std::string, std::vector<Token*>> signatureToDeclarations: kv_pair.second) {
       if (signatureToDeclarations.second.size() > 1) {
+        cerr<<"More than 1 methods with the same signature\n"<<endl;
+        cerr<<kv_pair.first<<" : ";
+        DEFAULT();
         return false;
       }
       if(signatureToDeclarations.second[0]->Abstract == true) {
@@ -620,9 +675,13 @@ bool environment::checkMethods() {
 }
 
 bool environment::checkConstructors() {
+  CYAN();
+  cout<<"\nCHECKING CONSTRUCTORS\n";
   for(std::pair<std::string,std::map<std::string,std::vector<Token*>>> kv_pair: constructorsWithSignatures){
     for(std::pair<std::string, std::vector<Token*>> signatureToDeclarations: kv_pair.second) {
       if (signatureToDeclarations.second.size() > 1) {
+        cerr<<"More than 1 constructor with the same signature"<<endl;
+        DEFAULT();
         return false;
       }
     }
@@ -880,6 +939,8 @@ bool environment::valid_method(std::pair<std::string,std::map<std::string,std::v
 
       // If signatures don't match but names match for inherited methods, it means an overloaded superclass method
       // add to inherit set
+      
+      /*
       for(std::pair<std::string, std::vector<Token*>> srcSignature: srcMethod.second) {
         // If inherited method is abstract, class must be abstract
         if(srcSignature.second[0]->Abstract == true) {
@@ -888,10 +949,11 @@ bool environment::valid_method(std::pair<std::string,std::map<std::string,std::v
           //std::cerr<<"Token Types are: "<<srcSignature.second[0]->m_type<<" "<<methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->m_type<<std::endl;
           //std::cerr<<"Class names are: "<<srcSignature.second[0]->compilation_unit->SearchByTypeDFS(InterfaceDeclaration)->m_generated_tokens[2].m_lex<<" "<<methodsWithSignaturesInherited[srcMethod.first][srcSignature.first][0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex<<std::endl;
 
+          
           for(std::pair<std::string, std::vector<Token*>> currentConstructor: constructors) {
             if(currentConstructor.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[0].SearchByTypeBFS(T_ABSTRACT) == nullptr) {
               std::cerr<<"Inheriting ABSTRACT method, class not ABSTRACT"<<std::endl;
-              return false;
+              //return false;
             }
           }
         }
@@ -900,6 +962,7 @@ bool environment::valid_method(std::pair<std::string,std::map<std::string,std::v
       //if(!checkMethods()) { return false; }
       //if(!checkConstructors()) { return false; }
       return true;
+      */
     }
 
     // add to inherit set
@@ -910,7 +973,7 @@ bool environment::valid_method(std::pair<std::string,std::map<std::string,std::v
         for(std::pair<std::string, std::vector<Token*>> currentConstructor: constructors) {
           if(currentConstructor.second[0]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[0].SearchByTypeBFS(T_ABSTRACT) == nullptr) {
             std::cerr<<"Inheriting ABSTRACT method, class not ABSTRACT"<<std::endl;
-            return false;
+            //return false;
           }
         }
       }
