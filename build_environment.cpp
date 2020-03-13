@@ -52,7 +52,7 @@ void removeAbstractFlag(Token *token){
 Token traverse(Token *token, environment *scope, bool parentIsClass=false){
   vector<Token> &children = token->m_generated_tokens;
   for(vector<Token>::iterator it=children.begin(); it!=children.end(); it++) {
-    // cout << "looking at token" << it->m_display_name << " parentIsClass: " << parentIsClass << endl;
+    //cout << "looking at token" << it->m_display_name << " parentIsClass: " << parentIsClass << endl;
     if (it->m_type == ClassDeclaration){
       string identifier = it->m_generated_tokens[2].m_lex;
       scope->classes = addToParent(parentIsClass, scope->classes, identifier, &(*it));
@@ -78,21 +78,8 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       addProtectedFlag(&(*it));
       removeAbstractFlag(&(*it));
 
-      if (parentIsClass && !(scope->methods.find(identifier) != scope->methods.end())) {
-        if (find(scope->methods[identifier].begin(), scope->methods[identifier].end(), &(*it)) == scope->methods[identifier].end()){
-          scope->methods[identifier].push_back(&(*it));
-        }
-        else{
-          throw logic_error("ERROR: " + identifier + " identifier already defined");
-        }
-      }
-      if (it->scope.methods.find(identifier) != it->scope.methods.end()) {
-        if (find(it->scope.methods[identifier].begin(), it->scope.methods[identifier].end(), &(*it)) == it->scope.methods[identifier].end()){
-          it->scope.methods[identifier].push_back(&(*it));
-        }
-        else{
-          throw logic_error("ERROR: " + identifier + " identifier already defined");;
-        }
+      if (parentIsClass){
+        scope->methods[identifier].push_back(&(*it));
       }
       traverse(&(*it), &it->scope);
     }
@@ -101,27 +88,14 @@ Token traverse(Token *token, environment *scope, bool parentIsClass=false){
       it->scope.formalParameters = addToSelf(it->scope.formalParameters, identifier, &(*it));
     }
     else if (it->m_type == ConstructorDeclaration){
-      Token *identifierToken = it->SearchByTypeDFS(T_IDENTIFIER);
+      Token *constructorDeclarator = it->SearchByTypeDFS(ConstructorDeclarator);
+      Token *identifierToken = constructorDeclarator->SearchByTypeDFS(T_IDENTIFIER);
       string identifier = identifierToken->m_lex;
 
       addProtectedFlag(&(*it));
 
-      if (parentIsClass && !(scope->constructors.find(identifier) != scope->constructors.end())) {
-        if (find(scope->constructors[identifier].begin(), scope->constructors[identifier].end(), &(*it)) == scope->constructors[identifier].end()){
-          scope->constructors[identifier].push_back(&(*it));
-          cout << scope->constructors.size();
-        }
-        else{
-          throw logic_error("ERROR: " + identifier + " identifier already defined");;
-        }
-      }
-      if (it->scope.constructors.find(identifier) != it->scope.constructors.end()) {
-        if (find(it->scope.constructors[identifier].begin(), it->scope.constructors[identifier].end(), &(*it)) == it->scope.constructors[identifier].end()){
-          it->scope.constructors[identifier].push_back(&(*it));
-        }
-        else{
-          throw logic_error("ERROR: " + identifier + " identifier already defined");
-        }
+      if (parentIsClass){
+        scope->constructors[identifier].push_back(&(*it));
       }
       traverse(&(*it), &identifierToken->scope);
     }
@@ -190,6 +164,7 @@ void printHelper2(string name, map<string,vector<Token*>> scopeList){
   cout << name;
   for(map<string,vector<Token*>>::iterator it=scopeList.begin(); it!=scopeList.end(); it++){
     cout << it->first;
+    cout << " size: " << it->second.size();
     for (vector<Token*>::iterator subit=it->second.begin(); subit!=it->second.end(); subit++){
       if ((*subit)->Protected){
         cout << (*subit)->m_lex << "(protected)";
