@@ -727,7 +727,7 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 	DEFAULT();
 	return false;
       } else {
-	
+
 	// Check for acyclic inheritance
 	if(duplicate.find(super_class) != duplicate.end()){
 	  RED();
@@ -737,42 +737,53 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
 	}
 	// If super interface is inherited continue
       }
-      if(super_class->Inherited) continue;
-      
-      // if the name is not binded return false
-      if(t.declaration == nullptr){
-	RED();
-	std::cerr<<"Interface Inheritance ERROR: "<<t.m_lex<<" is not binded during type linking"<<std::endl;
-	DEFAULT();
-	return false;
-      }
 
-      // Consturct superclass environment
-      environment* new_envs[4];
-      environment local_env,single_type,on_demand;
-      new_envs[0] = &local_env;
-      new_envs[1] = &single_type;
-      new_envs[3] = &on_demand;
-      Token* cun = super_class->compilation_unit;
-      if(!ResolvePackage(cun,new_envs)){
-	RED();
-	std::cerr<<"Inheritance ERROR: cannot construct package environment for";
-	std::cerr<<" super class or interface."<<std::endl;
-	return false;
-	DEFAULT();
-      }
+      // If super_class is not inherited, resolve super_class first.
+      // Otherwise directly link it.
       
-      // prepare for recursive check
-      duplicate[super_class] = true;
-      /*YELLOW();
-      for(std::pair<Token*,bool> kv:duplicate){
-	std::cout<<kv.first<<" ";
+      if(!super_class->Inherited){ //continue;
+	
+      
+	// if the name is not binded return false
+	if(t.declaration == nullptr){
+	  RED();
+	  std::cerr<<"Interface Inheritance ERROR: "<<t.m_lex<<" is not binded during type linking"<<std::endl;
+	  DEFAULT();
+	  return false;
+	}
+	
+	// Consturct superclass environment
+	environment* new_envs[4];
+	environment local_env,single_type,on_demand;
+	new_envs[0] = &local_env;
+	new_envs[1] = &single_type;
+	new_envs[3] = &on_demand;
+	Token* cun = super_class->compilation_unit;
+	if(!ResolvePackage(cun,new_envs)){
+	  RED();
+	  std::cerr<<"Inheritance ERROR: cannot construct package environment for";
+	  std::cerr<<" super class or interface."<<std::endl;
+	  return false;
+	  DEFAULT();
+	}
+	
+	// prepare for recursive check
+	duplicate[super_class] = true;
+	/*YELLOW();
+	  for(std::pair<Token*,bool> kv:duplicate){
+	  std::cout<<kv.first<<" ";
+	  }
+	  std::cout<<std::endl;
+	  DEFAULT();*/
+	//duplicate[super_class] = true;
+	Token* implement = super_class->SearchOneChild(TokenType::ExtendsInterfaces); 
+	if(!DoInheritInterface(super_class,implement,duplicate,new_envs)) return false;
       }
-      std::cout<<std::endl;
-      DEFAULT();*/
-      //duplicate[super_class] = true;
-      Token* implement = super_class->SearchOneChild(TokenType::ExtendsInterfaces); 
-      if(!DoInheritInterface(super_class,implement,duplicate,new_envs)) return false;
+      RED();
+	std::cout<<"Interface Inheritance: "<<sub->m_generated_tokens[2].m_lex<<"<-";
+	std::cout<<super_class->m_generated_tokens[2].m_lex<<std::endl;
+	DEFAULT();
+      
       // merge super to me
       if(!sub->scope.replace_merge(super_class->scope)) return false;
     }
