@@ -103,11 +103,14 @@ int main(int argc, char *argv[]) {
     t->BindCompilationUnit();
   }
 
+  /*
   for(Token* t: tree_ptrs){
     if(!t->BuildDeclaredSet()) {
       return 42;
     }
   }
+  */
+
   //object_interface.BindCompilationUnit();
 
   
