@@ -524,7 +524,6 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
       DEFAULT();
       return false;
     }
-    sub->Inherited = true;
     return true;
   }
   // If this class is inherited, return ;
@@ -633,7 +632,7 @@ bool TypeLinker::DoInheritClass(Token* sub, Token* super,std::map<Token*,bool>& 
   DEFAULT();
   // merge super to me
   if(!sub->scope.replace_merge(super->scope)) return false;
-  
+  sub->super_class = super;
   //  handle class implements interfaces
   
   std::map<Token*,bool> interface_dup;
@@ -679,6 +678,7 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
       DEFAULT();
       return false;
     }
+    sub->super_interfaces.emplace_back(the_interface);
     sub->Inherited = true;
     return true;
   }
@@ -786,6 +786,7 @@ bool TypeLinker::DoInheritInterface(Token* sub, Token* interfaces,
       
       // merge super to me
       if(!sub->scope.replace_merge(super_class->scope)) return false;
+      sub->super_interfaces.emplace_back(super_class);
     }
   }
   sub->Inherited = true;

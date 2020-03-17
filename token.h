@@ -16,6 +16,8 @@ class Token{
   environment scope;
   Token* declaration;
   Token* compilation_unit;
+  Token* super_class;
+  std::vector<Token*> super_interfaces;
   bool Protected;
   bool Abstract;
   bool Inherited;

@@ -8,6 +8,7 @@ Token::Token():
   Protected = false;
   Abstract = true;
   Inherited = false;
+  super_class = nullptr;
   m_rule = -1;
   m_display_name = "TOKEN_EMPTY";
 }
@@ -36,6 +37,7 @@ Token::Token(TokenType type, std::string lex):
   Protected = false;
   Inherited = false;
   Abstract = true;
+  super_class = nullptr;
   m_rule = -1;
   // Determine the display name
   int type_int = static_cast<int>(type);
