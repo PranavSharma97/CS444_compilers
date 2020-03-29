@@ -44,6 +44,7 @@ void Weeder::BuildAST(Token& node){
     case TokenType::ExtendsInterfaces:
     case TokenType::ClassTypeList:
     case TokenType::Modifiers:
+    case TokenType::ArgumentList:
     case TokenType::Super:
       do_cut = false;
       break;

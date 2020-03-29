@@ -22,7 +22,7 @@ class NameChecker{
 */
 
 bool NameChecker::LinkStringLiterals(Token* roots){
-  if(roots->m_type == TokenTypes::STRING_LITERAL){
+  if(roots->m_type == TokenType::STRING_LITERAL){
     // search for Java.Lang.String
     Token* str = m_packages->GetQualified("java.lang.String");
 
