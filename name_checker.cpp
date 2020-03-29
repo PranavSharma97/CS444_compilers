@@ -21,6 +21,32 @@ class NameChecker{
 };
 */
 
+bool NameChecker::LinkStringLiterals(Token* roots){
+  if(roots->m_type == TokenTypes::STRING_LITERAL){
+    // search for Java.Lang.String
+    Token* str = m_packages->GetQualified("java.lang.String");
+
+    // if didn't find string
+    if(str == nullptr){
+      RED();
+      std::cerr<<"Name Checker ERROR: cannot find java.lang.String."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+    roots->declaration = str;
+  }
+
+  for(Token& t:roots->m_generated_tokens){
+    if(!LinkStringLiterals(&t)) return false;
+  }
+  return true;
+}
+
+
+/*
+ * Ctor and Dtor
+ */
+
 NameChecker::NameChecker(){
   local_envs = single_types = on_demand = nullptr;
   pack_envs = nullptr;
@@ -40,6 +66,10 @@ NameChecker::~NameChecker(){
   }
 }
 
+/*
+ * public methods
+ */
+
 bool NameChecker::CheckNames(){
   // Resolve NameSpaces
   // Resolve Fields
@@ -58,6 +88,17 @@ bool NameChecker::CheckNames(){
   environment* pack_envs[file_count];
   environment on_demands[file_count];
 
+  // Link string literals to java.lang.String
+  for(Token* n: m_asts){
+    if (file_count - file_index - 16 <= 0) break; 
+
+    if(!LinkStringLiterals(m_asts[file_index])) return false;
+    CYAN();
+    std::cout<<"String Literals linked."<<std::endl;
+    DEFAULT(); 
+  }
+  
+  
   for(Token* n: m_asts){
     if (file_count - file_index - 16 <= 0) break; 
     environment* envs[4];

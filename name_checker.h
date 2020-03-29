@@ -5,7 +5,7 @@
 #include <vector>
 
 class NameChecker{
-  
+  bool LinkStringLiterals(Token* root);
  public:
   Package* m_packages;
   environment* local_envs;
