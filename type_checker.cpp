@@ -1,6 +1,8 @@
 #include "type_checker.h"
 #include <queue>
 
+// TODO: Assign types to token
+
 Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type returnType) {
   
   set<string> numericTypes = {"int", "char", "short", "byte"};
@@ -134,6 +136,15 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
     case T_IDENTIFIER:
       Type identifierType;
       
+      // First check if declaration pointer is not null
+      if (current->declaration != nullptr) {
+        identifierType.type = 1;
+        identifierType.reference = current->declaration;
+
+        current->checkedType = identifierType;
+        return identifierType;
+      }
+
       // Determine whether identifier is a localVariable, parameter or a field
       if (localEnv.localVariables.find(current->m_lex) != localEnv.localVariables.end()) {
         Token* identifierDeclaration = localEnv.localVariables[current->m_lex];
@@ -156,7 +167,7 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
       checkedType.type = 6;
 
       return checkedType;
-    // DO: Other literals
+    // TODO: Other literals
 
     case ConditionalOrExpression:
     case ConditionalAndExpression:
@@ -271,15 +282,104 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
       return checkedType;
 
     case CastExpression:
+      Type expressionType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType);
+      Type castType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+
+      // Check if Casting type is arrayType
+      if (current->m_generated_tokens[2].m_type == Dims) {
+        if (castType.type == 0) {
+          castType.type = 2;
+        }
+        else if (castType.type == 1) {
+          castType.type = 3;
+        }
+      }
       
+      // Must be assignable in 1 direction
+      if ((isAssignable(expressionType, castType) == false) && (isAssignable(castType, expressionType) == false))  {
+        throw;
+      }
+
+      return castType;
+
+    case T_BYTE:
+    case T_INT:
+    case T_SHORT:
+    case T_CHAR:
+    case T_BOOLEAN:
+      Type checkedType;
+      checkedType.type = 0;
+      checkedType.primitive = current->m_lex;
+
+      return checkedType;
+
+    case QualifiedName:
+      Type checkedType;
+      checkedType.type = 1;
+      checkedType.reference = current->declaration;
+
+      // Should not be nullptr
+      if (current->declaration == nullptr) {
+        cerr<<"Problem with qualified name";
+        throw;
+      }
+
+      return checkedType;
 
     case UnaryExpressionNotPlusMinus:
       Type checkedType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
 
       // Type must be boolean
-      if ((checkedType.type != 1) || checkedType.primitive != "boolean") {
+      if ((checkedType.type != 0) || checkedType.primitive != "boolean") {
         throw;
       }
+
+      return checkedType;
+    
+    case UnaryExpression:
+      Type expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+
+      // Must be numeric type
+      if (numericTypes.find(expressionType.primitive) == numericTypes.end()) {
+        throw;
+      }
+
+      Type checkedType;
+      checkedType.type = 0;
+      checkedType.primitive = "int";
+
+      return checkedType;
+
+    case ArrayAccess:
+      Type leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      Type expressionType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      // Expression must be numeric
+      if (numericTypes.find(expressionType.primitive) == numericTypes.end()) {
+        throw;
+      }
+
+      Type checkedType = leftCheckedType;
+
+      return checkedType;
+
+    case FieldAccess:
+      Type expressionType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+
+      // Must be reference type
+      if (expressionType.type != 1) {
+        cerr<<"Problem with Field Access";
+        throw;
+      }
+
+      // Now Check that field is present in class environment
+      string identifierName = current->m_generated_tokens[2].m_lex;
+
+      if (expressionType.reference->scope.fields.find(identifierName) == expressionType.reference->scope.fields.end()) {
+        throw;
+      }
+
+      Type checkedType = getType(expressionType.reference->scope.fields[identifierName]->m_generated_tokens[1]);
 
       return checkedType;
   }
