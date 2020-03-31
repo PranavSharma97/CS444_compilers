@@ -12,11 +12,13 @@ class Token{
   std::string m_display_name;
 
   int m_rule;
-
+  int qualified_index;
+  
   environment scope;
   Token* declaration;
   Token* compilation_unit;
   Token* super_class;
+  Token* qualified_declaration;
   std::vector<Token*> super_interfaces;
   bool Protected;
   bool Abstract;
