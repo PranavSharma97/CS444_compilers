@@ -11,7 +11,7 @@ class Token{
   TokenType m_type;
   std::string m_lex;
   std::string m_display_name;
-  Type checkedType;
+  TCType checkedType;
   int m_rule;
 
   environment scope;

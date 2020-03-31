@@ -1,9 +1,9 @@
 #include <string>
-#include "token.h"
 
 // Union return type to hold possible Type values
+class Token;
 
-struct Type {
+struct TCType {
   // Indicates the type:
   // 0: Primitive type
   // 1: Reference type
@@ -13,6 +13,6 @@ struct Type {
   // 5: String literal
   // 6: Null literal
   int type;
-  string primitive;
+  std::string primitive;
   Token* reference;
-}
+};
