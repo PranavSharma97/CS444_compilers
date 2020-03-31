@@ -5,7 +5,8 @@
 #include <vector>
 
 class NameChecker{
-  
+  bool GetAllValidType(Token* root, int idx, environment** envs, int[] dot_indices, bool has_qualified = false);
+  bool ResolveQualifiedPart(Token* node);
  public:
   Package* m_packages;
   environment* local_envs;
