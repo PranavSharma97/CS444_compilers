@@ -46,29 +46,6 @@ Token* GetInterfaceFromEnv(std::string& name,environment ** envs){
   return dec;
 }
 
-Token* GetTypeFromEnv(std::string& name, environment ** envs){
-  //std::cout<<"Local"<<std::endl;
-  Token *dec = envs[0]->GetType(name);
-  if(dec == nullptr){
-    //std::cout<<"DirectImport"<<std::endl;
-    dec = envs[1]->GetType(name);
-    if(dec == nullptr){
-      //std::cout<<"Package"<<std::endl;
-      dec = envs[2]->GetType(name);
-      if(dec == nullptr){
-	//std::cout<<"ImportAll"<<std::endl;
-	dec = envs[3]->GetType(name);
-	if(dec == nullptr){
-	  RED();
-	  std::cerr<<"GetType ERROR: "<<(name)<<" is ambiguous or undefined."<<std::endl;
-	  DEFAULT();
-	}
-      }
-    }
-  }
-  return dec;
-}
-
 // If ast implements a package, bind it to a package.
 
 bool TypeLinker::ConstructPackage(){

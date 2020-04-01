@@ -22,121 +22,181 @@ class NameChecker{
 */
 
 /*
+ * Standalone methods
+ */
+
+/*
  * Private methods
  */
 
-bool NameChecker::GetAllValidTypes(Token* root,int idx, environment** envs, int[] dot_indices, bool has_qualified){
+bool NameChecker::GetAllValidType(Token* root,Token* last_resovled,int idx, environment** envs, int* dot_indices, bool is_method, bool search_type){
   bool success = false;
   Token* target_node = &(root->m_generated_tokens[idx]);
   // search for local variables first
+  if(!search_type){
+    Token* local = envs[0]->GetDeclaration(target_node->m_lex);
+    // resolve for interpreation where the first is a local var/field/param
+    if(local!=nullptr){
+      Token* local_type;
+      if(local->m_type == TokenType::FieldDeclaration){
+	local_type = &(local->m_generated_tokens[1]);
+      } else {
+	// else it's local variable or parameter
+	local_type = &(local->m_generated_tokens[0]);
+      }
+      
+      // if it's not array type, keep resolve it
+      if(local_type->m_type != TokenType::ArrayType){
+	local_type = local_type->declaration;
+	// check if I'm the last
+	if(idx == root->m_generated_tokens.size() - 1){
+	  // If I'm the last, record my type onto root
+	  root->declaration = local;
+	  success = true;
+	}else{
+	  // If I'm not the last, keep on searching
+	  environment* backup_local = envs[0];
+	  envs[0] = &(local_type->scope);
+	  success = GetAllValidType(root,local,idx+2,envs,dot_indices,is_method);
+	  envs[0] = backup_local;
+	}
+      } else {
+	// if it's array type, throw an error
+	
+	RED();
+	std::cerr<<"Type Resolving ERROR: array type "<<target_node->m_lex<<" cannot have field/method access"<<std::endl;
+	DEFAULT();
+	return false;
+      }
+    }else{
+      
+      RED();
+      std::cerr<<"Type Resolving ERROR: cannot find "<<target_node->m_lex<<","<<root->m_lex<<std::endl;
+      DEFAULT();
+      // if failed to find the field
+      success = false;
+    }
+  } else {
   
+    // if it's the first search, check if it can be resolved to
+    // imported types
+    if(idx == 0){
+      // resolve for interpretation where the first is a non qualified type
+      Token* import = GetTypeFromEnv(target_node->m_lex,envs);
+      if(import != nullptr){
+	environment* backup_local = envs[0];
+	envs[0] = &(import->scope);
+	success = GetAllValidType(root,import,idx+2,envs,dot_indices,is_method);
+	envs[0] = backup_local;
+      } else {
+	
+	RED();
+	std::cerr<<"Type Resolving ERROR: cannot find "<<target_node->m_lex<<","<<root->m_lex<<std::endl;
+	DEFAULT();
+	success = false;
+      }
+    } else {
+      // Resolve for qualified name
+      // If we've resolved for a qualified name ,don't resolve it twice
+      std::string q_name = root->m_lex.substr(0,dot_indices[idx>>1]);
+      Token* q_type = m_packages->GetQualified(q_name);
+      if(q_type != nullptr){
+	// If this is the last one, record myself on the root's vec
+	if(idx == root->m_generated_tokens.size() - 1){
+	  root->declaration = q_type;
+	}else{
+	  environment* backup_local = envs[0];
+	  envs[0] = &(q_type->scope);
+	  success = GetAllValidType(root,q_type,idx+2,envs,dot_indices,is_method);
+	  envs[0] = backup_local;
+	}
+      } else {
+	if(idx == root->m_generated_tokens.size() - 1){
+	  // at last we can't find anything
+	  RED();
+	  std::cerr<<"Type Resolving ERROR: cannot resolve "<<root->m_lex<<std::endl;
+	  DEFAULT();
+	  success = false;
+	} else {
+	  success = GetAllValidType(root,nullptr,idx+2,envs,dot_indices,is_method,true);
+	}
+      }
+    }
+  }
+
+  return success;
+  
+}
+
+bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_method){
+  
+  bool result = true;
+  if(node->m_type != TokenType::QualifiedName){
+    return ResolveQualifiedPart(&(node->m_generated_tokens[0]),envs,true);
+  }
+  // If it's qualified 
+
+  // check if the first can be resolved to local var or field
+  Token* target_node = &(node->m_generated_tokens[0]);
   Token* local = envs[0]->GetDeclaration(target_node->m_lex);
-  // resolve for interpreation where the first is a local var/field/param
-  if(local!=nullptr){
+  if(local != nullptr){
+    int dot_indices;
+    // get the class/interface of local
     Token* local_type;
     if(local->m_type == TokenType::FieldDeclaration){
       local_type = &(local->m_generated_tokens[1]);
     } else {
       // else it's local variable or parameter
       local_type = &(local->m_generated_tokens[0]);
-    }
-    
+    }  
     // if it's not array type, keep resolve it
     if(local_type->m_type != TokenType::ArrayType){
       local_type = local_type->declaration;
-      // check if I'm the last
-      if(idx == root->m_generated_tokens.size() - 1){
-	// If I'm the last, record my type onto root
-	root->valid_types.emplace_back(local_type);
-	success = true;
-      }else{
-	// If I'm not the last, keep on searching
-	Token* backup_local = envs[0];
-	envs[0] = local_type->scope;
-	success |= GetAllValidTypes(root,idx+2,envs,dot_indices);
-	envs[0] = backup_local;
-      }
-    }
-  }
-  
-  // if it's the first search, check if it can be resolved to
-  // imported types
-  if(idx == 0){
-    // resolve for interpretation where the first is a non qualified type
-    Token* import = GetImportClassFromEnv(target_node->m_lex,envs);
-    if(import != 0){
       environment* backup_local = envs[0];
-      envs[0] = import->scope;
-      success |= GetAllValidTypes(root,idx+2,envs,dot_indices);
+      envs[0] = &(local_type->scope);
+      result = GetAllValidType(node,local,2,envs,&dot_indices,is_method);
       envs[0] = backup_local;
+    } else {
+      RED();
+      std::cerr<<"Type Resolving ERROR: array type "<<target_node->m_lex<<" cannot have field access"<<std::endl;
+      DEFAULT();
+      result = false;
     }
-  }
-
-  // Resolve for qualified name
-  // If we've resolved for a qualified name ,don't resolve it twice
-  if(!has_qualified){
-    std::string q_name = root->m_lex.substr(0,dot_indices[idx>>1]);
-    Token* q_type = m_packages->GetQualified(qname);
-    if(q_type != nullptr){
-      // If this is the last one, record myself on the root's vec
-      if(idx == root->m_generated_tokens.size() - 1){
-	root->valid_types.emplace_back(q_type);
-      }else{
-	environment* backup_local = envs[0];
-	envs[0] = q_type->scope;
-	success |= GetAllValidTypes(root,idx+2,envs,dot_indices,true);
-	envs[0] = backup_local;
-      }
+  }else{
+    // Search for types
+    // Split into every prefixes
+    int dot_counter = 0;
+    for(Token& t: node->m_generated_tokens){
+      if(t.m_type == T_DOT) dot_counter ++;
     }
+    dot_counter += 1;
+    
+    // to store all dot's location
+    int dot_indices[dot_counter];
+    int dot_loc = 0, idx = 0;
+    for(char c: node->m_lex){
+      // record by reverse order
+      if(c == '.') { dot_indices[idx] = dot_loc; idx++; }
+      dot_loc++;
+    }
+    dot_indices[dot_counter-1] = dot_counter-1;
+
+    environment* backup_local = envs[0];
+    
+    // Lastly, check if the node itself can be resolved to a qualified name
+    //Token* qtype = m_packages->GetQualified(node->m_lex);
+    //node->valid_types.emplace_back(qtype);
+    result = GetAllValidType(node,nullptr,0,envs,dot_indices,is_method,true);
+    envs[0] = backup_local;
   }
   
-  return success;
-  
-}
-
-bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs){
-
-  bool result = true;
-  
-  // check if node is a qualifed name
-  if(node->m_type != TokenType::QualifiedName){
-    RED();
-    std::cerr<<"Name Checker Resolve Qualified ERROR: node is not";
-    std::cerr<<"QualifiedName"<<std::endl;
-    DEFAULT();
-    return false;
-  }
-
-  // Split into every prefixes
-  int dot_counter = 0;
-  for(Token& t: node->m_generated_tokens){
-    if(t->m_type == T_DOT) dot_counter ++;
-  }
-  dot_counter += 1;
-  
-  // to store all dot's location
-  int dot_indices[dot_counter];
-  int dot_loc = 0, idx = 0;
-  for(char c: node->m_lex){
-    // record by reverse order
-    if(c == '.') { dot_indices[idx] = dot_loc; idx++; }
-    dot_loc++;
-  }
-  dot_indices[dot_counter-1] = dot_counter-1;
-
-  environment* backup_local = envs[0];
-  
-  // Lastly, check if the node itself can be resolved to a qualified name
-  //Token* qtype = m_packages->GetQualified(node->m_lex);
-  //node->valid_types.emplace_back(qtype);
-  if(!GetAllValidTypes(node,0,envs,dot_indices)){
+  // Handle the result
+  if(!result){
     RED();
     std::cerr<<"Type Resoving ERROR:"<<node->m_lex<<" doesn't resolve to valid types";
     std::cerr<<std::endl;
     DEFAULT();
-    result = false;
   }
-  envs[0] = backup_local;
   return result;
 }
 
