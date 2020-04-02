@@ -42,6 +42,9 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
   if(last_resolved != nullptr){
     if(idx > the_last_idx){
       root->declaration = last_resolved;
+      CYAN();
+      std::cout << "(1) Linked " << root->m_lex << " to " << last_resolved->m_display_name << std::endl;
+      DEFAULT();
       return true;
     }
     
@@ -68,7 +71,8 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
 	      if(target_node->m_lex.compare("length")!=0){
 	        return false;
 	      } else {
-	        local_scope = &(java_object->scope);
+	        std::cout << "LOCAL SCOPE IS SET FROM JAVA OBJECT" << std::endl;
+          local_scope = &(java_object->scope);
 	        // TODO: NEED TO HANDLE LENGTH AS FIELD
 	      }
       }
@@ -116,6 +120,9 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       if(idx == the_last_idx){
 	      // If I'm the last, record my type onto root
 	      root->declaration = local;
+        CYAN();
+        std::cout << "(2) Linked " << root->m_lex << " to type " << local << std::endl;
+        DEFAULT();
 	      success = true;
       }else{
 	    // If I'm not the last, keep on searching
@@ -130,18 +137,24 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       return false;
     }
   } else {
-    if(idx > the_last_idx){
+    /*if(idx > the_last_idx){
       root->declaration = last_resolved;
+      CYAN();
+      std::cout << "(4) Linked " << root->m_lex << " to " << last_resolved->m_display_name << std::endl;
+      DEFAULT();
       return last_resolved != nullptr;
-    }
+    }*/
     // Last one is nullptr, we are still looking for types
-    // Get the qualified name until this point
+    // Get the qualified name until this point 
     std::string q_name = root->m_lex.substr(0,dot_indices[idx>>1]);
     Token* q_type = m_packages->GetQualified(q_name);
     if(q_type != nullptr){
       // If this is the last one, record myself on the root's vec
       if(idx == the_last_idx){
 	      root->declaration = q_type;
+        CYAN();
+        std::cout << "(3) Linked " << root->m_lex << " to type " << q_type << std::endl;
+        DEFAULT();
 	      return true;
       }
     } else {
@@ -161,6 +174,7 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
 }
 
 bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_method){  
+  std::cout << "ResolveQualifiedPart: " << node->m_lex << std::endl;
   bool result = true;
   if(node->m_type != TokenType::QualifiedName){
     return ResolveQualifiedPart(&(node->m_generated_tokens[0]),envs,true);
@@ -188,7 +202,8 @@ bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_m
   }
   dot_indices[dot_counter-1] = dot_counter-1;
 
-  result = GetAllValidType(node,local,2,dot_indices,is_method);
+  std::cout << "Finding all valid types for: " << node->m_lex << std::endl;
+  result = GetAllValidType(node,local,1,dot_indices,is_method);
   // Handle the result
   if(!result){
     RED();
