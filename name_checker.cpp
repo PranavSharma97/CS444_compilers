@@ -59,24 +59,24 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       last_type = &(last_resolved->m_generated_tokens[type_index]);
       // if last_type is name, it's scope should be in it's declaration
       if(last_type->m_type == TokenType::T_IDENTIFIER || last_type->m_type == TokenType::QualifiedName){
-	      last_scope = &(last_type->declaration->scope);
+        last_scope = &(last_type->declaration->scope);
       } else if(last_type->m_type != TokenType::ArrayType){
 	      // if it's primitive type, scope is java lang object
-	      last_scope = &(java_object->scope);
+        last_scope = &(java_object->scope);
       } else {
-	    // if last one is array, check if this is length,
-	    if(target_node->m_lex.compare("length")!=0){
-	      return false;
-	    } else {
-	      local_scope = &(java_object->scope);
-	      // TODO: NEED TO HANDLE LENGTH AS FIELD
+	      // if last one is array, check if this is length,
+	      if(target_node->m_lex.compare("length")!=0){
+	        return false;
+	      } else {
+	        local_scope = &(java_object->scope);
+	        // TODO: NEED TO HANDLE LENGTH AS FIELD
 	      }
       }
     }
     
     // if last one is not array, get local scope
-    
-    Token* local = local_scope->GetDeclaration(target_node->m_lex);
+    Token *local = nullptr;
+    if (local_scope) local = local_scope->GetDeclaration(target_node->m_lex);
     // resolve for interpreation where the first is a local var/field/param
     if(local!=nullptr){
       
@@ -242,7 +242,7 @@ bool NameChecker::CheckNames(){
   int file_count = m_asts.size();
   environment local_envs[file_count];
   environment single_types[file_count];
-  environment* pack_envs[file_count];
+  environment* pack_envs[file_count] = { nullptr };
   environment on_demands[file_count];
 
   int file_index = 0;
@@ -343,7 +343,7 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   new_envs[1] = envs[1];
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
-  // std::cout << "number of envs3 classes: " << envs[3]->classes.size() << std::endl;
+  if (new_envs[2]) std::cout << "number of envs2 classes: " << envs[2]->classes.size() << std::endl;
   
   // std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
 
