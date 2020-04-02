@@ -5,23 +5,6 @@
 #include "color_print.h"
 
 /*
-class NameChecker{
-  
- public:
-  Package* m_packages;
-  environment* local_envs;
-  environment* single_types;
-  environment** pack_envs;
-  environment* on_demand;
-
-  Token* m_asts;
-  
-  NameChecker() = default;
-  ~NameChecker();
-};
-*/
-
-/*
  * Standalone methods
  */
 bool CheckModifiers(Token* last_resolved, Token* modifiers){
@@ -75,20 +58,19 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       // last_type is either name, primitive type, or array type
       last_type = &(last_resolved->m_generated_tokens[type_index]);
       // if last_type is name, it's scope should be in it's declaration
-      if(last_type->m_type == TokenType::T_IDENTIFIER ||
-	 last_type->m_type == TokenType::QualifiedName){
-	last_scope = &(last_type->declaration->scope);
+      if(last_type->m_type == TokenType::T_IDENTIFIER || last_type->m_type == TokenType::QualifiedName){
+	      last_scope = &(last_type->declaration->scope);
       } else if(last_type->m_type != TokenType::ArrayType){
-	// if it's primitive type, scope is java lang object
-	last_scope = &(java_object->scope);
+	      // if it's primitive type, scope is java lang object
+	      last_scope = &(java_object->scope);
       } else {
-	// if last one is array, check if this is length,
-	if(target_node->m_lex.compare("length")!=0){
-	  return false;
-	} else {
-	  local_scope = &(java_object->scope);
-	  // TODO: NEED TO HANDLE LENGTH AS FIELD
-	}
+	    // if last one is array, check if this is length,
+	    if(target_node->m_lex.compare("length")!=0){
+	      return false;
+	    } else {
+	      local_scope = &(java_object->scope);
+	      // TODO: NEED TO HANDLE LENGTH AS FIELD
+	      }
       }
     }
     
@@ -104,40 +86,40 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       Token* modifiers = &(local->m_generated_tokens[0]);
       // Check modifiers
       if(!CheckModifiers(last_resolved,modifiers)){
-	RED();
-	std::cerr<<"GetAllValidType ERROR:"<<target_node->m_lex<<" in ";
-	std::cerr<<root->m_lex<<" failed on staticness."<<std::endl;
-	DEFAULT();
-	return false;
+	      RED();
+      	std::cerr<<"GetAllValidType ERROR:"<<target_node->m_lex<<" in ";
+	      std::cerr<<root->m_lex<<" failed on staticness."<<std::endl;
+	      DEFAULT();
+	      return false;
       }
       // Get the Type of local_type
       local_type = &(local->m_generated_tokens[1]);
       // If local_type is not a reference type, change it to Object
       if(local_type->m_type != TokenType::T_IDENTIFIER &&
-	 local_type->m_type != TokenType::QualifiedName &&
-	 local_type->m_type != TokenType::ArrayType){
-	local_scope = &(java_object->scope);
+	      local_type->m_type != TokenType::QualifiedName &&
+	      local_type->m_type != TokenType::ArrayType){
+	      local_scope = &(java_object->scope);
       }else if(local_type->m_type!= TokenType::ArrayType){
-	if(local_type->declaration == nullptr){
-	  RED();
-	  std::cerr<<"GetValidType ERROR: unbinded name "<<local_type->m_lex;
-	  std::cerr<<", from"<<target_node->m_lex<<", from";
-	  std::cerr<<root->m_lex<<std::endl;
-	  DEFAULT();
-	  return false;
-	}
-	local_scope = &(local_type->declaration->scope);
+	      if(local_type->declaration == nullptr){
+	        RED();
+	        std::cerr<<"GetValidType ERROR: unbinded name "<<local_type->m_lex;
+	        std::cerr<<", from"<<target_node->m_lex<<", from";
+	        std::cerr<<root->m_lex<<std::endl;
+	        DEFAULT();
+	        return false;
+	      }
+	      local_scope = &(local_type->declaration->scope);
       }
 
       
       // check if I'm the last
       if(idx == the_last_idx){
-	// If I'm the last, record my type onto root
-	root->declaration = local;
-	success = true;
+	      // If I'm the last, record my type onto root
+	      root->declaration = local;
+	      success = true;
       }else{
-	// If I'm not the last, keep on searching
-	success = GetAllValidType(root,local,idx+2,dot_indices,is_method);
+	    // If I'm not the last, keep on searching
+	      success = GetAllValidType(root,local,idx+2,dot_indices,is_method);
       }
       
     }else{
@@ -148,7 +130,6 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       return false;
     }
   } else {
-    
     if(idx > the_last_idx){
       root->declaration = last_resolved;
       return last_resolved != nullptr;
@@ -160,16 +141,16 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
     if(q_type != nullptr){
       // If this is the last one, record myself on the root's vec
       if(idx == the_last_idx){
-	root->declaration = q_type;
-	return true;
+	      root->declaration = q_type;
+	      return true;
       }
     } else {
       if(idx == the_last_idx){
-	// at last we can't find anything
-	RED();
-	std::cerr<<"Type Resolving ERROR: cannot resolve "<<root->m_lex<<std::endl;
-	DEFAULT();
-	success = false;
+	      // at last we can't find anything
+	      RED();
+  	    std::cerr<<"Type Resolving ERROR: cannot resolve "<<root->m_lex<<std::endl;
+	      DEFAULT();
+	      success = false;
       }
     }
     // keep on searching 
@@ -179,8 +160,7 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
   return success;
 }
 
-bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_method){
-  
+bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_method){  
   bool result = true;
   if(node->m_type != TokenType::QualifiedName){
     return ResolveQualifiedPart(&(node->m_generated_tokens[0]),envs,true);
@@ -260,12 +240,12 @@ bool NameChecker::CheckNames(){
   // here as well
   // but not declared in the .h file yet.
   int file_count = m_asts.size();
-  int file_index = 0;
   environment local_envs[file_count];
   environment single_types[file_count];
   environment* pack_envs[file_count];
   environment on_demands[file_count];
 
+  int file_index = 0;
   for(Token* n: m_asts){
     if (file_count - file_index - 16 <= 0) break; 
     environment* envs[4];
@@ -363,29 +343,15 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   new_envs[1] = envs[1];
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
+  // std::cout << "number of envs3 classes: " << envs[3]->classes.size() << std::endl;
   
   // std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
 
   if (t == FieldAccess || t == QualifiedName || 
      (t == MethodInvocation && root->m_generated_tokens[1].m_type == T_DOT)) {
-    Token* firstIdentifier = root->SearchByTypeDFS(T_IDENTIFIER);
-
-    Token* declaration = envs[0]->GetDeclaration(firstIdentifier->m_lex);
-    if (declaration){
-      root->declaration = declaration;
-      firstIdentifier->declaration = declaration;
-      CYAN();
-      std::cout<<"Linking " << firstIdentifier->m_lex << " to " << declaration->m_display_name << std::endl;
-      DEFAULT();
-    }
-    else{
-      CYAN();
-      std::cout << "Could not link \"" << firstIdentifier->m_lex << "\" possibly a type" << std::endl;
-      DEFAULT();
-    }
+    ResolveQualifiedPart(root, new_envs);
   }
 
-  bool result = true;
   for(Token& n: root->m_generated_tokens){
     if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
         t == MethodHeader || t == ConstructorDeclarator){
