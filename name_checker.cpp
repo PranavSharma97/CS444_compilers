@@ -125,7 +125,8 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
     }else{
       // Cannot find local, failed.
       RED();
-      std::cerr<<"Type Resolving ERROR: cannot find "<<target_node->m_lex<<","<<root->m_lex<<std::endl;
+      std::cerr<<"Type Resolving ERROR: cannot find "<<target_node->m_lex<<" in "<<root->m_lex<<std::endl;
+      std::cerr<<"ROOT TYPE: is method? "<<is_method<<std::endl;
       DEFAULT();
       return false;
     }
@@ -160,10 +161,19 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
   return success;
 }
 
-bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_method){  
+bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_method){
+  if(node->declaration) return true;
+  CYAN();
+  std::cout<<"Node:"<<*node<<","<<node->m_lex<<","<<is_method<<std::endl;
+  DEFAULT();
   bool result = true;
   if(node->m_type != TokenType::QualifiedName){
-    return ResolveQualifiedPart(&(node->m_generated_tokens[0]),envs,true);
+    result = ResolveQualifiedPart(&(node->m_generated_tokens[0]),envs,true);
+    
+    CYAN();
+    std::cout<<"Finished:"<<*node<<","<<node->m_lex<<","<<is_method<<std::endl;
+    DEFAULT();
+    return result;
   }
   // If it's qualified 
 
@@ -186,8 +196,15 @@ bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_m
     if(c == '.') { dot_indices[idx] = dot_loc; idx++; }
     dot_loc++;
   }
-  dot_indices[dot_counter-1] = dot_counter-1;
+  dot_indices[dot_counter-1] = dot_loc-1;
 
+  CYAN();
+  for(int i = 0;i<dot_counter;i++){
+    std::cout<<dot_indices[i]<<" ";
+  }
+  std::cout<<std::endl;
+  DEFAULT();
+  
   result = GetAllValidType(node,local,2,dot_indices,is_method);
   // Handle the result
   if(!result){
@@ -348,8 +365,13 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   // std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
 
   if (t == FieldAccess || t == QualifiedName || 
-     (t == MethodInvocation && root->m_generated_tokens[1].m_type == T_DOT)) {
-    ResolveQualifiedPart(root, new_envs);
+      (t == MethodInvocation))} //&& root->m_generated_tokens[1].m_type == T_DOT)) {
+    // Reason for not checking the T_DOT
+    // an expression a.b.c.d(), it's structure looks like
+    // MethodInvocation -> QualifiedName(a.b.c.d) LEFT_BRACKET RIGHT_BRACKET
+    // the QualifiedName a.b.c.d may be a type.field, or field.field.field
+    // This need to be handled by ResolveQualifiedPart
+    if(!ResolveQualifiedPart(root, new_envs)) return false;
   }
 
   for(Token& n: root->m_generated_tokens){
