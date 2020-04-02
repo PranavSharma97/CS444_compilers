@@ -21,6 +21,209 @@ class NameChecker{
 };
 */
 
+/*
+ * Standalone methods
+ */
+bool CheckModifiers(Token* last_resolved, Token* modifiers){
+  // check for staticness based on last_resolved
+  
+  bool is_static = modifiers->SearchByTypeBFS(TokenType::T_STATIC) != nullptr;
+  TokenType last_type = last_resolved->m_type;
+  Token* last_modifier = nullptr;
+  if(last_type == TokenType::FieldDeclaration){
+    last_modifier == last_resolved->m_generated_tokens[0].SearchByTypeBFS(TokenType::T_STATIC);
+  }
+  if(last_type == TokenType::ClassDeclaration ||
+     last_type == TokenType::InterfaceDeclaration ||
+     last_modifier != nullptr){
+    return is_static;
+  }
+  return (!is_static);
+}
+
+/*
+ * Private methods
+ */
+
+
+bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int* dot_indices, bool is_method){
+  bool success = false;
+  int the_last_idx = root->m_generated_tokens.size()-1;
+  the_last_idx = is_method? the_last_idx-2:the_last_idx;
+  Token* target_node = &(root->m_generated_tokens[idx]);
+  Token* last_type = nullptr;
+  Token* java_object = m_packages->GetQualified("java.lang.Object");
+  environment* last_scope = nullptr;
+  environment* local_scope = nullptr;
+  // if last one is not null, get last_type, last scope, etc
+  if(last_resolved != nullptr){
+    if(idx > the_last_idx){
+      root->declaration = last_resolved;
+      return true;
+    }
+    
+    //Get last_type, last scope
+    // last resolved can be field,local var, formal param, type
+    if(last_resolved->m_type == TokenType::ClassDeclaration ||
+       last_resolved->m_type == TokenType::InterfaceDeclaration){
+      // if last resolved is a type, last_type = last_resolved
+      // last_type is a type
+      last_type = last_resolved;
+      last_scope = &(last_type->scope);
+    }else{
+      int type_index = (last_resolved->m_type == TokenType::FieldDeclaration)? 1:0;
+      // last_type is either name, primitive type, or array type
+      last_type = &(last_resolved->m_generated_tokens[type_index]);
+      // if last_type is name, it's scope should be in it's declaration
+      if(last_type->m_type == TokenType::T_IDENTIFIER ||
+	 last_type->m_type == TokenType::QualifiedName){
+	last_scope = &(last_type->declaration->scope);
+      } else if(last_type->m_type != TokenType::ArrayType){
+	// if it's primitive type, scope is java lang object
+	last_scope = &(java_object->scope);
+      } else {
+	// if last one is array, check if this is length,
+	if(target_node->m_lex.compare("length")!=0){
+	  return false;
+	} else {
+	  local_scope = &(java_object->scope);
+	  // TODO: NEED TO HANDLE LENGTH AS FIELD
+	}
+      }
+    }
+    
+    // if last one is not array, get local scope
+    
+    Token* local = local_scope->GetDeclaration(target_node->m_lex);
+    // resolve for interpreation where the first is a local var/field/param
+    if(local!=nullptr){
+      
+      // check target_node if last resolved is 
+      Token* local_type;
+      //if(local->m_type == TokenType::FieldDeclaration){
+      Token* modifiers = &(local->m_generated_tokens[0]);
+      // Check modifiers
+      if(!CheckModifiers(last_resolved,modifiers)){
+	RED();
+	std::cerr<<"GetAllValidType ERROR:"<<target_node->m_lex<<" in ";
+	std::cerr<<root->m_lex<<" failed on staticness."<<std::endl;
+	DEFAULT();
+	return false;
+      }
+      // Get the Type of local_type
+      local_type = &(local->m_generated_tokens[1]);
+      // If local_type is not a reference type, change it to Object
+      if(local_type->m_type != TokenType::T_IDENTIFIER &&
+	 local_type->m_type != TokenType::QualifiedName &&
+	 local_type->m_type != TokenType::ArrayType){
+	local_scope = &(java_object->scope);
+      }else if(local_type->m_type!= TokenType::ArrayType){
+	if(local_type->declaration == nullptr){
+	  RED();
+	  std::cerr<<"GetValidType ERROR: unbinded name "<<local_type->m_lex;
+	  std::cerr<<", from"<<target_node->m_lex<<", from";
+	  std::cerr<<root->m_lex<<std::endl;
+	  DEFAULT();
+	  return false;
+	}
+	local_scope = &(local_type->declaration->scope);
+      }
+
+      
+      // check if I'm the last
+      if(idx == the_last_idx){
+	// If I'm the last, record my type onto root
+	root->declaration = local;
+	success = true;
+      }else{
+	// If I'm not the last, keep on searching
+	success = GetAllValidType(root,local,idx+2,dot_indices,is_method);
+      }
+      
+    }else{
+      // Cannot find local, failed.
+      RED();
+      std::cerr<<"Type Resolving ERROR: cannot find "<<target_node->m_lex<<","<<root->m_lex<<std::endl;
+      DEFAULT();
+      return false;
+    }
+  } else {
+    
+    if(idx > the_last_idx){
+      root->declaration = last_resolved;
+      return last_resolved != nullptr;
+    }
+    // Last one is nullptr, we are still looking for types
+    // Get the qualified name until this point
+    std::string q_name = root->m_lex.substr(0,dot_indices[idx>>1]);
+    Token* q_type = m_packages->GetQualified(q_name);
+    if(q_type != nullptr){
+      // If this is the last one, record myself on the root's vec
+      if(idx == the_last_idx){
+	root->declaration = q_type;
+	return true;
+      }
+    } else {
+      if(idx == the_last_idx){
+	// at last we can't find anything
+	RED();
+	std::cerr<<"Type Resolving ERROR: cannot resolve "<<root->m_lex<<std::endl;
+	DEFAULT();
+	success = false;
+      }
+    }
+    // keep on searching 
+    success = GetAllValidType(root,q_type,idx+2,dot_indices,is_method);
+  }
+  
+  return success;
+}
+
+bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_method){
+  
+  bool result = true;
+  if(node->m_type != TokenType::QualifiedName){
+    return ResolveQualifiedPart(&(node->m_generated_tokens[0]),envs,true);
+  }
+  // If it's qualified 
+
+  // check if the first can be resolved to local var or field
+  Token* target_node = &(node->m_generated_tokens[0]);
+  Token* local = envs[0]->GetDeclaration(target_node->m_lex);
+  if(local == nullptr) local = GetTypeFromEnv(target_node->m_lex,envs);
+  // Generate the dot indices 
+  int dot_counter = 0;
+  for(Token& t: node->m_generated_tokens){
+    if(t.m_type == T_DOT) dot_counter ++;
+  }
+  dot_counter += 1;
+  
+  // to store all dot's location
+  int dot_indices[dot_counter];
+  int dot_loc = 0, idx = 0;
+  for(char c: node->m_lex){
+    // record by reverse order
+    if(c == '.') { dot_indices[idx] = dot_loc; idx++; }
+    dot_loc++;
+  }
+  dot_indices[dot_counter-1] = dot_counter-1;
+
+  result = GetAllValidType(node,local,2,dot_indices,is_method);
+  // Handle the result
+  if(!result){
+    RED();
+    std::cerr<<"Type Resoving ERROR:"<<node->m_lex<<" doesn't resolve to valid types";
+    std::cerr<<std::endl;
+    DEFAULT();
+  }
+  return result;
+}
+
+
+/*
+ * Ctor and Dtors
+ */
+
 NameChecker::NameChecker(){
   local_envs = single_types = on_demand = nullptr;
   pack_envs = nullptr;
@@ -39,6 +242,11 @@ NameChecker::~NameChecker(){
     delete[] on_demand;
   }
 }
+
+
+/*
+ * Public Methods
+ */
 
 bool NameChecker::CheckNames(){
   // Resolve NameSpaces
