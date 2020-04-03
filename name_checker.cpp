@@ -169,13 +169,20 @@ bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_m
   std::cout<<"Node:"<<*node<<","<<node->m_lex<<","<<is_method<<std::endl;
   DEFAULT();
   bool result = true;
-  if(node->m_type != TokenType::QualifiedName){
+  if(node->m_type == TokenType::FieldAccess ||
+     node->m_type == TokenType::MethodInvocation){
     result = ResolveQualifiedPart(&(node->m_generated_tokens[0]),envs,true);
     
     CYAN();
     std::cout<<"Finished:"<<*node<<","<<node->m_lex<<","<<is_method<<std::endl;
     DEFAULT();
     return result;
+  } else if (node->m_type != TokenType::QualifiedName){
+    CYAN();
+    std::cout<<"("<<*node<<","<<node->m_lex<<","<<is_method<<") can not";
+    std::cout<<" be handled by ResolveQualifiedPart. Return true."<<std::endl;
+    DEFAULT();
+    return true;
   }
   // If it's qualified 
 
