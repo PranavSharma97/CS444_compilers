@@ -18,8 +18,11 @@ Token* GetTypeFromEnv(std::string& name, environment ** envs){
   dec = envs[1]->GetType(name);
   if(dec != nullptr) return dec;
   if (envs[2]){
+
     dec = envs[2]->GetType(name);
     if(dec != nullptr) return dec;
+  } else {
+    std::cout<<"GET TYEP FROM ENV:env2 is null"<<std::endl;
   }
   dec = envs[3]->GetType(name);
   if(dec != nullptr) return dec;
