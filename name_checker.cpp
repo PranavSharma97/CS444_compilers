@@ -343,7 +343,6 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   new_envs[1] = envs[1];
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
-  if (new_envs[2]) std::cout << "number of envs2 classes: " << envs[2]->classes.size() << std::endl;
   
   // std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
 
@@ -353,7 +352,8 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   }
 
   for(Token& n: root->m_generated_tokens){
-    if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
+    if (t == PackageDeclaration) continue;
+    else if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
         t == MethodHeader || t == ConstructorDeclarator){
       if (!ResolveNameSpaces(&n, envs)) return false;
     } else {
