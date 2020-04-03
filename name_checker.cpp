@@ -44,7 +44,6 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       root->declaration = last_resolved;
       return true;
     }
-    
     //Get last_type, last scope
     // last resolved can be field,local var, formal param, type
     if(last_resolved->m_type == TokenType::ClassDeclaration ||
@@ -171,25 +170,64 @@ bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_m
   bool result = true;
   if(node->m_type == TokenType::FieldAccess ||
      node->m_type == TokenType::MethodInvocation){
+    for(Token& t:node->m_generated_tokens){
+      std::cout<<t<<" ";
+    }
+    std::cout<<std::endl;
     result = ResolveQualifiedPart(&(node->m_generated_tokens[0]),envs,true);
     
     CYAN();
     std::cout<<"Finished:"<<*node<<","<<node->m_lex<<","<<is_method<<std::endl;
     DEFAULT();
     return result;
-  } else if (node->m_type != TokenType::QualifiedName){
+  } else if (!(node->m_type == TokenType::QualifiedName ||
+	       node->m_type == TokenType::T_THIS ||
+	       node->m_type == TokenType::T_IDENTIFIER)){
     CYAN();
     std::cout<<"("<<*node<<","<<node->m_lex<<","<<is_method<<") can not";
     std::cout<<" be handled by ResolveQualifiedPart. Return true."<<std::endl;
     DEFAULT();
     return true;
   }
-  // If it's qualified 
 
+  
+  Token* target_node = (node->m_generated_tokens.size()>0)? &(node->m_generated_tokens[0]):node;
   // check if the first can be resolved to local var or field
-  Token* target_node = &(node->m_generated_tokens[0]);
-  Token* local = envs[0]->GetDeclaration(target_node->m_lex);
-  if(local == nullptr) local = GetTypeFromEnv(target_node->m_lex,envs);
+  Token* local = nullptr;
+  // check for this keyword
+  if(node->m_type == TokenType::T_THIS){
+    local = node->compilation_unit->SearchByTypeDFS(TokenType::InterfaceDeclaration);  
+    if(!local) local = node->compilation_unit->SearchByTypeDFS(TokenType::ClassDeclaration);
+    if(!local){
+      RED();
+      std::cerr<<"Resolve Qualfied ERROR: cannot find the type of this keyword."<<std::endl;
+      DEFAULT();
+      return false;
+    }
+  } else {
+    local = envs[0]->GetDeclaration(target_node->m_lex);
+    std::cout<<"ResolveQualifiedPart: Checking envs[0] size:"<<std::endl;
+    std::cout<<envs[0]->classes.size()<<" ";
+    std::cout<<envs[0]->interfaces.size()<<" ";
+    std::cout<<envs[0]->fields.size()<<" ";
+    std::cout<<envs[0]->methods.size()<<" ";
+    std::cout<<envs[0]->localVariables.size()<<" ";
+    std::cout<<envs[0]->formalParameters.size()<<std::endl;;
+    //std::cout<<std::endl;
+    if(local == nullptr) local = GetTypeFromEnv(target_node->m_lex,envs);
+  }
+  
+  // If target_node is node, then no nested dot expression.
+  if(target_node == node){
+    node->declaration = local;
+    if(!local){
+      RED();
+      std::cerr<<"ResolveQualifiedPart ERROR: cannot find "<<node->m_lex<<std::endl;
+      DEFAULT();
+    }
+    return local!=nullptr;
+  }
+  
   // Generate the dot indices 
   int dot_counter = 0;
   for(Token& t: node->m_generated_tokens){
@@ -377,7 +415,9 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   }
 
   for(Token& n: root->m_generated_tokens){
-    if (t == PackageDeclaration) continue;
+    if (t == PackageDeclaration ||
+	t == SingleTypeImportDeclaration ||
+	t == TypeImportOnDemandDeclaration) continue;
     else if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
         t == MethodHeader || t == ConstructorDeclarator){
       if (!ResolveNameSpaces(&n, envs)) return false;
