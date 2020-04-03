@@ -377,7 +377,8 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   }
 
   for(Token& n: root->m_generated_tokens){
-    if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
+    if (t == PackageDeclaration) continue;
+    else if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
         t == MethodHeader || t == ConstructorDeclarator){
       if (!ResolveNameSpaces(&n, envs)) return false;
     } else {
