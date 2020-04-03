@@ -396,12 +396,13 @@ bool NameChecker::ResolveFieldDeclarations(Token* root, environment** envs){
 
   if (t == FieldDeclaration){
     // check there is no reference to self in FieldDeclaration
-    Token *identifierToken = root->SearchByTypeDFS(T_IDENTIFIER);
+    Token declarationToken = root->m_generated_tokens.end()[-2];
+    Token *identifierToken = declarationToken.SearchByTypeDFS(T_IDENTIFIER);
     std::string identifier = identifierToken->m_lex;
 
     Token *rightHandToken = root->SearchByTypeDFS(VariableDeclarator);
     Token mostRightToken;
-    if (rightHandToken) mostRightToken = rightHandToken->m_generated_tokens.back();
+    if (rightHandToken && rightHandToken->SearchByTypeDFS(ClassInstanceCreationExpression) == nullptr) mostRightToken = rightHandToken->m_generated_tokens.back();
     Token *rightHandIdentifier = nullptr;
 
     if (rightHandToken) rightHandIdentifier = mostRightToken.SearchByTypeDFS(T_IDENTIFIER);
