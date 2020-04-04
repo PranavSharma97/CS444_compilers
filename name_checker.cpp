@@ -266,6 +266,22 @@ bool NameChecker::CheckNames(){
 
   int file_index = 0;
   for(Token* n: m_asts){
+    if (file_count - file_index - 16 <= 0) break;
+    environment* envs[4];
+    envs[0] = &local_envs[file_index];
+    envs[1] = &single_types[file_index];
+    envs[2] = pack_envs[file_index];
+    envs[3] = &on_demand[file_index];
+    file_index ++;
+
+    if(!ShadowingCheck(m_asts[file_index],envs)) return false;
+    CYAN();
+    std::cout<<"Shadowing variables checked"<<std::endl;
+    DEFAULT();
+  }
+
+  file_index = 0;
+  for(Token* n: m_asts){
     if (file_count - file_index - 16 <= 0) break; 
     environment* envs[4];
     envs[0] = &local_envs[file_index];
@@ -313,7 +329,7 @@ bool NameChecker::CheckNames(){
   return true;
 }
 
-bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
+bool NameChecker::ShadowingCheck(Token* root, environment** envs){
   TokenType t = root->type();  
   if (t != ClassDeclaration && t != InterfaceDeclaration){
     if (!envs[0]->merge(root->scope)){
@@ -324,6 +340,27 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
     }
   }
 
+  environment next_local_env(*(envs[0]));
+
+  environment* new_envs[4];
+
+  new_envs[0] = &next_local_env;
+  new_envs[1] = envs[1];
+  new_envs[2] = envs[2];
+  new_envs[3] = envs[3];
+
+  for(Token& n: root->m_generated_tokens){
+    if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
+        t == MethodHeader || t == ConstructorDeclarator){
+      if (!ShadowingCheck(&n, envs)) return false;
+    } else {
+      if (!ShadowingCheck(&n, new_envs)) return false;
+    }
+  }
+  return true;
+}
+
+bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   /********************** COMMENTS *******************************
   std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
 
@@ -354,6 +391,9 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   std::cout << std::endl;
 
   ***************************** COMMENTS END ********************/
+  TokenType t = root->type();
+  envs[0]->force_merge(root->scope);
+
   environment next_local_env(*(envs[0]));
 
   environment* new_envs[4];
@@ -378,12 +418,7 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
 
   for(Token& n: root->m_generated_tokens){
     if (t == PackageDeclaration) continue;
-    else if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
-        t == MethodHeader || t == ConstructorDeclarator){
-      if (!ResolveNameSpaces(&n, envs)) return false;
-    } else {
-      if (!ResolveNameSpaces(&n, new_envs)) return false;
-    }
+    else if (!ResolveNameSpaces(&n, new_envs)) return false;
   }
 
   return true;
