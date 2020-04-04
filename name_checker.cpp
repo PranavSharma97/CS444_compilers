@@ -482,11 +482,13 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
   std::cout << "constructors: ";
   for(std::pair<std::string, std::vector<Token*>> kv_pair: new_envs[0]->constructors){
     std::cout << kv_pair.first;
+    std::cout << "SIZE: " << kv_pair.second.size();
   }
   std::cout << std::endl;
   std::cout << "methods: ";
   for(std::pair<std::string, std::vector<Token*>> kv_pair: new_envs[0]->methods){
     std::cout << kv_pair.first;
+    std::cout << "SIZE: " << kv_pair.second.size();
   }
   std::cout << std::endl;
   std::cout << "fields: ";
@@ -512,16 +514,16 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
     Token* declaration = nullptr;
     if (methodOrConstructor){
       std::vector<Token*> declarations = new_envs[0]->GetInvocationDeclaration(root->m_lex);
-      if (declarations.size() == 0) {
-        RED();
-        std::cerr << "Error: cannot find method or constructor identifier: " << root->m_lex << std::endl;
-        DEFAULT();
-        return false;
-      }
-      else if (declarations.size() == 1) declaration = declarations[0];
+      /*if (declarations.size() == 0) {
+         RED();
+         std::cerr << "Error: cannot find method or constructor identifier: " << root->m_lex << std::endl;
+         DEFAULT();
+         return false;
+      }*/
+      if (declarations.size() == 1) declaration = declarations[0];
       else {
         CYAN();
-        std::cout << "method \"" << root->m_lex << "\" is overloaded, will have to do after type checking" << std::endl;
+        std::cout << "method \"" << root->m_lex << "\" is overloaded or inherited, will have to do after type checking" << std::endl;
         DEFAULT();
       }
       methodOrConstructor = false;
