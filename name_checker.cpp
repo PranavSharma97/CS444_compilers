@@ -151,9 +151,6 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
   } else {
     if(idx > the_last_idx){
       root->declaration = last_resolved;
-      CYAN();
-      std::cout << "(4) Linked " << root->m_lex << " to " << last_resolved->m_display_name << std::endl;
-      DEFAULT();
       return last_resolved != nullptr;
     }
     // Last one is nullptr, we are still looking for types
