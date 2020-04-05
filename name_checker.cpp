@@ -69,7 +69,16 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
 	} else {
 	  std::cout<<"LAST IS Array, I'm Length"<<std::endl;
 	  local_scope = &(java_object->scope);
+	  if(idx < the_last_idx){
+	    RED();
+	    std::cerr<<"GetAllValidType ERROR: array.length cannot access more method/field"<<std::endl;
+	    DEFAULT();
+	    return false;
+	  }
 	  // TODO: NEED TO HANDLE LENGTH AS FIELD
+	  root->declaration = new Token(TokenType::T_INT, "length");
+	  root->delete_dec = true;
+	  //std::cout<<root<<" gets new token:"<<root->declaration<<std::endl;
 	  return true;
 	}
       }
@@ -181,8 +190,7 @@ bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_m
     DEFAULT();
     return result;
   } else if (!(node->m_type == TokenType::QualifiedName ||
-	       node->m_type == TokenType::T_THIS ||
-	       node->m_type == TokenType::T_IDENTIFIER)){
+	       node->m_type == TokenType::T_THIS)){
     CYAN();
     std::cout<<"("<<*node<<","<<node->m_lex<<","<<is_method<<") can not";
     std::cout<<" be handled by ResolveQualifiedPart. Return true."<<std::endl;
@@ -191,7 +199,8 @@ bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_m
   }
 
   
-  Token* target_node = (node->m_generated_tokens.size()>0)? &(node->m_generated_tokens[0]):node;
+  //Token* target_node = (node->m_generated_tokens.size()>0)? &(node->m_generated_tokens[0]):node;
+  Token* target_node = &(node->m_generated_tokens[0]);
   // check if the first can be resolved to local var or field
   Token* local = nullptr;
   // check for this keyword
@@ -206,6 +215,7 @@ bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_m
     }
   } else {
     local = envs[0]->GetDeclaration(target_node->m_lex);
+    //std::cout<<"LOCAL:"<<local<<",TARGET:"<<target_node->m_lex<<std::endl;
     std::cout<<"ResolveQualifiedPart: Checking envs[0] size:"<<std::endl;
     std::cout<<envs[0]->classes.size()<<" ";
     std::cout<<envs[0]->interfaces.size()<<" ";
@@ -213,10 +223,14 @@ bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_m
     std::cout<<envs[0]->methods.size()<<" ";
     std::cout<<envs[0]->localVariables.size()<<" ";
     std::cout<<envs[0]->formalParameters.size()<<std::endl;;
+    /*for(std::pair<std::string,Token*> kv:envs[0]->localVariables){
+      std::cout<<kv.first<<" ";
+    }
+    std::cout<<std::endl;*/
     //std::cout<<std::endl;
     if(local == nullptr) local = GetTypeFromEnv(target_node->m_lex,envs);
   }
-  
+  /*
   // If target_node is node, then no nested dot expression.
   if(target_node == node){
     node->declaration = local;
@@ -226,7 +240,7 @@ bool NameChecker::ResolveQualifiedPart(Token* node,environment** envs, bool is_m
       DEFAULT();
     }
     return local!=nullptr;
-  }
+  }*/
   
   // Generate the dot indices 
   int dot_counter = 0;
@@ -455,8 +469,18 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   }
 
   for(Token& n: root->m_generated_tokens){
-    if (t == PackageDeclaration) continue;
-    else if (!ResolveNameSpaces(&n, new_envs)) return false;
+    if (t == PackageDeclaration ||
+	t == SingleTypeImportDeclaration ||
+	t == TypeImportOnDemandDeclaration){
+      continue;
+      
+    } else if (t == LocalVariableDeclarationStatement ||
+	       t == FormalParameterList || t == FormalParameter ||
+	       t == MethodDeclarator || t == MethodHeader ||
+	       t == ConstructorDeclarator){
+      // skip for aunt-niece relation
+      if (!ResolveNameSpaces(&n, envs)) return false;
+    } else if (!ResolveNameSpaces(&n, new_envs)) return false;
   }
 
   return true;
