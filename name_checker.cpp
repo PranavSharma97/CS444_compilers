@@ -42,7 +42,9 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
   if(last_resolved != nullptr){
     if(idx > the_last_idx){
       root->declaration = last_resolved;
+      CYAN();
       std::cout << "(1) Linked " << root->m_lex << " to " << last_resolved->m_display_name << std::endl;
+      DEFAULT();
       return true;
     }
     //Get last_type, last scope
@@ -79,13 +81,14 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
 	  // TODO: NEED TO HANDLE LENGTH AS FIELD
 	  root->declaration = new Token(TokenType::T_INT, "length");
 	  root->delete_dec = true;
+    CYAN();
     std::cout << "(2) Linked " << root->m_lex << " to length token" << std::endl;
-	  //std::cout<<root<<" gets new token:"<<root->declaration<<std::endl;
+	  DEFAULT();
+    //std::cout<<root<<" gets new token:"<<root->declaration<<std::endl;
 	  return true;
 	}
       }
     }
-    
     // if last one is not array, get local scope
     Token *local = nullptr;
     if (last_scope) local = last_scope->GetDeclaration(target_node->m_lex);
@@ -128,8 +131,10 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       if(idx == the_last_idx){
 	// If I'm the last, record my type onto root
 	root->declaration = local;
+  CYAN();
   std::cout << "(3) Linked " << root->m_lex << " to " << local->m_display_name << std::endl;
-	success = true;
+	DEFAULT();
+  success = true;
       }else{
 	// If I'm not the last, keep on searching
 	success = GetAllValidType(root,local,idx+2,dot_indices,is_method);
@@ -146,7 +151,9 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
   } else {
     if(idx > the_last_idx){
       root->declaration = last_resolved;
+      CYAN();
       std::cout << "(4) Linked " << root->m_lex << " to " << last_resolved->m_display_name << std::endl;
+      DEFAULT();
       return last_resolved != nullptr;
     }
     // Last one is nullptr, we are still looking for types
@@ -157,8 +164,10 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       // If this is the last one, record myself on the root's vec
       if(idx == the_last_idx){
 	      root->declaration = q_type;
+        CYAN();
         std::cout << "(5) Linked " << root->m_lex << " to " << q_type->m_display_name << std::endl;
-	      return true;
+	      DEFAULT();
+        return true;
       }
     } else {
       if(idx == the_last_idx){
@@ -627,9 +636,10 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
       if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression || t == MethodDeclarator){
         methodOrConstructor = true;
       }
-      if (t == FormalParameter || t == ArgumentList || (it-1)->type() == T_LEFT_ROUND_BRACKET){
+      if (t == FormalParameter || t == ArgumentList || (it-1)->m_type == T_LEFT_ROUND_BRACKET){
         methodOrConstructor = false;
       }
+      if ((it+1)->m_type == T_LEFT_ROUND_BRACKET){methodOrConstructor = true;}
       
       // constructor declarator blocks need to have access to all variables, fields, methods inside its parent class
       if (t == ConstructorDeclaration){
