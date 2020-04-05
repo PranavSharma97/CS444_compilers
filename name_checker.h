@@ -19,7 +19,7 @@ class NameChecker{
   bool ShadowingCheck(Token* root, environment** envs);
   bool ResolveNameSpaces(Token* node,environment** envs);
   bool ResolveFieldDeclarations(Token* root, environment** envs);
-  bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor);
+  bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor, bool checkScope = false);
 
   NameChecker();
   ~NameChecker();

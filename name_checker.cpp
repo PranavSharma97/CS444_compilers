@@ -42,6 +42,7 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
   if(last_resolved != nullptr){
     if(idx > the_last_idx){
       root->declaration = last_resolved;
+      std::cout << "(1) Linked " << root->m_lex << " to " << last_resolved->m_display_name << std::endl;
       return true;
     }
     //Get last_type, last scope
@@ -78,6 +79,7 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
 	  // TODO: NEED TO HANDLE LENGTH AS FIELD
 	  root->declaration = new Token(TokenType::T_INT, "length");
 	  root->delete_dec = true;
+    std::cout << "(2) Linked " << root->m_lex << " to length token" << std::endl;
 	  //std::cout<<root<<" gets new token:"<<root->declaration<<std::endl;
 	  return true;
 	}
@@ -126,6 +128,7 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       if(idx == the_last_idx){
 	// If I'm the last, record my type onto root
 	root->declaration = local;
+  std::cout << "(3) Linked " << root->m_lex << " to " << local->m_display_name << std::endl;
 	success = true;
       }else{
 	// If I'm not the last, keep on searching
@@ -143,6 +146,7 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
   } else {
     if(idx > the_last_idx){
       root->declaration = last_resolved;
+      std::cout << "(4) Linked " << root->m_lex << " to " << last_resolved->m_display_name << std::endl;
       return last_resolved != nullptr;
     }
     // Last one is nullptr, we are still looking for types
@@ -153,6 +157,7 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
       // If this is the last one, record myself on the root's vec
       if(idx == the_last_idx){
 	      root->declaration = q_type;
+        std::cout << "(5) Linked " << root->m_lex << " to " << q_type->m_display_name << std::endl;
 	      return true;
       }
     } else {
@@ -458,8 +463,7 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   
   // std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
 
-  if (t == FieldAccess || t == QualifiedName || 
-      (t == MethodInvocation)){ //&& root->m_generated_tokens[1].m_type == T_DOT)) {
+  if (t == FieldAccess || t == QualifiedName || t == MethodInvocation){ //&& root->m_generated_tokens[1].m_type == T_DOT)) {
     // Reason for not checking the T_DOT
     // an expression a.b.c.d(), it's structure looks like
     // MethodInvocation -> QualifiedName(a.b.c.d) LEFT_BRACKET RIGHT_BRACKET
@@ -507,7 +511,9 @@ bool NameChecker::ResolveFieldDeclarations(Token* root, environment** envs){
 
     Token *rightHandToken = root->SearchByTypeDFS(VariableDeclarator);
     Token mostRightToken;
-    if (rightHandToken && rightHandToken->SearchByTypeDFS(ClassInstanceCreationExpression) == nullptr) mostRightToken = rightHandToken->m_generated_tokens.back();
+    if (rightHandToken && 
+        rightHandToken->SearchByTypeDFS(ClassInstanceCreationExpression) == nullptr &&
+        rightHandToken->SearchByTypeDFS(PrimaryNoNewArray) == nullptr) mostRightToken = rightHandToken->m_generated_tokens.back();
     Token *rightHandIdentifier = nullptr;
 
     if (rightHandToken) rightHandIdentifier = mostRightToken.SearchByTypeDFS(T_IDENTIFIER);
@@ -517,7 +523,7 @@ bool NameChecker::ResolveFieldDeclarations(Token* root, environment** envs){
       DEFAULT();
       return false;
     }
-    if (!ResolveExpressions(root, new_envs, false)) return false;
+    if (!ResolveExpressions(root, new_envs, false, true)) return false;
   }
   for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
     if (!ResolveFieldDeclarations(&(*it), new_envs)) return false;
@@ -525,7 +531,7 @@ bool NameChecker::ResolveFieldDeclarations(Token* root, environment** envs){
   return true;
 }
 
-bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool methodOrConstructor){
+bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool methodOrConstructor, bool checkScope){
   TokenType t = root->type();
 
   envs[0]->force_merge(root->scope);
@@ -538,7 +544,7 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
   new_envs[2] = envs[2];
   new_envs[3] = envs[3];
 
-  /******************** COMMENTS ******************************
+  /********************* COMMENTS ******************************
   std::cout << "TOKEN TYPE: " << root->m_display_name << std::endl;
   
   std::cout << "constructors: ";
@@ -592,6 +598,11 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
     }
     else {
       declaration = new_envs[0]->GetDeclaration(root->m_lex);
+      // Try simple Java types
+      if (!declaration) {
+        std::cout << "SEARCHING FOR " << "java.lang."+root->m_lex << std::endl;
+        declaration = m_packages->GetQualified("java.lang."+root->m_lex);
+      }
       if (!declaration) {
         RED();
         std::cerr << "Error: cannot find variable: " << root->m_lex << std::endl;
@@ -605,11 +616,14 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
       std::cout << "Linked " << root->m_lex << " to " << declaration->m_display_name << std::endl;
       DEFAULT();
     }
-  } else if (t!=QualifiedName) {
+  } 
+  if (t!=QualifiedName) {
+    int inscope = 0;
     for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
-      if (it->type() == T_DOT){
-        break;
-      }
+      if (it->type() == T_DOT){ break; }
+      else if (checkScope && it->type() == T_LEFT_ROUND_BRACKET) inscope += 1;
+      else if (checkScope && it->type() == T_RIGHT_ROUND_BRACKET) inscope -= 1;
+
       if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression || t == MethodDeclarator){
         methodOrConstructor = true;
       }
@@ -622,14 +636,16 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
         new_envs[0]->merge(root->scope);
       }
 
-      if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
+      if (!checkScope || inscope == 0){
+        if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
           t == MethodHeader || t == ConstructorDeclarator){
-        if (!ResolveExpressions(&(*it), envs, methodOrConstructor)) return false;
-      }
-      // imports, ArrayType, CastExpression are all types that will be resolved later
-      if (t != SingleTypeImportDeclaration && t != TypeImportOnDemandDeclaration && t != PackageDeclaration &&
+          if (!ResolveExpressions(&(*it), envs, methodOrConstructor, checkScope)) return false;
+        }
+        // imports, ArrayType, CastExpression are all types that will be resolved later
+        else if (t != SingleTypeImportDeclaration && t != TypeImportOnDemandDeclaration && t != PackageDeclaration &&
           t != ArrayType && t != CastExpression) {
-        if (!ResolveExpressions(&(*it), new_envs, methodOrConstructor)) return false;
+          if (!ResolveExpressions(&(*it), new_envs, methodOrConstructor, checkScope)) return false;
+        }
       }
     }
   }

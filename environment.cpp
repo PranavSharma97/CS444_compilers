@@ -431,6 +431,7 @@ Token* environment::GetDeclaration(std::string& name){
   if(localVariables.find(name) != localVariables.end()) declaration = localVariables[name];
   else if(fields.find(name) != fields.end()) declaration = fields[name];
   else if(formalParameters.find(name) != formalParameters.end()) declaration = formalParameters[name];
+  else if(classes.find(name) != classes.end()) declaration = classes[name];
 
   return declaration;
 }
