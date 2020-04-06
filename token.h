@@ -13,23 +13,24 @@ class Token{
   std::string m_display_name;
   TCType checkedType;
   int m_rule;
-
   environment scope;
   Token* declaration;
   Token* compilation_unit;
   Token* super_class;
+  //std::vector<Token*> valid_types;
   std::vector<Token*> super_interfaces;
   bool Protected;
   bool Abstract;
   bool Inherited;
+  bool delete_dec;
   std::vector<Token> m_generated_tokens;
   bool PostInheritanceCheck();
 
   Token();
   Token(TokenType type, std::string lex);
   Token(TokenType type, int rule,const std::vector<Token>& generated_token);
-  Token(const Token& t) = default;
-
+  Token(const Token& t);
+  ~Token();
   TokenType type() const;
   // Get the first token with the same type as type, not including itself.
   Token* SearchByTypeBFS(TokenType type);

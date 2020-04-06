@@ -8,12 +8,13 @@ Token::Token():
   Protected = false;
   Abstract = true;
   Inherited = false;
+  delete_dec = false;
   super_class = nullptr;
   m_rule = -1;
   m_display_name = "TOKEN_EMPTY";
 }
 
-/*
+
 Token::Token(const Token& t):
   m_type(t.m_type),
   m_lex(t.m_lex),
@@ -22,12 +23,15 @@ Token::Token(const Token& t):
   scope(t.scope),
   declaration(t.declaration),
   compilation_unit(t.compilation_unit),
+  super_class(t.super_class),
+  super_interfaces(t.super_interfaces),
   Protected(t.Protected),
   Abstract(t.Abstract),
   Inherited(t.Inherited),
+  delete_dec(false),
   m_generated_tokens(t.m_generated_tokens)
 {}
-*/
+
 
 Token::Token(TokenType type, std::string lex):
   m_type(type),
@@ -38,6 +42,7 @@ Token::Token(TokenType type, std::string lex):
   Inherited = false;
   Abstract = true;
   super_class = nullptr;
+  delete_dec = false;
   m_rule = -1;
   // Determine the display name
   int type_int = static_cast<int>(type);
@@ -579,10 +584,24 @@ void Token::clear(){
   scope.localVariables.clear();
   scope.formalParameters.clear();
   scope.constructors.clear();
-  
+  if(delete_dec==true && declaration!=nullptr) {
+    delete declaration;
+    delete_dec = false;
+    declaration = nullptr;
+  }
+}
+
+Token::~Token(){
+  //if(delete_dec == true){
+  //std::cout<<this<<"~Token: delete declaration:"<<declaration<<std::endl;
+  //}
+  if(delete_dec==true && declaration!=nullptr){
+    delete declaration;
+  }
 }
 
 TokenType Token::type() const { return m_type; }
+
 
 bool Token::PostInheritanceCheck(){
   std::vector<Token*> queue;

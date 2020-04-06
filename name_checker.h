@@ -5,7 +5,8 @@
 #include <vector>
 
 class NameChecker{
-  bool LinkStringLiterals(Token* root);
+  bool GetAllValidType(Token* root, Token* last_resolved, int idx, int* dot_indices, bool is_method);
+  bool ResolveQualifiedPart(Token* node, environment** envs, bool is_method = false);
  public:
   Package* m_packages;
   environment* local_envs;
@@ -15,9 +16,10 @@ class NameChecker{
 
   std::vector<Token *> m_asts;
 
+  bool ShadowingCheck(Token* root, environment** envs);
   bool ResolveNameSpaces(Token* node,environment** envs);
   bool ResolveFieldDeclarations(Token* root, environment** envs);
-  bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor);
+  bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor, bool checkScope = false);
 
   NameChecker();
   ~NameChecker();
