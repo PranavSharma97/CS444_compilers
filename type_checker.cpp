@@ -1,35 +1,36 @@
 #include "type_checker.h"
 #include <queue>
 
-// TODO: Assign types to token
+using namespace std;
 
-Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type returnType) {
+TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCType returnType) {
   
   set<string> numericTypes = {"int", "char", "short", "byte"};
 
   switch (current->m_type) {
     case BlockStatements:
-      Type checkedType;
+      TCType checkedType;
       for (Token& token: current->m_generated_tokens) {
         // Don't care about return value since it's a statement
         checkedType = typeCheck(&token, currentClass, localEnv, returnType);
       }
 
-      break;
+      return checkedType;
     
     case IfThenStatement:
-      Type checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
       // Type must be boolean
       if (checkedType.type != 0 || checkedType.primitive != "boolean") {
         throw;
       }
 
       current->m_generated_tokens[2].checkedType = checkedType;
-      break;
+  
+      return checkedType;
 
     case IfThenElseStatement:
     case IfThenElseStatementNoShortIf:
-      Type checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
       // Type must be boolean
       if (checkedType.type != 0 || checkedType.primitive != "boolean") {
         throw;
@@ -39,11 +40,12 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
       // Don't care about return value since it's a statement
       typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
       typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType);
-      break;
+
+      return checkedType;
 
     case WhileStatement:
     case WhileStatementNoShortIf:
-      Type checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
       // Type must be boolean
       if (checkedType.type != 0 || checkedType.primitive != "boolean") {
         throw;
@@ -52,19 +54,20 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
       current->m_generated_tokens[2].checkedType = checkedType;
       // Don't care about return value since it's a statement 
       typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
-      break;
+
+      return checkedType;
 
     case ForStatement:
     case ForStatementNoShortIf:
       // Check if ForInit exists
       if (current->m_generated_tokens[2].m_type != T_SEMICOLON) {
-        Type checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+        TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
         current->m_generated_tokens[2].checkedType = checkedType;
       }
 
       // Check if Stopping condition exists
       if (current->m_generated_tokens[3].m_type != T_SEMICOLON) {
-        Type checkedType = typeCheck(&current->m_generated_tokens[3], currentClass, localEnv, returnType);
+        TCType checkedType = typeCheck(&current->m_generated_tokens[3], currentClass, localEnv, returnType);
         // Type must be boolean
         if (checkedType.type != 0 || checkedType.primitive != "boolean") {
           throw;
@@ -73,7 +76,7 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
         current->m_generated_tokens[3].checkedType = checkedType;
       }
       else if (current->m_generated_tokens[4].m_type != T_SEMICOLON) {
-        Type checkedType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
+        TCType checkedType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
         // Type must be boolean
         if (checkedType.type != 0 || checkedType.primitive != "boolean") {
           throw;
@@ -84,25 +87,29 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
 
       // Check if ForUpdate exists 
       if (current->m_generated_tokens.size() == 9) {
-        Type checkedType = typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType);
+        TCType checkedType = typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType);
         current->m_generated_tokens[6].checkedType = checkedType;
       }
       else if (current->m_generated_tokens.size() == 8) {
-        Type checkedType = typeCheck(&current->m_generated_tokens[5], currentClass, localEnv, returnType);
+        TCType checkedType = typeCheck(&current->m_generated_tokens[5], currentClass, localEnv, returnType);
         current->m_generated_tokens[5].checkedType = checkedType;
       }
       else if (current->m_generated_tokens.size() == 7) {
-        Type checkedType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
+        TCType checkedType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
         current->m_generated_tokens[4].checkedType = checkedType;
       }
 
       // Don't care, but storing since need to return something
-      Type checkedType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType);
-      break;
+      TCType checkedType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType);
+
+      return checkedType;
 
     case ReturnStatement:
       if (current->m_generated_tokens[1].m_type != T_SEMICOLON) {
-        Type checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+        TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+        
+        current->m_generated_tokens[2].checkedType = checkedType;
+
         // Check if Type doesn't match with return type
         if (returnType.type != checkedType.type) {
           throw;
@@ -120,21 +127,25 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
         // Throw error since method return type is not VOID but return statement is blank
         throw;
       }
-      break;
+
+      return checkedType;
 
     case Assignment:
-      Type leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      Type rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].checkedType = leftCheckedType;
+      current->m_generated_tokens[2].checkedType = rightCheckedType;
 
       // Check for assignability
       if (isAssignable(leftCheckedType, rightCheckedType) == false) {
         throw; 
       }
-      
+     
       return leftCheckedType;
     
     case T_IDENTIFIER:
-      Type identifierType;
+      TCType identifierType;
       
       // First check if declaration pointer is not null
       if (current->declaration != nullptr) {
@@ -163,38 +174,78 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
       return identifierType;
 
     case NULL_LITERAL:
-      Type checkedType;
-      checkedType.type = 6;
+      TCType checkedType;
+      checkedType.type = 5;
 
       return checkedType;
-    // TODO: Other literals
+  
+    case CHAR_LITERAL:
+      TCType checkedType;
+      checkedType.type = 0;
+      checkedType.primitive = "char";
+
+      return checkedType;
+
+    case INT_LITERAL:
+      TCType checkedType;
+      checkedType.type = 0;
+      checkedType.primitive = "int";
+
+      return checkedType;
+
+    case BOOL_LITERAL:
+      TCType checkedType;
+      checkedType.type = 0;
+      checkedType.primitive = "boolean";
+
+      return checkedType;
+
+    case STRING_LITERAL:
+      TCType checkedType;
+      checkedType.type = 1;
+      checkedType.reference = current->declaration;
+
+      return checkedType;
+
+    case T_THIS:
+      TCType checkedType;
+      checkedType.type = 1;
+      checkedType.reference = currentClass;
+
+      return checkedType;
 
     case ConditionalOrExpression:
     case ConditionalAndExpression:
     case InclusiveOrExpression:
     case AndExpression:
-      Type leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      Type rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].checkedType = leftCheckedType;
+      current->m_generated_tokens[2].checkedType = rightCheckedType;
 
       // Throw if expressions are not boolean
       if (leftCheckedType.primitive != "boolean" || rightCheckedType.primitive != "boolean") {
         throw;
       }
 
-      Type checkedType;
+      TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "boolean";
 
       return checkedType;
 
     case EqualityExpression:
-      Type leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      Type rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].checkedType = leftCheckedType;
+      current->m_generated_tokens[2].checkedType = rightCheckedType;
 
       set<string> numericTypes = {"int", "char", "short", "byte"};
       
       if (numericTypes.find(leftCheckedType.primitive) != numericTypes.end() && numericTypes.find(rightCheckedType.primitive) != numericTypes.end()) {
-        Type checkedType;
+        TCType checkedType;
         checkedType.type = 0;
         checkedType.primitive = "boolean";
 
@@ -205,15 +256,18 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
         throw;      
       }
 
-      Type checkedType;
+      TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "boolean";
 
       return checkedType;
 
     case RelationalExpression:
-      Type leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      Type rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].checkedType = leftCheckedType;
+      current->m_generated_tokens[2].checkedType = rightCheckedType;
 
       set<string> numericTypes = {"int", "char", "short", "byte"};
 
@@ -227,27 +281,30 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
         throw; 
       }
 
-      Type checkedType;
+      TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "boolean";
 
       return checkedType;
 
     case AdditiveExpression:
-      Type leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      Type rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].checkedType = leftCheckedType;
+      current->m_generated_tokens[2].checkedType = rightCheckedType;
 
       if (current->m_generated_tokens[1].m_type == T_PLUS) {
         // If either is String, then Expression type is String
         if ((leftCheckedType.type == 1) && (leftCheckedType.reference->m_generated_tokens[2].m_lex == "String")) {
-          Type checkedType;
+          TCType checkedType;
           checkedType.type = 1;
           checkedType.reference = leftCheckedType.reference;
 
           return checkedType;
         }
         else if ((rightCheckedType.type == 1) && (rightCheckedType.reference->m_generated_tokens[2].m_lex == "String")) {
-          Type checkedType;
+          TCType checkedType;
           checkedType.type = 1;
           checkedType.reference = rightCheckedType.reference;
 
@@ -260,30 +317,36 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
         throw;
       }
 
-      Type checkedType;
+      TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "int";
 
       return checkedType;
 
     case MultiplicativeExpression:
-      Type leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      Type rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].checkedType = leftCheckedType;
+      current->m_generated_tokens[2].checkedType = rightCheckedType;
 
       // Both operands must be numeric
       if (numericTypes.find(leftCheckedType.primitive) == numericTypes.end() || numericTypes.find(rightCheckedType.primitive) == numericTypes.end()) {
         throw;
       }
 
-      Type checkedType;
+      TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "int";
 
       return checkedType;
 
     case CastExpression:
-      Type expressionType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType);
-      Type castType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+      TCType expressionType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType);
+      TCType castType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[current->m_generated_tokens.size() - 1].checkedType = expressionType;
+      current->m_generated_tokens[1].checkedType = castType;
 
       // Check if Casting type is arrayType
       if (current->m_generated_tokens[2].m_type == Dims) {
@@ -295,7 +358,7 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
         }
       }
       
-      // Must be assignable in 1 direction
+      // Must be assignable in atleast 1 direction
       if ((isAssignable(expressionType, castType) == false) && (isAssignable(castType, expressionType) == false))  {
         throw;
       }
@@ -307,14 +370,15 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
     case T_SHORT:
     case T_CHAR:
     case T_BOOLEAN:
-      Type checkedType;
+      TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = current->m_lex;
 
       return checkedType;
 
+    // TODO
     case QualifiedName:
-      Type checkedType;
+      TCType checkedType;
       checkedType.type = 1;
       checkedType.reference = current->declaration;
 
@@ -327,7 +391,9 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
       return checkedType;
 
     case UnaryExpressionNotPlusMinus:
-      Type checkedType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+      TCType checkedType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[1].checkedType = checkedType;
 
       // Type must be boolean
       if ((checkedType.type != 0) || checkedType.primitive != "boolean") {
@@ -337,34 +403,41 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
       return checkedType;
     
     case UnaryExpression:
-      Type expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+      TCType expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[1].checkedType = expressionType;
 
       // Must be numeric type
       if (numericTypes.find(expressionType.primitive) == numericTypes.end()) {
         throw;
       }
 
-      Type checkedType;
+      TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "int";
 
       return checkedType;
 
     case ArrayAccess:
-      Type leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      Type expressionType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      TCType expressionType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].checkedType = leftCheckedType;
+      current->m_generated_tokens[2].checkedType = expressionType;
 
       // Expression must be numeric
       if (numericTypes.find(expressionType.primitive) == numericTypes.end()) {
         throw;
       }
 
-      Type checkedType = leftCheckedType;
+      TCType checkedType = leftCheckedType;
 
       return checkedType;
 
     case FieldAccess:
-      Type expressionType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      TCType expressionType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].checkedType = expressionType;
 
       // Must be reference type
       if (expressionType.type != 1) {
@@ -378,14 +451,191 @@ Type typeCheck(Token* current, Token* currentClass, environment localEnv, Type r
       if (expressionType.reference->scope.fields.find(identifierName) == expressionType.reference->scope.fields.end()) {
         throw;
       }
+      // Check field should not be static
+      else if (expressionType.reference->scope.fields[identifierName]->m_generated_tokens[0].SearchByTypeBFS(T_STATIC) != nullptr) {
+        throw;
+      }
 
-      Type checkedType = getType(expressionType.reference->scope.fields[identifierName]->m_generated_tokens[1]);
+      TCType checkedType = getType(expressionType.reference->scope.fields[identifierName]->m_generated_tokens[1]);
+
+      return checkedType;
+
+    case MethodInvocation:
+      // TODO
+      string argSignature = "";
+
+      // Check if any arguments
+      if (current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_type == ArgumentList) {
+        for (Token& token: current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_generated_tokens) {
+          TCType argumentType = typeCheck(&token, currentClass, localEnv, returnType);
+
+          // Compute signature
+          if (argumentType.type == 0) {
+            argSignature += argumentType.primitive;
+          }
+          else if (argumentType.type == 1) {
+            const void * address = static_cast<const void*>(argumentType.reference);
+            std::stringstream ss;
+            ss << address;
+            argSignature += ss.str();
+          }
+          else if (argumentType.type == 2) {
+            argSignature += argumentType.primitive;
+            argSignature += "[]";
+          }
+          else if (argumentType.type == 2) {
+            const void * address = static_cast<const void*>(argumentType.reference);
+            std::stringstream ss;
+            ss << address;
+            argSignature += ss.str();
+            argSignature += "[]";
+          }
+        }
+      }
+
+      Token* methodCalleeClass;
+      string methodName;
+      bool shouldBeStatic = false;
+
+      // Distinguish between Primary . Identifier v/s Name
+      if (current->m_generated_tokens[2].m_type == T_IDENTIFIER) {
+        Type checkedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+        
+        // Error if not reference type
+        if (checkedType.type != 1) {
+          throw;
+        }
+        
+        methodCalleeClass = checkedType.reference;
+        methodName = current->m_generated_tokens[2].m_lex;
+      }
+      // Method is current class's method
+      else if (current->m_generated_tokens[0].m_type == T_IDENTIFIER) {
+        methodCalleeClass = currentClass;
+        methodName = current->m_generated_tokens[0].m_lex;
+      }
+      // Qualified Name method call
+      else {
+      
+      }
+
+    case ArrayCreationExpression:
+      TCType creationType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+      TCType checkedType;
+
+      current->m_generated_tokens[1].checkedType = creationType;
+
+      if (creationType.type == 0) {
+        checkedType.type = 2;
+        checkedType.primitive = creationType.primitive;
+      }
+      else if (creationType.type == 1) {
+        checkedType.type = 3;
+        checkedType.reference = creationType.reference;
+      }
+
+      return checkedType;
+
+    case ClassInstanceCreationExpression:
+      TCType creationType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[1].checkedType = creationType;
+
+      string argSignature = "";
+
+      // Check if any arguments
+      if (current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_type == ArgumentList) {
+        for (Token& token: current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_generated_tokens) {
+          TCType argumentType = typeCheck(&token, currentClass, localEnv, returnType);
+          
+          // Compute signature
+          if (argumentType.type == 0) {
+            argSignature += argumentType.primitive;
+          }
+          else if (argumentType.type == 1) {
+            const void * address = static_cast<const void*>(argumentType.reference);
+            std::stringstream ss;
+            ss << address;
+            argSignature += ss.str();  
+          }
+          else if (argumentType.type == 2) {
+            argSignature += argumentType.primitive;
+            argSignature += "[]";
+          }
+          else if (argumentType.type == 2) {
+            const void * address = static_cast<const void*>(argumentType.reference);
+            std::stringstream ss;
+            ss << address;
+            argSignature += ss.str();
+            argSignature += "[]";
+          }
+        }
+      }
+      
+      // Must be reference type
+      if (creationType.type != 1) {
+        throw;
+      }
+
+      string className = creationType.reference->m_generated_tokens[2].m_lex;
+
+      // Check that constructors have same name as class
+      for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> constructor: creationType.reference->scope.constructorsWithSignatures) {
+        if (constructor.first != className) {
+          cerr<<"Constructor has different name than class"<<endl;
+          throw;
+        }
+
+        bool signatureMatch = false;
+
+        TCType checkedType;
+
+        // Check constructor with signature exists
+        for (std::pair<std::string,std::vector<Token*>> signature: constructor.second) {
+          if (signature.first == argSignature) {
+            signatureMatch = true;
+            checkedType.implementation = signature.second;
+          }
+        }
+      }
+
+      // Error if no constructor matched
+      if (signatureMatch == false) {
+        cerr<<"Constructor signature did not match"<<endl;
+        throw;
+      }
+
+      string emptySignature = "";
+
+      // Check that superClass has 0 argument constructor
+      for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> constructor: creationType.reference->super_class->scope.constructorsWithSignatures) {
+        if (constructor.second.find(emptySignature) == constructor.second.end()) {
+          cerr<<"Zero argument superclass constructor does not exist"<<endl;
+          throw;
+        }
+      }
+
+      checkedType.type = 1;
+      checkedType.reference = creationType.reference;
+
+      return checkedType;
+
+    case PrimaryNoNewArray:
+      TCType expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[1].checkedType = expressionType;
+
+      return expressionType;
+
+    default:
+      TCType checkedType;
+      checkedType.type = -1;
 
       return checkedType;
   }
 }
 
-bool isAssignable(Type lhs, Type rhs) {
+bool isAssignable(TCType lhs, TCType rhs) {
   
   // First check for Array Assignability rules
   if ((rhs.type == 2) || (rhs.type == 3)) {
@@ -470,7 +720,7 @@ bool isSubtype(Token* superType, Token* subType) {
   }
 
   bool isRecursiveSubType = false;
-  if (subType->super_class == nullptr) {
+  if (subType->super_class != nullptr) {
     isRecursiveSubType = isSubtype(superType, subType->super_class);
   }
 
@@ -481,8 +731,8 @@ bool isSubtype(Token* superType, Token* subType) {
   return isRecursiveSubType;
 }
 
-Type getType(Token* current) {
-  Type nodeType;
+TCType getType(Token* current) {
+  TCType nodeType;
 
   if (current->SearchByTypeDFS(VOID) != nullptr) {
     nodeType.type = 4;
@@ -530,18 +780,18 @@ bool checkTypes(Token* astRoot) {
 
   queue<Token*> tokens;
   Token* current;
-  tokens.push(current);
+  tokens.push(astRoot);
   while (tokens.size() > 0) {
     current = tokens.pop();
     if (current->m_type == MethodDeclaration) {
       Token* currentClass = current->compilation_unit->searchByTypeDFS(ClassDeclaration);
-      Type returnType;
+      TCType returnType;
 
       returnType = getType(&current->m_generated_tokens[0].m_generated_tokens[1]);
 
       current->checkedTyped = returnType;
       if (current->m_generated_tokens[1].m_type == Block && current->m_generated_tokens[1].m_generated_tokens[1] == BlockStatements) {
-        Type checkedType = typeCheck(current, currentClass, current->scope, returnType);    
+        TCType checkedType = typeCheck(current->m_generated_tokens[1].m_generated_tokens[1], currentClass, current->scope, returnType);    
       }
     }
     for (Token& token: current->m_generated_tokens) {
