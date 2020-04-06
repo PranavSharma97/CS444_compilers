@@ -8,7 +8,7 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
   set<string> numericTypes = {"int", "char", "short", "byte"};
 
   switch (current->m_type) {
-    case BlockStatements:
+    case BlockStatements: {
       TCType checkedType;
       for (Token& token: current->m_generated_tokens) {
         // Don't care about return value since it's a statement
@@ -16,8 +16,31 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
 
       return checkedType;
-    
-    case IfThenStatement:
+    }
+
+    case LocalVariableDeclarationStatement: {
+      TCType declaredType = getType(&current->m_generated_tokens[0].m_generated_tokens[0]);
+      TCType initializerType = typeCheck(&current->m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].checkedType = initializerType;
+
+      // Check if Type doesn't match with return type
+      if (declaredType.type != initializerType.type) {
+        throw;
+      }
+      // Check if declared type is primitive or primitive array and don't match
+      else if ((declaredType.type == 0 || declaredType.type == 2) && (declaredType.primitive != initializerType.primitive)) {
+        throw;
+      }
+      // Check if declared type is reference or reference array and don't match
+      else if ((declaredType.type == 1 || declaredType.type == 3) && (declaredType.reference != initializerType.reference)) {
+        throw;
+      }
+
+      return declaredType;
+    }
+
+    case IfThenStatement: {
       TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
       // Type must be boolean
       if (checkedType.type != 0 || checkedType.primitive != "boolean") {
@@ -27,9 +50,10 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       current->m_generated_tokens[2].checkedType = checkedType;
   
       return checkedType;
+    }
 
     case IfThenElseStatement:
-    case IfThenElseStatementNoShortIf:
+    case IfThenElseStatementNoShortIf: {
       TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
       // Type must be boolean
       if (checkedType.type != 0 || checkedType.primitive != "boolean") {
@@ -42,9 +66,10 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType);
 
       return checkedType;
+    }
 
     case WhileStatement:
-    case WhileStatementNoShortIf:
+    case WhileStatementNoShortIf: {
       TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
       // Type must be boolean
       if (checkedType.type != 0 || checkedType.primitive != "boolean") {
@@ -56,9 +81,10 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
 
       return checkedType;
+    }
 
     case ForStatement:
-    case ForStatementNoShortIf:
+    case ForStatementNoShortIf: {
       // Check if ForInit exists
       if (current->m_generated_tokens[2].m_type != T_SEMICOLON) {
         TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
@@ -103,8 +129,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       TCType checkedType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType);
 
       return checkedType;
+    }
 
-    case ReturnStatement:
+    case ReturnStatement: {
       if (current->m_generated_tokens[1].m_type != T_SEMICOLON) {
         TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
         
@@ -129,8 +156,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
 
       return checkedType;
+    }
 
-    case Assignment:
+    case Assignment: {
       TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
       TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
 
@@ -142,9 +170,12 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
         throw; 
       }
      
+      current->checkedType = leftCheckedType;
+
       return leftCheckedType;
-    
-    case T_IDENTIFIER:
+    }
+
+    case T_IDENTIFIER: {
       TCType identifierType;
       
       // First check if declaration pointer is not null
@@ -172,52 +203,59 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       current->checkedType = identifierType;
 
       return identifierType;
+    }
 
-    case NULL_LITERAL:
+    case NULL_LITERAL: {
       TCType checkedType;
       checkedType.type = 5;
 
       return checkedType;
-  
-    case CHAR_LITERAL:
+    }
+
+    case CHAR_LITERAL: {
       TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "char";
 
       return checkedType;
+    }
 
-    case INT_LITERAL:
+    case INT_LITERAL: {
       TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "int";
 
       return checkedType;
+    }
 
-    case BOOL_LITERAL:
+    case BOOL_LITERAL: {
       TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "boolean";
 
       return checkedType;
+    }
 
-    case STRING_LITERAL:
+    case STRING_LITERAL: {
       TCType checkedType;
       checkedType.type = 1;
       checkedType.reference = current->declaration;
 
       return checkedType;
+    }
 
-    case T_THIS:
+    case T_THIS: {
       TCType checkedType;
       checkedType.type = 1;
       checkedType.reference = currentClass;
 
       return checkedType;
+    }
 
     case ConditionalOrExpression:
     case ConditionalAndExpression:
     case InclusiveOrExpression:
-    case AndExpression:
+    case AndExpression: {
       TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
       TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
 
@@ -234,8 +272,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.primitive = "boolean";
 
       return checkedType;
+    }
 
-    case EqualityExpression:
+    case EqualityExpression: {
       TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
       TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
 
@@ -261,8 +300,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.primitive = "boolean";
 
       return checkedType;
+    }
 
-    case RelationalExpression:
+    case RelationalExpression: {
       TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
       TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
 
@@ -286,8 +326,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.primitive = "boolean";
 
       return checkedType;
+    }
 
-    case AdditiveExpression:
+    case AdditiveExpression: {
       TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
       TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
 
@@ -322,8 +363,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.primitive = "int";
 
       return checkedType;
+    }
 
-    case MultiplicativeExpression:
+    case MultiplicativeExpression: {
       TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
       TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
 
@@ -340,8 +382,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.primitive = "int";
 
       return checkedType;
+    }
 
-    case CastExpression:
+    case CastExpression: {
       TCType expressionType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType);
       TCType castType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
 
@@ -364,23 +407,22 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
 
       return castType;
+    }
 
     case T_BYTE:
     case T_INT:
     case T_SHORT:
     case T_CHAR:
-    case T_BOOLEAN:
+    case T_BOOLEAN: {
       TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = current->m_lex;
 
       return checkedType;
+    }
 
-    // TODO
-    case QualifiedName:
+    case QualifiedName: {
       TCType checkedType;
-      checkedType.type = 1;
-      checkedType.reference = current->declaration;
 
       // Should not be nullptr
       if (current->declaration == nullptr) {
@@ -388,9 +430,31 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
         throw;
       }
 
-      return checkedType;
+      // Check if QualifiedName is array.length
+      if (current->declaration->m_type == T_INT && current->declaration->m_lex == "length") {
+        checkedType.type = 0;
+        checkedType.primitive = "int";
+      }
+      // Check if it's a local variable
+      else if (current->declaration->m_type == LocalVariableDeclaration) {
+        checkedType = getType(&current->declaration->m_generated_tokens[0]);
+      }
+      // Check if it's a field
+      else if (current->declaration->m_type == FieldDeclaration) {
+        checkedType = getType(&current->declaration->m_generated_tokens[1]);
+      }
+      // Implies it's a Type
+      else {
+        checkedType.type = 1;
+        checkedType.reference = current->declaration;
+      }
 
-    case UnaryExpressionNotPlusMinus:
+      current->checkedType = checkedType;
+
+      return checkedType;
+    }
+
+    case UnaryExpressionNotPlusMinus: {
       TCType checkedType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
 
       current->m_generated_tokens[1].checkedType = checkedType;
@@ -401,8 +465,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
 
       return checkedType;
-    
-    case UnaryExpression:
+    }
+
+    case UnaryExpression: {
       TCType expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
 
       current->m_generated_tokens[1].checkedType = expressionType;
@@ -417,8 +482,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.primitive = "int";
 
       return checkedType;
+    }
 
-    case ArrayAccess:
+    case ArrayAccess: {
       TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
       TCType expressionType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
 
@@ -430,11 +496,10 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
         throw;
       }
 
-      TCType checkedType = leftCheckedType;
+      return leftCheckedType;
+    }
 
-      return checkedType;
-
-    case FieldAccess:
+    case FieldAccess: {
       TCType expressionType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
 
       current->m_generated_tokens[0].checkedType = expressionType;
@@ -459,8 +524,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       TCType checkedType = getType(expressionType.reference->scope.fields[identifierName]->m_generated_tokens[1]);
 
       return checkedType;
+    }
 
-    case MethodInvocation:
+    case MethodInvocation: {
       // TODO
       string argSignature = "";
 
@@ -500,7 +566,9 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       // Distinguish between Primary . Identifier v/s Name
       if (current->m_generated_tokens[2].m_type == T_IDENTIFIER) {
         Type checkedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-        
+    
+        current->m_generated_tokens[0].checkedType = checkedType;
+
         // Error if not reference type
         if (checkedType.type != 1) {
           throw;
@@ -514,12 +582,74 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
         methodCalleeClass = currentClass;
         methodName = current->m_generated_tokens[0].m_lex;
       }
-      // Qualified Name method call
-      else {
-      
+      // Qualified Name Static method call
+      else if (current->m_generated_tokens[0].declaration->m_type == ClassDeclaration) {
+        shouldBeStatic = true;
+        methodCalleeClass = current->m_generated_tokens[0].declaration;
+        methodName = current->m_generated_tokens[0].m_generated_tokens[current->m_generated_tokens[0].m_generated_tokens.size() - 1].m_lex;
+      }
+      // Qualified Name method call on variable
+      else if (current->m_generated_tokens[0].declaration->m_type == LocalVariableDeclaration) {
+        TCType variableType = getType(&current->m_generated_tokens[0].declaration->m_generated_tokens[0]);
+        
+        // Error if not reference type
+        if (variableType.type != 1) {
+          throw;
+        }
+        
+        methodCalleeClass = variableType.reference;
+        methodName = current->m_generated_tokens[0].m_generated_tokens[current->m_generated_tokens[0].m_generated_tokens.size() - 1].m_lex;
+      }
+      // Qualified Name method call on field
+      else if (current->m_generated_tokens[0].declaration->m_type == FieldDeclaration) {
+        TCType fieldType = getType(&current->m_generated_tokens[0].declaration->m_generated_tokens[1]);
+        
+        // Error if not reference type
+        if (fieldType.type != 1) {
+          throw;
+        }
+        
+        methodCalleeClass = fieldType.reference;
+        methodName = current->m_generated_tokens[0].m_generated_tokens[current->m_generated_tokens[0].m_generated_tokens.size() - 1].m_lex; 
       }
 
-    case ArrayCreationExpression:
+      // Now search for methodName in methodCalleeClass
+      bool foundMethodMatch = false;
+      TCType checkedType;
+
+      for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> method: methodCalleeClass->scope.methodsWithSignatures) {
+        
+        // Check method with signature exists
+        for (std::pair<std::string,std::vector<Token*>> signature: method.second) {
+          
+          // Found match
+          if (methodName == method.first && argSignature == signature.first) {
+            foundMethodMatch = true;
+            checkedType = getType(&signature.second[0]->m_generated_tokens[0].m_generated_tokens[1]);
+            checkedType.implementation = signature.second[0];
+
+            // Check staticness
+            if (shouldBeStatic == true && signature.second[0]->m_generated_tokens[0].m_generated_tokens[0].SearchByTypeBFS(T_STATIC) == nullptr) {
+              throw;
+            }
+            else if (shouldBeStatic == false && signature.second[0]->m_generated_tokens[0].m_generated_tokens[0].SearchByTypeBFS(T_STATIC) != nullptr) {
+              throw;
+            }
+          }
+        }
+      }
+
+      // Error if no method found
+      if (foundMethodMatch == false) {
+        throw; 
+      }
+
+      current->checkedType = checkedType;
+
+      return checkedType; 
+    }
+
+    case ArrayCreationExpression: {
       TCType creationType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
       TCType checkedType;
 
@@ -534,9 +664,12 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
         checkedType.reference = creationType.reference;
       }
 
-      return checkedType;
+      current->checkedType = checkedType;
 
-    case ClassInstanceCreationExpression:
+      return checkedType;
+    }
+
+    case ClassInstanceCreationExpression: {
       TCType creationType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
 
       current->m_generated_tokens[1].checkedType = creationType;
@@ -618,20 +751,25 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.type = 1;
       checkedType.reference = creationType.reference;
 
-      return checkedType;
+      current->checkedType = checkedType;
 
-    case PrimaryNoNewArray:
+      return checkedType;
+    }
+
+    case PrimaryNoNewArray: {
       TCType expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
 
       current->m_generated_tokens[1].checkedType = expressionType;
 
       return expressionType;
+    }
 
-    default:
+    default: {
       TCType checkedType;
       checkedType.type = -1;
 
       return checkedType;
+    }
   }
 }
 
