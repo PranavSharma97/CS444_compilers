@@ -258,7 +258,6 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
       // check if the on demand import 
       if(node_type == TokenType::TypeImportOnDemandDeclaration){
 	is_on_demand = true;
-	std::cout<<"ON DEMAND PACKAGE"<<std::endl;
 	// On demand import should be imported only once
 	if(imported.find(pack_name) == imported.end()){
 	  //if(!CheckName(pack_name,envs,true)) return false;
@@ -362,7 +361,7 @@ bool TypeLinker::Link(){
     envs[1] = &(single_types[file_index]);
     envs[3] = &(on_demands[file_index]);
     Token* cun = n->SearchByTypeBFS(TokenType::CompilationUnit);
-    
+    std::cout<<"LINK: FILE "<<file_index<<","<<envs[1]<<",ZERO:"<<&(single_types[0])<<std::endl;
     if(!ResolvePackage(cun,envs)) return false;
 
     pack_envs[file_index] = envs[2];
@@ -399,6 +398,7 @@ bool TypeLinker::Link(){
     std::cout<<"INHERITANCE Resolved"<<std::endl;
     DEFAULT();
   }
+  
   init_name_checker(local_envs,single_types,pack_envs,on_demands,m_asts.size());
   
   return true;
