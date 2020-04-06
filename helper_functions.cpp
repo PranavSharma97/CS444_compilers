@@ -15,10 +15,10 @@ void string_split(const std::string& s, const char delim, std::vector<std::strin
 Token* GetTypeFromEnv(std::string& name, environment ** envs){
   Token* dec = envs[0]->GetType(name);
   if(dec != nullptr) return dec;
+  std::cout<<envs[1]->classes.size()<<std::endl;
   dec = envs[1]->GetType(name);
   if(dec != nullptr) return dec;
   if (envs[2]){
-
     dec = envs[2]->GetType(name);
     if(dec != nullptr) return dec;
   } else {

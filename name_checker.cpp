@@ -348,6 +348,7 @@ bool NameChecker::CheckNames(){
   // here as well
   // but not declared in the .h file yet.
   int file_count = m_asts.size();
+  std::cout<<"NAME CHECKER FILE COUNT:"<<file_count<<std::endl;
   //environment local_envs[file_count];
   //environment single_types[file_count];
   //environment* pack_envs[file_count];
@@ -377,9 +378,8 @@ bool NameChecker::CheckNames(){
     envs[1] = &single_types[file_index];
     envs[2] = pack_envs[file_index];
     envs[3] = &on_demand[file_index];
-    file_index ++;
-
     if(!ResolveNameSpaces(m_asts[file_index],envs)) return false;
+    file_index ++;
     CYAN();
     std::cout<<"NameSpaces Resolved"<<std::endl;
     DEFAULT(); 
