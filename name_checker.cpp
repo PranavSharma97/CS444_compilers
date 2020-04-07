@@ -627,7 +627,8 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
   if (t!=QualifiedName) {
     int inscope = 0;
     for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
-      if (checkScope && it->type() == T_LEFT_ROUND_BRACKET) inscope += 1;
+      if (it->type() == T_DOT){ break; }
+      else if (checkScope && it->type() == T_LEFT_ROUND_BRACKET) inscope += 1;
       else if (checkScope && it->type() == T_RIGHT_ROUND_BRACKET) inscope -= 1;
 
       if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression || t == MethodDeclarator){
