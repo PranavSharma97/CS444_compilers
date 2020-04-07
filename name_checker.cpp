@@ -403,6 +403,7 @@ bool NameChecker::CheckNames(){
   file_index = 0;
   for(Token* n: m_asts){
     //if (file_count - file_index - 16 <= 0) break;
+    //std::cout << "FILE NUM " << file_index << std::endl;
     environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
@@ -606,7 +607,10 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
     std::cout << kv_pair.first;
   }
   std::cout << std::endl;
-
+  std::cout << "classes: ";
+  for(std::pair<std::string, Token*> kv_pair: new_envs[0]->classes){
+    std::cout << kv_pair.first;
+  }
   ************************ COMMENTS END *******************/
 
     
@@ -631,6 +635,10 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
     else {
       declaration = new_envs[0]->GetDeclaration(root->m_lex);
       // Try simple Java types
+      if (!declaration) {
+        declaration = GetTypeFromEnv(root->m_lex, envs);
+        if (declaration) std::cout << "Linking Type " << root->m_lex << " to " << declaration->m_display_name << std::endl;
+      }
       if (!declaration) {
         std::cout << "SEARCHING FOR " << "java.lang."+root->m_lex << std::endl;
         declaration = m_packages->GetQualified("java.lang."+root->m_lex);
@@ -675,8 +683,7 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
           if (!ResolveExpressions(&(*it), envs, methodOrConstructor, checkScope)) return false;
         }
         // imports, ArrayType, CastExpression are all types that will be resolved later
-        else if (t != SingleTypeImportDeclaration && t != TypeImportOnDemandDeclaration && t != PackageDeclaration &&
-          t != ArrayType && t != CastExpression) {
+        else if (t != SingleTypeImportDeclaration && t != TypeImportOnDemandDeclaration && t != PackageDeclaration) {
           if (!ResolveExpressions(&(*it), new_envs, methodOrConstructor, checkScope)) return false;
         }
       }
