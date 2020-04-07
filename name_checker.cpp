@@ -372,7 +372,7 @@ bool NameChecker::CheckNames(){
 
   file_index = 0;
   for(Token* n: m_asts){
-    if (file_count - file_index - 16 <= 0) break; 
+    //if (file_count - file_index - 16 <= 0) break; 
     environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
@@ -387,30 +387,30 @@ bool NameChecker::CheckNames(){
   
   file_index = 0;
   for(Token* n: m_asts){
-    if (file_count - file_index - 16 <= 0) break;
+    //if (file_count - file_index - 16 <= 0) break;
     environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
     envs[2] = pack_envs[file_index];
     envs[3] = &on_demand[file_index];
-    file_index ++;
 
     if(!ResolveFieldDeclarations(m_asts[file_index],envs)) return false;
+    file_index ++;
     CYAN();
     DEFAULT();
   }
 
   file_index = 0;
   for(Token* n: m_asts){
-    if (file_count - file_index - 16 <= 0) break;
+    //if (file_count - file_index - 16 <= 0) break;
     environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
     envs[2] = pack_envs[file_index];
     envs[3] = &on_demand[file_index];
-    file_index ++;
 
     if(!ResolveExpressions(m_asts[file_index],envs,false)) return false;
+    file_index ++;
     CYAN();
     std::cout<<"Expressions Resolved"<<std::endl;
     DEFAULT();
