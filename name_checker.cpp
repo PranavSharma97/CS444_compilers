@@ -581,7 +581,10 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
     std::cout << kv_pair.first;
   }
   std::cout << std::endl;
-
+  std::cout << "classes: ";
+  for(std::pair<std::string, Token*> kv_pair: new_envs[0]->classes){
+    std::cout << kv_pair.first;
+  }
   ************************ COMMENTS END *******************/
 
     
@@ -606,6 +609,10 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
     else {
       declaration = new_envs[0]->GetDeclaration(root->m_lex);
       // Try simple Java types
+      if (!declaration) {
+        declaration = GetTypeFromEnv(root->m_lex, envs);
+        if (declaration) std::cout << "Linking Type " << root->m_lex << " to " << declaration->m_display_name << std::endl;
+      }
       if (!declaration) {
         std::cout << "SEARCHING FOR " << "java.lang."+root->m_lex << std::endl;
         declaration = m_packages->GetQualified("java.lang."+root->m_lex);
