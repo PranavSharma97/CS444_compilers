@@ -377,6 +377,7 @@ bool NameChecker::CheckNames(){
   file_index = 0;
   for(Token* n: m_asts){
     //if (file_count - file_index - 16 <= 0) break;
+    //std::cout << "FILE NUM " << file_index << std::endl;
     environment* envs[4];
     envs[0] = &local_envs[file_index];
     envs[1] = &single_types[file_index];
@@ -626,8 +627,7 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
   if (t!=QualifiedName) {
     int inscope = 0;
     for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
-      if (it->type() == T_DOT){ break; }
-      else if (checkScope && it->type() == T_LEFT_ROUND_BRACKET) inscope += 1;
+      if (checkScope && it->type() == T_LEFT_ROUND_BRACKET) inscope += 1;
       else if (checkScope && it->type() == T_RIGHT_ROUND_BRACKET) inscope -= 1;
 
       if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression || t == MethodDeclarator){
@@ -649,8 +649,7 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
           if (!ResolveExpressions(&(*it), envs, methodOrConstructor, checkScope)) return false;
         }
         // imports, ArrayType, CastExpression are all types that will be resolved later
-        else if (t != SingleTypeImportDeclaration && t != TypeImportOnDemandDeclaration && t != PackageDeclaration &&
-          t != ArrayType && t != CastExpression) {
+        else if (t != SingleTypeImportDeclaration && t != TypeImportOnDemandDeclaration && t != PackageDeclaration) {
           if (!ResolveExpressions(&(*it), new_envs, methodOrConstructor, checkScope)) return false;
         }
       }
