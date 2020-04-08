@@ -15,10 +15,24 @@
 #include "type_linker.h"
 #include "color_print.h"
 #include "name_checker.h"
-
+#include "token_types.h"
 
 using namespace std;
 
+void CheckToken(Token* t){
+  if(t->m_type == T_IDENTIFIER && t->declaration) {
+    std::cout << "IDENTIFIER: " << t->m_lex << " is connected to " << t->declaration->m_display_name << std::endl;
+  }
+  else if (t->m_type == T_IDENTIFIER){
+    std::cout << "IDENTIFIER: " << t->m_lex << " is not connected" << std::endl;
+  }  
+  else if(t->m_generated_tokens.size() > 0){
+    for(Token& child: t->m_generated_tokens){
+      CheckToken(&child);
+    }
+  }
+  return;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -125,6 +139,7 @@ int main(int argc, char *argv[]) {
   // TPLink.set_object_interface(&object_interface);
   if(!TPLink.Link()) return 42;
   if(!NCheck.CheckNames()) return 42;
+  for (Token *ptr: tree_ptrs) { std::cout << "FILE " << std::endl; CheckToken(ptr); }
   
   /*
   for(Token* ti: tree_ptrs){
