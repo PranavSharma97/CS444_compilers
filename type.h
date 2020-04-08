@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 
 // Union return type to hold possible Type values

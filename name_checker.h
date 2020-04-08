@@ -20,6 +20,7 @@ class NameChecker{
   bool ResolveNameSpaces(Token* node,environment** envs);
   bool ResolveFieldDeclarations(Token* root, environment** envs);
   bool ResolveExpressions(Token* node, environment** envs, bool methodOrConstructor, bool checkScope = false);
+  bool LinkStringLiterals(Token* roots);
 
   NameChecker();
   ~NameChecker();

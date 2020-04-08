@@ -15,7 +15,7 @@
 #include "type_linker.h"
 #include "color_print.h"
 #include "name_checker.h"
-
+#include "type_checker.h"
 
 using namespace std;
 
@@ -125,7 +125,21 @@ int main(int argc, char *argv[]) {
   // TPLink.set_object_interface(&object_interface);
   if(!TPLink.Link()) return 42;
   if(!NCheck.CheckNames()) return 42;
-  
+
+//  for(Token* t: tree_ptrs){
+//    if (!NCheck.LinkStringLiterals(t)) return 42;
+//  }
+
+  try {
+    for(Token* t: tree_ptrs){
+      checkTypes(t);
+    }
+  }
+  catch (std::exception& e){
+    cerr<<e.what()<<endl;
+    return 42;
+  }
+
   /*
   for(Token* ti: tree_ptrs){
     vector<Token*> queue;

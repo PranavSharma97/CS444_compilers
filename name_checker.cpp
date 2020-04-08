@@ -416,6 +416,10 @@ bool NameChecker::CheckNames(){
     std::cout<<"Expressions Resolved"<<std::endl;
     DEFAULT();
   }
+
+  for(Token* n: m_asts){
+    if (!LinkStringLiterals(n)) return false;
+  }
   return true;
 }
 

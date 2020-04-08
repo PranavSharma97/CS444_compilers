@@ -72,6 +72,7 @@ void Weeder::BuildAST(Token& node){
   case TokenType::ExtendsInterfaces:
   case TokenType::ClassTypeList:
   case TokenType::ClassBodyDeclarations:
+  case TokenType::ArgumentList:
   case TokenType::Modifiers:
     Flatten(node,node.m_type);
     break;

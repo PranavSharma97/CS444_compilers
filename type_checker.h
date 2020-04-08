@@ -3,5 +3,7 @@
 #include "environment.h"
 
 bool checkTypes(Token* astRoot);
-Type typeCheck(Token* astRoot, Token* currentClass, environment localEnv, Type returnType);
-bool checkInheritance(Token* superClass, Token* subClass);
+TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCType returnType);
+bool isAssignable(TCType lhs, TCType rhs);
+bool isSubtype(Token* superType, Token* subType);
+TCType getType(Token* current);
