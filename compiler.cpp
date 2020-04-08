@@ -19,6 +19,20 @@
 
 using namespace std;
 
+void CheckToken(Token* t){
+  if(t->m_type == T_IDENTIFIER && t->declaration) {
+    std::cerr << "IDENTIFIER: " << t->m_lex << " is connected to " << t->declaration->m_display_name << std::endl;
+  }
+  else if (t->m_type == T_IDENTIFIER){
+    std::cerr << "IDENTIFIER: " << t->m_lex << " is not connected" << std::endl;
+  }
+  else if(t->m_generated_tokens.size() > 0){
+    for(Token& child: t->m_generated_tokens){
+      CheckToken(&child);
+    }
+  }
+  return;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -130,6 +144,9 @@ int main(int argc, char *argv[]) {
 //    if (!NCheck.LinkStringLiterals(t)) return 42;
 //  }
 
+  
+
+/*
   try {
     for(Token* t: tree_ptrs){
       checkTypes(t);
@@ -139,7 +156,7 @@ int main(int argc, char *argv[]) {
     cerr<<e.what()<<endl;
     return 42;
   }
-
+*/
   /*
   for(Token* ti: tree_ptrs){
     vector<Token*> queue;
