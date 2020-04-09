@@ -674,7 +674,7 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
       if (t == FormalParameter || t == ArgumentList || (it-1)->m_type == T_LEFT_ROUND_BRACKET){
         methodOrConstructor = false;
       }
-      if ((it+1)->m_type == T_LEFT_ROUND_BRACKET){methodOrConstructor = true;}
+      if (root->m_type != FormalParameter && (it+1)->m_type == T_LEFT_ROUND_BRACKET){methodOrConstructor = true;}
       
       // constructor declarator blocks need to have access to all variables, fields, methods inside its parent class
       if (t == ConstructorDeclaration){
