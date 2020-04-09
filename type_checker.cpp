@@ -37,6 +37,24 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
     case LocalVariableDeclarationStatement: {
       cerr<<"Inside LocalVariableDeclarationStatement"<<endl;
       return typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      /*
+      TCType declaredType = getType(&current->m_generated_tokens[0].m_generated_tokens[0]);
+      TCType initializerType = typeCheck(&current->m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2], currentClass, localEnv, returnType);
+
+      current->m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].checkedType = initializerType;
+
+      cerr<<"Declared Type: "<<declaredType.type<<" "<<declaredType.primitive<<endl;
+      cerr<<"Initializer Type: "<<initializerType.type<<" "<<initializerType.primitive<<endl;
+      for (Token& t: current->m_generated_tokens) {
+        cerr<<t<<endl;
+      }
+
+      if (isAssignable(declaredType, initializerType) == false) {
+        throw std::logic_error("Type checking error: LocalVariableDeclaration not assignable");
+      }
+     
+      return declaredType;
+      */
     }
 
     case LocalVariableDeclaration: {
@@ -83,8 +101,8 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
 
       current->m_generated_tokens[2].checkedType = checkedType;
       // Don't care about return value since it's a statement
-      typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
-      typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType);
+      TCType ifType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
+      TCType elseType = typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType);
 
       return checkedType;
     }
@@ -100,7 +118,7 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       
       current->m_generated_tokens[2].checkedType = checkedType;
       // Don't care about return value since it's a statement 
-      typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
+      TCType statementType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
 
       return checkedType;
     }
@@ -441,6 +459,7 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
 
     case CastExpression: {
       cerr<<"Inside Cast Expression"<<endl;
+      cerr<<"Declaration of cast expression: "<<current->declaration<<endl;
       if (current->m_generated_tokens[current->m_generated_tokens.size() - 1].m_type == T_IDENTIFIER) {
         cerr<<endl<<current->m_generated_tokens[current->m_generated_tokens.size() - 1].m_lex<<" "<<current->m_generated_tokens[current->m_generated_tokens.size() - 1].declaration<<endl;
         cerr<<"Class name: "<<currentClass->m_generated_tokens[2].m_lex<<endl;
@@ -612,14 +631,18 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       cerr<<"Inside Method Invocation"<<endl;
       string argSignature = "";
 
+      cerr<<"Declaration pointer is: ";
+      cerr<<current->m_generated_tokens[0].declaration<<endl;
+
       // Check if any arguments
       if (current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_type == ArgumentList) {
+        //for (int i=0; i<current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_generated_tokens.size(); i++) {
         for (Token& token: current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_generated_tokens) {
-          
+          //cerr<<current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_generated_tokens.size[i]
           //cerr<<"Type of token IS: "<<token.m_type<<endl;
           
           TCType argumentType = typeCheck(&token, currentClass, localEnv, returnType);
-
+          
           //cerr<<"Type of argument is: "<<argumentType.type<<endl;
 
           // Compute signature
@@ -879,6 +902,7 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       TCType checkedType;
       checkedType.type = -1;
 
+      cerr<<"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
       cerr<<"Landed in default case: Type is "<<current->m_type<<endl;
 
       return checkedType;
@@ -1031,12 +1055,12 @@ bool checkTypes(Token* astRoot) {
   
   // Do BFS to find all methods
 
-  queue<Token*> tokens;
+  vector<Token*> tokens;
   Token* current;
-  tokens.push(astRoot);
+  tokens.push_back(astRoot);
   while (tokens.size() > 0) {
-    current = tokens.front();
-    tokens.pop();
+    current = tokens[0];
+    tokens.erase(tokens.begin() + 0);
     if (current->m_type == MethodDeclaration) {
       Token* currentClass = current->compilation_unit->SearchByTypeDFS(ClassDeclaration);
       TCType returnType;
@@ -1045,8 +1069,10 @@ bool checkTypes(Token* astRoot) {
 
       cerr<<"Method name: "<<current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[0].m_lex<<endl;
       cerr<<"Method return type: "<<returnType.type<<" ";
+      string sig;
       if (current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[2].m_type == FormalParameterList) {
         cerr<<"Method signature: "<<getType(&current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens[0]).primitive<<endl;
+        sig = getType(&current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens[0]).primitive;
       }
       if (returnType.type == 0) {
         cerr<<returnType.primitive<<endl;
@@ -1057,6 +1083,12 @@ bool checkTypes(Token* astRoot) {
 
       cerr<<"MethodDeclaration found"<<endl;
 
+      if (current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[0].m_lex == "valueOf" && sig == "short") {
+        cerr<<"Testing valueOf(short i) in class String now "<<endl;
+        cerr<<"Printing declaration of id: "<<current->m_generated_tokens[1].m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens[current->m_generated_tokens[1].m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens.size() - 1].m_type<<endl;
+        cerr<<"Printing declaration of id: "<<current->m_generated_tokens[1].m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens[current->m_generated_tokens[1].m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens.size() - 1].declaration<<endl;
+      }
+
       current->checkedType = returnType;
       if (current->m_generated_tokens[1].m_type == Block && current->m_generated_tokens[1].m_generated_tokens[1].m_type == BlockStatements) {
         cerr<<"Calling typeCheck"<<endl;
@@ -1064,7 +1096,7 @@ bool checkTypes(Token* astRoot) {
       }
     }
     for (Token& token: current->m_generated_tokens) {
-      tokens.push(&token);
+      tokens.push_back(&token);
     }
   }
 }

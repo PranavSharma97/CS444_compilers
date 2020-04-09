@@ -25,7 +25,7 @@ void CheckToken(Token* t){
   }
   else if (t->m_type == T_IDENTIFIER){
     std::cerr << "IDENTIFIER: " << t->m_lex << " is not connected" << std::endl;
-  }
+  }  
   else if(t->m_generated_tokens.size() > 0){
     for(Token& child: t->m_generated_tokens){
       CheckToken(&child);
@@ -139,14 +139,21 @@ int main(int argc, char *argv[]) {
   // TPLink.set_object_interface(&object_interface);
   if(!TPLink.Link()) return 42;
   if(!NCheck.CheckNames()) return 42;
-
 //  for(Token* t: tree_ptrs){
 //    if (!NCheck.LinkStringLiterals(t)) return 42;
-//  }
+//  }  
 
-  
+  /*
+  for (Token *ptr: tree_ptrs) {
+    cerr<<ptr->m_generated_tokens[ptr->m_generated_tokens.size() -1].m_type<<endl;
+    if (ptr->m_generated_tokens[1].m_generated_tokens[ptr->m_generated_tokens[1].m_generated_tokens.size() -1].m_type == ClassDeclaration) {
+      if (ptr->m_generated_tokens[1].m_generated_tokens[ptr->m_generated_tokens[1].m_generated_tokens.size() -1].m_generated_tokens[2].m_lex == "String")
+        CheckToken(ptr);
+    }
+    //std::cout << "FILE " << std::endl; CheckToken(ptr);
+  }
+  */
 
-/*
   try {
     for(Token* t: tree_ptrs){
       checkTypes(t);
@@ -156,7 +163,7 @@ int main(int argc, char *argv[]) {
     cerr<<e.what()<<endl;
     return 42;
   }
-*/
+
   /*
   for(Token* ti: tree_ptrs){
     vector<Token*> queue;
