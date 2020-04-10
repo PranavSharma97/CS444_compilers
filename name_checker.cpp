@@ -7,7 +7,7 @@
 /*
  * Standalone methods
  */
-bool CheckModifiers(Token* last_resolved, Token* modifiers){
+bool CheckStaticness(Token* last_resolved, Token* modifiers){
   // check for staticness based on last_resolved
   
   bool is_static = modifiers->SearchByTypeBFS(TokenType::T_STATIC) != nullptr;
@@ -94,13 +94,45 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
     if (last_scope) local = last_scope->GetDeclaration(target_node->m_lex);
     // resolve for interpreation where the first is a local var/field/param
     if(local!=nullptr){
-      
+      //std::cout<<"LOCAL:"<<*local<<std::endl;
       // check target_node if last resolved is 
       Token* local_type;
       //if(local->m_type == TokenType::FieldDeclaration){
       Token* modifiers = &(local->m_generated_tokens[0]);
-      // Check modifiers
-      if(!CheckModifiers(last_resolved,modifiers)){
+      // Check modifiers // Check if it's public
+      bool is_public = modifiers->SearchByTypeBFS(TokenType::T_PUBLIC);
+      if(!is_public){
+	// if not public check if root is the subclass of last resolved
+
+	Token* root_class = root->compilation_unit->SearchByTypeBFS(TokenType::ClassDeclaration);
+	if(!root_class) root_class = root->compilation_unit->SearchByTypeBFS(TokenType::InterfaceDeclaration);
+	// check for inheritance relation
+	// Protected access is legal when the field/method is declared in the common ancestor of
+	// last_resolved and root
+	Token* common_ancestor = local->compilation_unit->SearchByTypeBFS(TokenType::ClassDeclaration);
+	if(!common_ancestor) common_ancestor = local->compilation_unit->SearchByTypeBFS(TokenType::InterfaceDeclaration);
+	// If common_ancestor is not a common_ancestor of both last and root,
+	// inheritance check failed.
+	if(!(IsSubClass(root_class,common_ancestor) && IsSubClass(last_type,common_ancestor))){
+	  // if failed, check if it's in the same package.
+	  Token* root_pack = root->compilation_unit->SearchByTypeBFS(TokenType::PackageDeclaration);
+	  std::string root_pack_name = (root_pack)? root_pack->m_generated_tokens[1].m_lex:"THE DEFAULT PACKAGE";
+	  Token* last_pack = last_resolved->compilation_unit->SearchByTypeBFS(TokenType::PackageDeclaration);
+	  std::string last_pack_name = (last_pack)? last_pack->m_generated_tokens[1].m_lex:"THE DEFAULT PACKAGE";
+	  // If not the same pack, reject
+	  if(root_pack_name.compare(last_pack_name)!=0){
+	    RED();
+	    std::cerr<<"GetAllValidTypes ERROR: protected access ERROR, ";
+	    std::cerr<<"current class is not a ";
+	    std::cerr<<"subclass of "<<last_resolved->m_lex<<", nor in the";
+	    std::cerr<<" same package."<<std::endl;
+	    DEFAULT();
+	    return false;
+	  }
+	}
+      }
+      // check staticness and get the field/method if succeed.
+      if(!CheckStaticness(last_resolved,modifiers)){
 	RED();
       	std::cerr<<"GetAllValidType ERROR:"<<target_node->m_lex<<" in ";
 	std::cerr<<root->m_lex<<" failed on staticness."<<std::endl;
