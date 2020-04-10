@@ -31,3 +31,22 @@ Token* GetTypeFromEnv(std::string& name, environment ** envs){
   DEFAULT();
   return nullptr;
 }
+
+bool IsSubClass(Token* sub, Token* super){
+  bool result;
+  if(sub == super) return true;
+  if(sub == nullptr) return false;
+  if(super == nullptr){
+    RED();
+    std::cerr<<"IsSubClass ERROR: super is null"<<std::endl;
+    DEFAULT();
+    return false;
+  }
+  if(IsSubClass(sub->super_class,super)) return true;
+  if(sub->super_interfaces.size() > 0){
+    for(Token* t: sub->super_interfaces){
+      if(IsSubClass(t,super)) return true;
+    }
+  }
+  return false;
+}
