@@ -39,7 +39,17 @@ void restoreRegisters(std::ofstream &file){
 
 void generateToken(std::ofstream &file, Token *t){
   if (t->m_type == MethodDeclarator){
-    //generate code for MethodDeclarator
+    // currently using declaration as method label
+    Token *identifierToken = &(t->m_generated_tokens[0]);
+    file << identifierToken->declaration << ":" << std::endl;
+    saveRegisters(file);
+    for(Token& n: t->m_generated_tokens){
+      generateToken(file, &n);
+    }
+    restoreRegisters(file);
+  }
+
+  else if (t->m_type == FormalParameterList){
   }
 
   for(Token& n: t->m_generated_tokens){
