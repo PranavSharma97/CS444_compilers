@@ -16,6 +16,7 @@
 #include "color_print.h"
 #include "name_checker.h"
 #include "type_checker.h"
+#include "generate_code.h"
 
 using namespace std;
 
@@ -190,5 +191,7 @@ int main(int argc, char *argv[]) {
     }*/
   
   cout << "Parsing successful" << endl;
+  GenerateCode Code(tree_ptrs);
+  Code.Generate();
   return 0;
 }

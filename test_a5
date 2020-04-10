@@ -1,0 +1,18 @@
+#! /bin/bash
+
+rm -rf ./output
+mkdir output
+
+echo "global _start" >> ./output/fileName.s
+echo "_start:" >> ./output/fileName.s
+echo "mov eax, 1" >> ./output/fileName.s
+echo "mov ebx, 123" >> ./output/fileName.s
+echo "int 0x80" >> ./output/fileName.s
+
+for fileName in output/*.s ; do
+  /u/cs444/bin/nasm -O1 -f elf -g -F dwarf "${fileName}"
+done
+
+ld -melf_i386 -o main output/*.o
+./main
+echo $?
