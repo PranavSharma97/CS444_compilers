@@ -25,6 +25,8 @@ class Token{
   bool delete_dec;
   std::vector<Token> m_generated_tokens;
   bool PostInheritanceCheck();
+  // For Code Generation
+  std::string loc="";
 
   Token();
   Token(TokenType type, std::string lex);
