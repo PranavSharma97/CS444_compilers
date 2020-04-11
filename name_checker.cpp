@@ -1,4 +1,4 @@
-s#include "name_checker.h"
+#include "name_checker.h"
 #include <iostream>
 #include "helper_functions.h"
 #include "type_linker.h"
@@ -7,10 +7,11 @@ s#include "name_checker.h"
 /*
  * Standalone methods
  */
-bool CheckStaticness(Token* last_resolved, Token* modifiers,bool& staticness){
+bool CheckStaticness(Token* last_resolved, Token* modifiers,bool* staticness){
   // check for staticness based on last_resolved
   
   bool is_static = modifiers->SearchByTypeBFS(TokenType::T_STATIC) != nullptr;
+  *staticness = is_static;
   TokenType last_type = last_resolved->m_type;
   Token* last_modifier = nullptr;
   if(last_type == TokenType::FieldDeclaration){
@@ -96,11 +97,22 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
     if (last_scope) local = last_scope->GetDeclaration(target_node->m_lex);
     // resolve for interpreation where the first is a local var/field/param
     if(local!=nullptr){
+
+      
+      Token* modifiers = &(local->m_generated_tokens[0]);
+      // check staticness and get the field/method if succeed.
+      bool is_static = false;
+      if(!CheckStaticness(last_resolved,modifiers,&is_static)){
+	RED();
+      	std::cerr<<"GetAllValidType ERROR:"<<target_node->m_lex<<" in ";
+	std::cerr<<root->m_lex<<" failed on staticness."<<std::endl;
+	DEFAULT();
+	return false;
+      }
       //std::cout<<"LOCAL:"<<*local<<std::endl;
       // check target_node if last resolved is 
       Token* local_type;
       //if(local->m_type == TokenType::FieldDeclaration){
-      Token* modifiers = &(local->m_generated_tokens[0]);
       // Check modifiers // Check if it's public
       bool is_public = modifiers->SearchByTypeBFS(TokenType::T_PUBLIC);
       if(!is_public){
@@ -117,7 +129,7 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
 	// If common_ancestor is not a common_ancestor of both last and root,
 	// inheritance check failed.
 	//if(!(IsSubClass(root_class,common_ancestor) && IsSubClass(last_type,common_ancestor))){
-	if(!(IsSubClass(root_class,common_ancestor) && (!is_static) && IsSubClass(last_type,root_class))){
+	if(!(IsSubClass(root_class,common_ancestor) && (is_static || IsSubClass(last_type,root_class)))){
 	//if(!(IsSubClass(root_class,common_ancestor))){
 	  // if failed, check if it's in the same package.
 	  Token* root_pack = root->compilation_unit->SearchByTypeBFS(TokenType::PackageDeclaration);
@@ -136,15 +148,6 @@ bool NameChecker::GetAllValidType(Token* root,Token* last_resolved,int idx, int*
 	    return false;
 	  }
 	}
-      }
-      // check staticness and get the field/method if succeed.
-      bool is_static = false;
-      if(!CheckStaticness(last_resolved,modifiers,&is_static)){
-	RED();
-      	std::cerr<<"GetAllValidType ERROR:"<<target_node->m_lex<<" in ";
-	std::cerr<<root->m_lex<<" failed on staticness."<<std::endl;
-	DEFAULT();
-	return false;
       }
       // Get the Type of local_type
       local_type = &(local->m_generated_tokens[1]);
