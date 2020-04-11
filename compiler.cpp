@@ -143,17 +143,18 @@ int main(int argc, char *argv[]) {
 //    if (!NCheck.LinkStringLiterals(t)) return 42;
 //  }  
 
-  /*
+  /* 
+  cerr<<endl<<endl;
   for (Token *ptr: tree_ptrs) {
-    cerr<<ptr->m_generated_tokens[ptr->m_generated_tokens.size() -1].m_type<<endl;
+    //cerr<<ptr->m_generated_tokens[ptr->m_generated_tokens.size() -1].m_type<<endl;
     if (ptr->m_generated_tokens[1].m_generated_tokens[ptr->m_generated_tokens[1].m_generated_tokens.size() -1].m_type == ClassDeclaration) {
+      cerr<<"Class name is: "<<ptr->m_generated_tokens[1].m_generated_tokens[ptr->m_generated_tokens[1].m_generated_tokens.size() -1].m_generated_tokens[2].m_lex<<endl;
       if (ptr->m_generated_tokens[1].m_generated_tokens[ptr->m_generated_tokens[1].m_generated_tokens.size() -1].m_generated_tokens[2].m_lex == "String")
         CheckToken(ptr);
     }
     //std::cout << "FILE " << std::endl; CheckToken(ptr);
-  }
-  */
-
+  }*/
+  
   try {
     for(Token* t: tree_ptrs){
       checkTypes(t);

@@ -6,222 +6,182 @@
 
 using namespace std;
 
-TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCType returnType) {
+TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCType returnType, bool isStatic) {
   
   set<string> numericTypes = {"int", "char", "short", "byte"};
 
   switch (current->m_type) {
     case BlockStatements: {
-      cerr<<"Inside BlockStatements "<<endl;
+      //cerr<<"Inside BlockStatements "<<endl;
       TCType checkedType;
       for (Token& token: current->m_generated_tokens) {
         // Don't care about return value since it's a statement
-        checkedType = typeCheck(&token, currentClass, localEnv, returnType);
+        checkedType = typeCheck(&token, currentClass, localEnv, returnType, isStatic);
       }
 
+      current->checkedType = checkedType;
       return checkedType;
     }
 
     case Block: {
-      cerr<<"Inside BLOCK"<<endl;
+      //cerr<<"Inside BLOCK"<<endl;
       if (current->m_generated_tokens[1].m_type == BlockStatements) {
-        return typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+        return typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType, isStatic);
       }
 
       TCType checkedType;
       checkedType.type = -1;
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case LocalVariableDeclarationStatement: {
-      cerr<<"Inside LocalVariableDeclarationStatement"<<endl;
-      return typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      /*
-      TCType declaredType = getType(&current->m_generated_tokens[0].m_generated_tokens[0]);
-      TCType initializerType = typeCheck(&current->m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].checkedType = initializerType;
-
-      cerr<<"Declared Type: "<<declaredType.type<<" "<<declaredType.primitive<<endl;
-      cerr<<"Initializer Type: "<<initializerType.type<<" "<<initializerType.primitive<<endl;
-      for (Token& t: current->m_generated_tokens) {
-        cerr<<t<<endl;
-      }
-
-      if (isAssignable(declaredType, initializerType) == false) {
-        throw std::logic_error("Type checking error: LocalVariableDeclaration not assignable");
-      }
-     
-      return declaredType;
-      */
+      //cerr<<"Inside LocalVariableDeclarationStatement"<<endl;
+      return typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
     }
 
     case LocalVariableDeclaration: {
-      cerr<<"Inside LocalVariableDeclaration"<<endl;
+      //cerr<<"Inside LocalVariableDeclaration"<<endl;
       TCType declaredType = getType(&current->m_generated_tokens[0]);
-      TCType initializerType = typeCheck(&current->m_generated_tokens[1].m_generated_tokens[2], currentClass, localEnv, returnType);
+      TCType initializerType = typeCheck(&current->m_generated_tokens[1].m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
 
-      current->m_generated_tokens[1].m_generated_tokens[2].checkedType = initializerType;
-
-      cerr<<"Declared Type: "<<declaredType.type<<" "<<declaredType.primitive<<endl;
-      cerr<<"Initializer Type: "<<initializerType.type<<" "<<initializerType.primitive<<endl;
+      ////cerr<<"Declared Type: "<<declaredType.type<<" "<<declaredType.primitive<<endl;
+      ////cerr<<"Initializer Type: "<<initializerType.type<<" "<<initializerType.primitive<<endl;
       for (Token& t: current->m_generated_tokens) {
-        cerr<<t<<endl;
+        //cerr<<t<<endl;
       }
 
       if (isAssignable(declaredType, initializerType) == false) {
         throw std::logic_error("Type checking error: LocalVariableDeclaration not assignable");
       }
-     
+      
+      current->checkedType = declaredType;
       return declaredType;
     }
 
     case IfThenStatement: {
-      cerr<<"Inside ifthenstatement"<<endl;
-      TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      //cerr<<"Inside ifthenstatement"<<endl;
+      TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
       // Type must be boolean
       if (checkedType.type != 0 || checkedType.primitive != "boolean") {
         throw std::logic_error("Type checking error: IfThenStatement");
       }
 
-      current->m_generated_tokens[2].checkedType = checkedType;
-  
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case IfThenElseStatement:
     case IfThenElseStatementNoShortIf: {
-      cerr<<"Inside ifthenelse"<<endl;
-      TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      //cerr<<"Inside ifthenelse"<<endl;
+      TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
       // Type must be boolean
       if (checkedType.type != 0 || checkedType.primitive != "boolean") {
         throw std::logic_error("Type checking error: IfThenElseStatement");
       }
 
-      current->m_generated_tokens[2].checkedType = checkedType;
       // Don't care about return value since it's a statement
-      TCType ifType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
-      TCType elseType = typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType);
+      TCType ifType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType, isStatic);
+      TCType elseType = typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType, isStatic);
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case WhileStatement:
     case WhileStatementNoShortIf: {
-      cerr<<"Inside while"<<endl;
-      TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      //cerr<<"Inside while"<<endl;
+      TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
       // Type must be boolean
       if (checkedType.type != 0 || checkedType.primitive != "boolean") {
         throw std::logic_error("Type checking error: WhileStatement");
       }
       
-      current->m_generated_tokens[2].checkedType = checkedType;
       // Don't care about return value since it's a statement 
-      TCType statementType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
+      TCType statementType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType, isStatic);
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case ForStatement:
     case ForStatementNoShortIf: {
-      cerr<<"Inside for statement"<<endl;
+      //cerr<<"Inside for statement"<<endl;
       // Check if ForInit exists
       if (current->m_generated_tokens[2].m_type != T_SEMICOLON) {
-        TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
-        current->m_generated_tokens[2].checkedType = checkedType;
+        TCType checkedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
       }
 
       // Check if Stopping condition exists
       if (current->m_generated_tokens[3].m_type != T_SEMICOLON) {
-        TCType checkedType = typeCheck(&current->m_generated_tokens[3], currentClass, localEnv, returnType);
+        TCType checkedType = typeCheck(&current->m_generated_tokens[3], currentClass, localEnv, returnType, isStatic);
         // Type must be boolean
         if (checkedType.type != 0 || checkedType.primitive != "boolean") {
           throw std::logic_error("Type checking error: ForStatement stopping condition");
         }
-
-        current->m_generated_tokens[3].checkedType = checkedType;
       }
       else if (current->m_generated_tokens[4].m_type != T_SEMICOLON) {
-        TCType checkedType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
+        TCType checkedType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType, isStatic);
         // Type must be boolean
         if (checkedType.type != 0 || checkedType.primitive != "boolean") {
           throw std::logic_error("Type checking error: ForStatement stopping condition");
         }
-
-        current->m_generated_tokens[4].checkedType = checkedType;
       }
 
       // Check if ForUpdate exists 
       if (current->m_generated_tokens.size() == 9) {
-        TCType checkedType = typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType);
-        current->m_generated_tokens[6].checkedType = checkedType;
+        TCType checkedType = typeCheck(&current->m_generated_tokens[6], currentClass, localEnv, returnType, isStatic);
       }
       else if (current->m_generated_tokens.size() == 8) {
-        TCType checkedType = typeCheck(&current->m_generated_tokens[5], currentClass, localEnv, returnType);
-        current->m_generated_tokens[5].checkedType = checkedType;
+        TCType checkedType = typeCheck(&current->m_generated_tokens[5], currentClass, localEnv, returnType, isStatic);
       }
       else if (current->m_generated_tokens.size() == 7) {
-        TCType checkedType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType);
-        current->m_generated_tokens[4].checkedType = checkedType;
+        TCType checkedType = typeCheck(&current->m_generated_tokens[4], currentClass, localEnv, returnType, isStatic);
       }
 
       // Don't care, but storing since need to return something
-      TCType checkedType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType);
+      TCType checkedType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType, isStatic);
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case ReturnStatement: {
-      cerr<<"Inside return statement"<<endl;
-      cerr<<"Class is: "<<currentClass->m_generated_tokens[2].m_lex<<endl;
+      //cerr<<"Inside return statement"<<endl;
+      ////cerr<<"Class is: "<<currentClass->m_generated_tokens[2].m_lex<<endl;
       TCType checkedType;
       if (current->m_generated_tokens[1].m_type != T_SEMICOLON) {
-        checkedType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
-        
-        current->m_generated_tokens[1].checkedType = checkedType;
+        checkedType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType, isStatic);
 
         if (isAssignable(returnType, checkedType) == false) {
           throw std::logic_error("Type checking error: ReturnStatement not assignable");
         } 
-
-        /*
-        // Check if Type doesn't match with return type
-        if (returnType.type != checkedType.type) {
-          cerr<<"Types: "<<returnType.type<<" "<<checkedType.type<<endl;
-          throw std::logic_error("Type checking error: ReturnStatement types don't match");
-        }
-        // Check if return type is primitive or primitive array and don't match
-        else if ((returnType.type == 0 || returnType.type == 2) && (returnType.primitive != checkedType.primitive)) {
-          throw std::logic_error("Type checking error: ReturnStatement primitive mismatch"); 
-        }
-        // Check if return type is reference or reference array and don't match
-        else if ((returnType.type == 1 || returnType.type == 3) && (returnType.reference != checkedType.reference)) {
-          cerr<<"Return type is: "<<returnType.reference<<endl;
-          cerr<<"Checked type is: "<<checkedType.reference<<endl;
-          throw std::logic_error("Type checking error: ReturnStatement reference mismatch");
-        }
-        */
       }
       else if (returnType.type != 4) {
         // Throw error since method return type is not VOID but return statement is blank
         throw std::logic_error("Type checking error: ReturnStatement is void, return type not void");
       }
 
+      current->checkedType = returnType;
       return returnType;
     }
 
     case ExpressionStatement:
-      cerr<<"Inside expressionStatement"<<endl;
-      return typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      //cerr<<"Inside expressionStatement"<<endl;
+      return typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
 
     case Assignment: {
-      cerr<<"Inside assignment"<<endl;
-      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
+      //cerr<<"Inside assignment"<<endl;
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
 
-      current->m_generated_tokens[0].checkedType = leftCheckedType;
-      current->m_generated_tokens[2].checkedType = rightCheckedType;
+      // Need to check no assignment to array.length
+      if (current->m_generated_tokens[0].m_type == QualifiedName) {
+        if (current->m_generated_tokens[0].declaration->m_lex == "length") {
+          throw std::logic_error("Type checking error: Assignment cannot assign to array.length"); 
+        }
+      }
 
       // Check for assignability
       if (isAssignable(leftCheckedType, rightCheckedType) == false) {
@@ -234,13 +194,16 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
     }
 
     case T_IDENTIFIER: {
-      cerr<<"Inside T_identifier"<<endl;
+      //cerr<<"Inside T_identifier"<<endl;
       TCType identifierType;
     
       if (current->declaration == nullptr) {
         cerr<<"\n\n\n";
-        cerr<<current->m_lex;
+        cerr<<current->m_lex<<endl;
+        cerr<<"Class: "<<currentClass->m_generated_tokens[2].m_lex<<" ";
+        
         cerr<<endl<<endl<<endl;
+        throw std::logic_error("Type checking error: T_IDENTIFIER declaration nullptr");
       }
 
       // First check if declaration pointer is not null
@@ -258,78 +221,91 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
       // Check if it's a field
       else if (current->declaration->m_type == FieldDeclaration) {
+        
+        if (isStatic == true) {
+          throw std::logic_error("Type checking error: T_IDENTIFIER cannot access field in static context");
+        }
+
         identifierType = getType(&current->declaration->m_generated_tokens[1]);
       }
 
       current->checkedType = identifierType;
-
       return identifierType;
     }
 
     case NULL_LITERAL: {
-      cerr<<"Inside NULL"<<endl;
+      //cerr<<"Inside NULL"<<endl;
       TCType checkedType;
       checkedType.type = 5;
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case CHAR_LITERAL: {
-      cerr<<"Inside CHAR literal"<<endl;
+      //cerr<<"Inside CHAR literal"<<endl;
       TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "char";
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case INT_LITERAL: {
-      cerr<<"Inside INT literal"<<endl;
+      //cerr<<"Inside INT literal"<<endl;
       TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "int";
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case BOOL_LITERAL: {
-      cerr<<"Inside BOOL literal"<<endl;
+      //cerr<<"Inside BOOL literal"<<endl;
       TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = "boolean";
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case STRING_LITERAL: {
-      cerr<<"Inside STRING literal"<<endl;
-      cerr<<current->declaration<<endl;
+      //cerr<<"Inside STRING literal"<<endl;
+      //cerr<<current->declaration<<endl;
       TCType checkedType;
       checkedType.type = 1;
       checkedType.reference = current->declaration;
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case T_THIS: {
-      cerr<<"Inside T_THIS"<<endl;
+      //cerr<<"Inside T_THIS"<<endl;
       TCType checkedType;
+      
+      // If method is static, error
+      if (isStatic == true) {
+        throw std::logic_error("Type checking error: T_THIS cannot be accesses in a static context");
+      }
+
       checkedType.type = 1;
       checkedType.reference = currentClass;
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case ConditionalOrExpression:
     case ConditionalAndExpression:
     case InclusiveOrExpression:
     case AndExpression: {
-      cerr<<"Inside ConditionalOrExpression"<<endl; 
-      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[0].checkedType = leftCheckedType;
-      current->m_generated_tokens[2].checkedType = rightCheckedType;
+      //cerr<<"Inside ConditionalOrExpression"<<endl; 
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
 
       // Throw if expressions are not boolean
       if (leftCheckedType.primitive != "boolean" || rightCheckedType.primitive != "boolean") {
@@ -340,16 +316,14 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.type = 0;
       checkedType.primitive = "boolean";
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case EqualityExpression: {
-      cerr<<"Inside Equality expression"<<endl; 
-      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[0].checkedType = leftCheckedType;
-      current->m_generated_tokens[2].checkedType = rightCheckedType;
+      //cerr<<"Inside Equality expression"<<endl; 
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
 
       set<string> numericTypes = {"int", "char", "short", "byte"};
       
@@ -358,7 +332,8 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
         checkedType.type = 0;
         checkedType.primitive = "boolean";
 
-        return checkedType;
+        current->checkedType = checkedType;
+			return checkedType;
       }
       // Error if not assignable
       else if ((isAssignable(leftCheckedType, rightCheckedType) == false) && (isAssignable(rightCheckedType, leftCheckedType) == false))  {
@@ -369,16 +344,13 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.type = 0;
       checkedType.primitive = "boolean";
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case RelationalExpression: {
-      cerr<<"Inside Relational Expression"<<endl; 
-      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[0].checkedType = leftCheckedType;
-      current->m_generated_tokens[2].checkedType = rightCheckedType;
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
 
       set<string> numericTypes = {"int", "char", "short", "byte"};
 
@@ -396,16 +368,14 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.type = 0;
       checkedType.primitive = "boolean";
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case AdditiveExpression: {
-      cerr<<"Inside Additive Expression"<<endl; 
-      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[0].checkedType = leftCheckedType;
-      current->m_generated_tokens[2].checkedType = rightCheckedType;
+      //cerr<<"Inside Additive Expression"<<endl; 
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
 
       if (current->m_generated_tokens[1].m_type == T_PLUS) {
         // If either is String, then Expression type is String
@@ -414,14 +384,26 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
           checkedType.type = 1;
           checkedType.reference = leftCheckedType.reference;
 
-          return checkedType;
+          // Other argument must not be void
+          if (rightCheckedType.type == 4) {
+            throw std::logic_error("Type checking error: AdditiveExpression cannot concatenate void with String");
+          }
+
+          current->checkedType = checkedType;
+			    return checkedType;
         }
         else if ((rightCheckedType.type == 1) && (rightCheckedType.reference->m_generated_tokens[2].m_lex == "String")) {
           TCType checkedType;
           checkedType.type = 1;
           checkedType.reference = rightCheckedType.reference;
 
-          return checkedType;
+          // Other argument must not be void
+          if (leftCheckedType.type == 4) {
+            throw std::logic_error("Type checking error: AdditiveExpression cannot concatenate void with String");
+          }
+
+          current->checkedType = checkedType;
+			    return checkedType;
         }
       }
 
@@ -434,16 +416,14 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.type = 0;
       checkedType.primitive = "int";
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case MultiplicativeExpression: {
-      cerr<<"Inside Multiplicate Expression"<<endl; 
-      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[0].checkedType = leftCheckedType;
-      current->m_generated_tokens[2].checkedType = rightCheckedType;
+      //cerr<<"Inside Multiplicate Expression"<<endl; 
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
+      TCType rightCheckedType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
 
       // Both operands must be numeric
       if (numericTypes.find(leftCheckedType.primitive) == numericTypes.end() || numericTypes.find(rightCheckedType.primitive) == numericTypes.end()) {
@@ -454,21 +434,20 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.type = 0;
       checkedType.primitive = "int";
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case CastExpression: {
-      cerr<<"Inside Cast Expression"<<endl;
-      cerr<<"Declaration of cast expression: "<<current->declaration<<endl;
+      //cerr<<"Inside Cast Expression"<<endl;
+      /*
       if (current->m_generated_tokens[current->m_generated_tokens.size() - 1].m_type == T_IDENTIFIER) {
         cerr<<endl<<current->m_generated_tokens[current->m_generated_tokens.size() - 1].m_lex<<" "<<current->m_generated_tokens[current->m_generated_tokens.size() - 1].declaration<<endl;
         cerr<<"Class name: "<<currentClass->m_generated_tokens[2].m_lex<<endl;
       }
-      TCType expressionType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType);
-      TCType castType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[current->m_generated_tokens.size() - 1].checkedType = expressionType;
-      current->m_generated_tokens[1].checkedType = castType;
+      */
+      TCType expressionType = typeCheck(&current->m_generated_tokens[current->m_generated_tokens.size() - 1], currentClass, localEnv, returnType, isStatic);
+      TCType castType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType, isStatic);
 
       // Check if Casting type is arrayType
       if (current->m_generated_tokens[2].m_type == Dims) {
@@ -485,6 +464,7 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
         throw std::logic_error("Type checking error: CastExpression not assignable");
       }
 
+      current->checkedType = castType;
       return castType;
     }
 
@@ -493,26 +473,26 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
     case T_SHORT:
     case T_CHAR:
     case T_BOOLEAN: {
-      cerr<<"Inside T_BYTE or T_INT or ..."<<endl; 
+      //cerr<<"Inside T_BYTE or T_INT or ..."<<endl; 
       TCType checkedType;
       checkedType.type = 0;
       checkedType.primitive = current->m_lex;
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case QualifiedName: {
-      cerr<<"Inside QualifiedName"<<endl; 
+      //cerr<<"Inside QualifiedName"<<endl; 
       TCType checkedType;
 
       // Should not be nullptr
       if (current->declaration == nullptr) {
-        cerr<<"Problem with qualified name";
         throw std::logic_error("Type checking error: QualifiedName declaration nullptr");
       }
 
       // Check if QualifiedName is array.length
-      if (current->declaration->m_type == T_INT && current->declaration->m_lex == "length") {
+      if (current->declaration->m_lex == "length") {
         checkedType.type = 0;
         checkedType.primitive = "int";
       }
@@ -531,29 +511,25 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
 
       current->checkedType = checkedType;
-
-      return checkedType;
+			return checkedType;
     }
 
     case UnaryExpressionNotPlusMinus: {
-      cerr<<"Inside Unary Expression Not plus minus"<<endl;
-      TCType checkedType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[1].checkedType = checkedType;
+      //cerr<<"Inside Unary Expression Not plus minus"<<endl;
+      TCType checkedType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType, isStatic);
 
       // Type must be boolean
       if ((checkedType.type != 0) || checkedType.primitive != "boolean") {
         throw std::logic_error("Type checking error: UnaryExpressionNotPlusMinus not boolean");
       }
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case UnaryExpression: {
-      cerr<<"Inside Unary Expression"<<endl;
-      TCType expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[1].checkedType = expressionType;
+      //cerr<<"Inside Unary Expression"<<endl;
+      TCType expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType, isStatic);
 
       // Must be numeric type
       if (numericTypes.find(expressionType.primitive) == numericTypes.end()) {
@@ -564,16 +540,14 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.type = 0;
       checkedType.primitive = "int";
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case ArrayAccess: {
-      cerr<<"Inside Array Access"<<endl;
-      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
-      TCType expressionType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[0].checkedType = leftCheckedType;
-      current->m_generated_tokens[2].checkedType = expressionType;
+      //cerr<<"Inside Array Access"<<endl;
+      TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
+      TCType expressionType = typeCheck(&current->m_generated_tokens[2], currentClass, localEnv, returnType, isStatic);
 
       // Expression must be numeric
       if (numericTypes.find(expressionType.primitive) == numericTypes.end()) {
@@ -596,18 +570,26 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
         checkedType.reference = leftCheckedType.reference;
       }
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case FieldAccess: {
-      cerr<<"Inside Field access"<<endl;
-      TCType expressionType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+      //cerr<<"Inside Field access"<<endl;
+      TCType expressionType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
 
-      current->m_generated_tokens[0].checkedType = expressionType;
+      // Check for array.length
+      if ((expressionType.type == 2 || expressionType.type == 3) && current->m_generated_tokens[2].m_lex == "length") {
+        TCType checkedType;
+        checkedType.type = 0;
+        checkedType.primitive = "int";
+
+        current->checkedType = checkedType;
+        return checkedType;
+      }
 
       // Must be reference type
       if (expressionType.type != 1) {
-        cerr<<"Problem with Field Access";
         throw std::logic_error("Type checking error: FieldAccess expression type is primitive");
       }
 
@@ -621,27 +603,33 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       else if (expressionType.reference->scope.fields[identifierName]->m_generated_tokens[0].SearchByTypeBFS(T_STATIC) != nullptr) {
         throw std::logic_error("Type checking error: FieldAccess field should not be static");
       }
+      else if (expressionType.reference->scope.fields[identifierName]->m_generated_tokens[0].SearchByTypeBFS(T_PROTECTED) != nullptr) {
+        // Error if not in the same package and not a subclass
+        if (expressionType.reference->compilation_unit->SearchByTypeDFS(PackageDeclaration) != currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) && ((expressionType.reference->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr || currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr) || (currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex != expressionType.reference->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex))) {
+          if (expressionType.reference->scope.fields[identifierName]->compilation_unit->SearchByTypeDFS(ClassDeclaration)->m_generated_tokens[2].m_lex == expressionType.reference->m_generated_tokens[2].m_lex || isSubtype(expressionType.reference, currentClass) == false) {
+            throw std::logic_error("Type checking error: FieldAccess Protected field error");      
+          }
+        }
+      }
 
       TCType checkedType = getType(&expressionType.reference->scope.fields[identifierName]->m_generated_tokens[1]);
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
 
     case MethodInvocation: {
-      cerr<<"Inside Method Invocation"<<endl;
+      //cerr<<"Inside Method Invocation"<<endl;
       string argSignature = "";
-
-      cerr<<"Declaration pointer is: ";
-      cerr<<current->m_generated_tokens[0].declaration<<endl;
 
       // Check if any arguments
       if (current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_type == ArgumentList) {
-        //for (int i=0; i<current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_generated_tokens.size(); i++) {
         for (Token& token: current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_generated_tokens) {
-          //cerr<<current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_generated_tokens.size[i]
           //cerr<<"Type of token IS: "<<token.m_type<<endl;
-          
-          TCType argumentType = typeCheck(&token, currentClass, localEnv, returnType);
+          if (token.m_type == T_COMMA) {
+            continue;
+          }
+          TCType argumentType = typeCheck(&token, currentClass, localEnv, returnType, isStatic);
           
           //cerr<<"Type of argument is: "<<argumentType.type<<endl;
 
@@ -659,7 +647,7 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
             argSignature += argumentType.primitive;
             argSignature += "[]";
           }
-          else if (argumentType.type == 2) {
+          else if (argumentType.type == 3) {
             const void * address = static_cast<const void*>(argumentType.reference);
             std::stringstream ss;
             ss << address;
@@ -673,28 +661,26 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       string methodName;
       bool shouldBeStatic = false;
 
-      cerr<<"signature created..."<<endl;
+      //cerr<<"signature created..."<<endl;
 
-      cerr<<"Declaration pointer is: ";
-      cerr<<current->m_generated_tokens[0].declaration<<endl;
-      cerr<<"Type of first child: "<<current->m_generated_tokens[0].m_type<<endl;
+      //cerr<<"Declaration pointer is: ";
+      //cerr<<current->m_generated_tokens[0].declaration<<endl;
+      //cerr<<"Type of first child: "<<current->m_generated_tokens[0].m_type<<endl;
       if (current->m_generated_tokens[0].m_type == QualifiedName) {
-        cerr<<"Number of children: "<<current->m_generated_tokens[0].m_generated_tokens.size()<<endl;
+        //cerr<<"Number of children: "<<current->m_generated_tokens[0].m_generated_tokens.size()<<endl;
         for (Token& t: current->m_generated_tokens[0].m_generated_tokens) {
-          cerr<<t.m_lex<<endl;
+          //cerr<<t.m_lex<<endl;
         }
-        cerr<<"Name of class: "<<currentClass->m_generated_tokens[2].m_lex<<endl;
+        //cerr<<"Name of class: "<<currentClass->m_generated_tokens[2].m_lex<<endl;
       }
 
       //cerr<<"Type is: "<<current->m_generated_tokens[0].declaration->m_type;
       
       // Distinguish between Primary . Identifier v/s Name
       if (current->m_generated_tokens[1].m_type == T_DOT) {
-        cerr<<"Primary . identifier"<<endl;
-        TCType checkedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType);
+        //cerr<<"Primary . identifier"<<endl;
+        TCType checkedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
     
-        current->m_generated_tokens[0].checkedType = checkedType;
-
         // Error if not reference type
         if (checkedType.type != 1) {
           throw std::logic_error("Type checking error: MethodInvocation on primitive type");
@@ -705,22 +691,21 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
       // Method is current class's method
       else if (current->m_generated_tokens[0].m_type == T_IDENTIFIER) {
-        cerr<<"Identifier..."<<endl;
+        //cerr<<"Identifier..."<<endl;
         methodCalleeClass = currentClass;
         methodName = current->m_generated_tokens[0].m_lex;
       }
       // Qualified Name Static method call
       else if (current->m_generated_tokens[0].declaration->m_type == ClassDeclaration) {
-        cerr<<"Static method call"<<endl;
+        //cerr<<"Static method call"<<endl;
         shouldBeStatic = true;
         methodCalleeClass = current->m_generated_tokens[0].declaration;
         methodName = current->m_generated_tokens[0].m_generated_tokens[current->m_generated_tokens[0].m_generated_tokens.size() - 1].m_lex;
       }
       // Qualified Name method call on variable
       else if (current->m_generated_tokens[0].declaration->m_type == LocalVariableDeclaration || current->m_generated_tokens[0].declaration->m_type == FormalParameter) {
-        cerr<<"Variable call"<<endl;
         TCType variableType = getType(&current->m_generated_tokens[0].declaration->m_generated_tokens[0]);
-        
+      
         // Error if not reference type
         if (variableType.type != 1) {
           throw std::logic_error("Type checking error: MethodInvocation on variable of primitive type");
@@ -731,7 +716,7 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
       // Qualified Name method call on field
       else if (current->m_generated_tokens[0].declaration->m_type == FieldDeclaration) {
-        cerr<<"Field call"<<endl;
+        //cerr<<"Field call"<<endl;
         TCType fieldType = getType(&current->m_generated_tokens[0].declaration->m_generated_tokens[1]);
         
         // Error if not reference type
@@ -747,20 +732,40 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       bool foundMethodMatch = false;
       TCType checkedType;
 
-      cerr<<"Now searching for method: "<<methodName<<endl;
-      cerr<<"In class: "<<methodCalleeClass->m_generated_tokens[2].m_lex<<endl; 
+      if (methodCalleeClass == nullptr) {
+        throw std::logic_error("Type checking error: MethodInvocation invalid method call - class null");
+      }
+
+      //cerr<<"Now searching for method: "<<methodName<<endl;
+      //cerr<<"In class: "<<methodCalleeClass->m_generated_tokens[2].m_lex<<endl; 
 
       for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> method: methodCalleeClass->scope.methodsWithSignatures) {
-        cerr<<"Method in environment: "<<method.first<<endl;
+        //cerr<<"Method in environment: "<<method.first<<endl;
         // Check method with signature exists
         for (std::pair<std::string,std::vector<Token*>> signature: method.second) {
-          cerr<<"Method signature: "<<signature.first<<endl;
-          cerr<<"Arg signature: "<<argSignature<<endl;
+          //cerr<<"Method signature: "<<signature.first<<endl;
+          //cerr<<"Arg signature: "<<argSignature<<endl;
           // Found match
           if (methodName == method.first && argSignature == signature.first) {
             foundMethodMatch = true;
             checkedType = getType(&signature.second[0]->m_generated_tokens[0].m_generated_tokens[1]);
             checkedType.implementation = signature.second[0];
+
+            
+            if (signature.second[0]->m_generated_tokens[0].m_generated_tokens[0].SearchByTypeBFS(T_PROTECTED) != nullptr) {
+              // Error if not in the same package, and not an inherited member
+              
+               if (methodCalleeClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) != currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) && ((methodCalleeClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr || currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr) || (currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex != methodCalleeClass->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex))) {
+                if (methodCalleeClass->scope.methodsWithSignaturesInherited.find(methodName) == methodCalleeClass->scope.methodsWithSignaturesInherited.end() || methodCalleeClass->scope.methodsWithSignaturesInherited[methodName].find(argSignature) == methodCalleeClass->scope.methodsWithSignaturesInherited[methodName].end()) {
+                  if (methodCalleeClass->scope.methodsWithSignaturesInherited[methodName][argSignature][0]->SearchByTypeDFS(ClassDeclaration) && isSubtype(methodCalleeClass->scope.methodsWithSignaturesInherited[methodName][argSignature][0]->SearchByTypeDFS(ClassDeclaration), currentClass) == false) {
+                    throw std::logic_error("Type checking error: MethodInvocation Protected method error"); 
+                  }
+                  else if (methodCalleeClass->scope.methodsWithSignaturesInherited[methodName][argSignature][0]->SearchByTypeDFS(InterfaceDeclaration) && isSubtype(methodCalleeClass->scope.methodsWithSignaturesInherited[methodName][argSignature][0]->SearchByTypeDFS(InterfaceDeclaration), currentClass) == false) {
+                    throw std::logic_error("Type checking error: MethodInvocation Protected method error");
+                  }
+                }
+              } 
+            }
 
             // Check staticness
             if (shouldBeStatic == true && signature.second[0]->m_generated_tokens[0].m_generated_tokens[0].SearchByTypeBFS(T_STATIC) == nullptr) {
@@ -779,16 +784,19 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
 
       current->checkedType = checkedType;
-
-      return checkedType; 
+			return checkedType; 
     }
 
     case ArrayCreationExpression: {
-      cerr<<"Inside Array creation Expression"<<endl;
-      TCType creationType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+      //cerr<<"Inside Array creation Expression"<<endl;
+      TCType creationType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType, isStatic);
       TCType checkedType;
 
-      current->m_generated_tokens[1].checkedType = creationType;
+      TCType expressionType = typeCheck(&current->m_generated_tokens[2].m_generated_tokens[1], currentClass, localEnv, returnType, isStatic);
+
+      if (numericTypes.find(expressionType.primitive) == numericTypes.end()) {
+        throw std::logic_error("Type checking error: ArrayCreationExpression expression not numeric");
+      }
 
       if (creationType.type == 0) {
         checkedType.type = 2;
@@ -800,22 +808,19 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
 
       current->checkedType = checkedType;
-
-      return checkedType;
+			return checkedType;
     }
 
     case ClassInstanceCreationExpression: {
-      cerr<<"Inside Class instance creation Expression"<<endl;
-      TCType creationType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
-
-      current->m_generated_tokens[1].checkedType = creationType;
+      //cerr<<"Inside Class instance creation Expression"<<endl;
+      TCType creationType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType, isStatic);
 
       string argSignature = "";
 
       // Check if any arguments
       if (current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_type == ArgumentList) {
         for (Token& token: current->m_generated_tokens[current->m_generated_tokens.size() - 2].m_generated_tokens) {
-          TCType argumentType = typeCheck(&token, currentClass, localEnv, returnType);
+          TCType argumentType = typeCheck(&token, currentClass, localEnv, returnType, isStatic);
           
           // Compute signature
           if (argumentType.type == 0) {
@@ -831,7 +836,7 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
             argSignature += argumentType.primitive;
             argSignature += "[]";
           }
-          else if (argumentType.type == 2) {
+          else if (argumentType.type == 3) {
             const void * address = static_cast<const void*>(argumentType.reference);
             std::stringstream ss;
             ss << address;
@@ -853,13 +858,20 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       // Check that constructors have same name as class
       for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> constructor: creationType.reference->scope.constructorsWithSignatures) {
         if (constructor.first != className) {
-          cerr<<"Constructor has different name than class"<<endl;
           throw std::logic_error("Type checking error: ClassInstanceCreationExpression constructor has different name");
         }
 
         // Check constructor with signature exists
         for (std::pair<std::string,std::vector<Token*>> signature: constructor.second) {
           if (signature.first == argSignature) {
+            
+            // Check for protected constructor
+            if (signature.second[0]->m_generated_tokens[0].SearchByTypeBFS(T_PROTECTED) != nullptr) {
+              // Error if not the same package or Subtype
+              if (creationType.reference->compilation_unit->SearchByTypeDFS(PackageDeclaration) != currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) && ((creationType.reference->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr || currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr) || (currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex != creationType.reference->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex))) {
+                throw std::logic_error("Type checking error: ClassInstanceCreationExpression Protected constructor error");
+              }
+            }
             signatureMatch = true;
             checkedType.implementation = signature.second[0];
           }
@@ -868,16 +880,18 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
 
       // Error if no constructor matched
       if (signatureMatch == false) {
-        cerr<<"Constructor signature did not match"<<endl;
         throw std::logic_error("Type checking error: ClassInstanceCreationExpression signature did not match");
       }
 
       string emptySignature = "";
 
-      // Check that superClass has 0 argument constructor
-      for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> constructor: creationType.reference->super_class->scope.constructorsWithSignatures) {
-        if (constructor.second.find(emptySignature) == constructor.second.end()) {
-          throw std::logic_error("Type checking error: ClassInstanceCreationExpression Zero argument superclass constructor does not exist");
+      // If not Object class, then need to check for 0 argument superclass constructor
+      if (creationType.reference->m_generated_tokens[2].m_lex != "Object") {
+        // Check that superClass has 0 argument constructor
+        for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> constructor: creationType.reference->super_class->scope.constructorsWithSignatures) {
+          if (constructor.second.find(emptySignature) == constructor.second.end()) {
+            throw std::logic_error("Type checking error: ClassInstanceCreationExpression Zero argument superclass constructor does not exist");
+          }
         }
       }
 
@@ -885,16 +899,14 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       checkedType.reference = creationType.reference;
 
       current->checkedType = checkedType;
-
-      return checkedType;
+			return checkedType;
     }
 
     case PrimaryNoNewArray: {
-      cerr<<"Inside Primary no new array"<<endl;
-      TCType expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType);
+      //cerr<<"Inside Primary no new array"<<endl;
+      TCType expressionType = typeCheck(&current->m_generated_tokens[1], currentClass, localEnv, returnType, isStatic);
 
-      current->m_generated_tokens[1].checkedType = expressionType;
-
+      current->checkedType = expressionType;
       return expressionType;
     }
 
@@ -902,16 +914,22 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       TCType checkedType;
       checkedType.type = -1;
 
-      cerr<<"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
-      cerr<<"Landed in default case: Type is "<<current->m_type<<endl;
+      //cerr<<"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+      //cerr<<"Landed in default case: Type is "<<current->m_type<<endl;
 
-      return checkedType;
+      current->checkedType = checkedType;
+			return checkedType;
     }
   }
 }
 
 bool isAssignable(TCType lhs, TCType rhs) {
-  
+
+  // If either of them is VOID, return false
+  if (lhs.type == 4 || rhs.type == 4) {
+    return false;
+  }
+
   // First check for Array Assignability rules
   if ((rhs.type == 2) || (rhs.type == 3)) {
     // Arrays can be assigned to Object, Cloneable, or Serializable
@@ -928,17 +946,15 @@ bool isAssignable(TCType lhs, TCType rhs) {
     }
     // Check assignability if type is primitive array
     else if ((rhs.type == 2) && (lhs.primitive != rhs.primitive)) {
-      cerr<<"Primitive array mismatch problem"<<endl;
       return false;
     }
     // Check assignability if type is reference array
     else if ((rhs.type == 3) && (isSubtype(lhs.reference, rhs.reference) == false)) {
-      cerr<<"Is subtype problem"<<endl;
       return false;
     }
   }
   // If LeftHandSide is array, but RightHandSide is not, ERROR
-  else if ((lhs.type == 2) || (lhs.type == 3)) {
+  else if (((lhs.type == 2) || (lhs.type == 3)) && rhs.type != 5) {
     return false;
   }
   
@@ -951,7 +967,7 @@ bool isAssignable(TCType lhs, TCType rhs) {
   }
   else if ((rhs.type == 0) && (rhs.primitive == "char")) {
     // Char can only be assigned to char or int
-    if ((lhs.type != 0) || ((lhs.primitive != "char") && (lhs.primitive != "int"))) {
+    if ((lhs.type != 0) || ((lhs.primitive != "char") && (lhs.primitive != "int") && (lhs.primitive != "byte") && (lhs.primitive != "short"))) {
       return false;
     }
   }
@@ -975,6 +991,11 @@ bool isAssignable(TCType lhs, TCType rhs) {
 
     return isSubtype(lhs.reference, rhs.reference);
   }
+  else if (rhs.type == 5) {
+    if (lhs.type != 1 && lhs.type != 2 && lhs.type != 3) {
+      return false;
+    }
+  }
 
   return true;
 }
@@ -996,6 +1017,11 @@ bool isSubtype(Token* superType, Token* subType) {
     }
   }
 
+  // Special case ObjectINTERFACE and Object
+  if (superType->m_generated_tokens[2].m_lex == "Object" && subType->m_generated_tokens[2].m_lex == "ObjectINTERFACE") {
+    return true;
+  }
+
   bool isRecursiveSubType = false;
   if (subType->super_class != nullptr) {
     isRecursiveSubType = isSubtype(superType, subType->super_class);
@@ -1013,32 +1039,35 @@ TCType getType(Token* current) {
 
   if (current->SearchByTypeDFS(VOID) != nullptr) {
     nodeType.type = 4;
+    return nodeType;
   }
 
   Token* arrayType = current->SearchByTypeDFS(ArrayType);
   if(arrayType) {
-    Token* id = arrayType->SearchByTypeDFS(T_IDENTIFIER);
-    if(id) {
-      nodeType.type = 3;
-      nodeType.reference = id->declaration;
-    } else if(arrayType->SearchByTypeDFS(QualifiedName)) {
+    if(arrayType->SearchByTypeDFS(QualifiedName)) {
       Token* qualifiedName = arrayType->SearchByTypeDFS(QualifiedName);
       nodeType.type = 3;
       nodeType.reference = qualifiedName->declaration;
+    }
+    else if(arrayType->SearchByTypeDFS(T_IDENTIFIER)) {
+      Token* id = arrayType->SearchByTypeDFS(T_IDENTIFIER);
+      nodeType.type = 3;
+      nodeType.reference = id->declaration;
     }
     else {
       nodeType.type = 2;
       nodeType.primitive = arrayType->m_generated_tokens[0].m_lex;
     }
   } else {
-    Token* id = current->SearchByTypeDFS(T_IDENTIFIER);
-    if(id) {
-      nodeType.type = 1;
-      nodeType.reference = id->declaration;
-    } else if(current->SearchByTypeDFS(QualifiedName)) {
+    if(current->SearchByTypeDFS(QualifiedName)) {
       Token* qualifiedName = current->SearchByTypeDFS(QualifiedName);
       nodeType.type = 1;
       nodeType.reference = qualifiedName->declaration;
+    }
+    else if(current->SearchByTypeDFS(T_IDENTIFIER)) {
+      Token* id = current->SearchByTypeDFS(T_IDENTIFIER);
+      nodeType.type = 1;
+      nodeType.reference = id->declaration;
     }
     else {
       nodeType.type = 0;
@@ -1066,34 +1095,87 @@ bool checkTypes(Token* astRoot) {
       TCType returnType;
 
       returnType = getType(&current->m_generated_tokens[0].m_generated_tokens[1]);
+      bool isStatic = false;
 
-      cerr<<"Method name: "<<current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[0].m_lex<<endl;
-      cerr<<"Method return type: "<<returnType.type<<" ";
+      if (current->m_generated_tokens[0].m_generated_tokens[0].SearchByTypeBFS(T_STATIC) != nullptr) {
+        isStatic = true;
+      }
+
+      //cerr<<"Method name: "<<current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[0].m_lex<<endl;
+      //cerr<<"Method return type: "<<returnType.type<<" ";
       string sig;
       if (current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[2].m_type == FormalParameterList) {
-        cerr<<"Method signature: "<<getType(&current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens[0]).primitive<<endl;
+        //cerr<<"Method signature: "<<getType(&current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens[0]).primitive<<endl;
         sig = getType(&current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens[0]).primitive;
       }
       if (returnType.type == 0) {
-        cerr<<returnType.primitive<<endl;
+        //cerr<<returnType.primitive<<endl;
       }
       else if (returnType.type == 1) {
-        cerr<<returnType.reference->m_generated_tokens[2].m_lex<<endl;
+        //cerr<<returnType.reference->m_generated_tokens[2].m_lex<<endl;
       }
 
-      cerr<<"MethodDeclaration found"<<endl;
+      //cerr<<"MethodDeclaration found"<<endl;
 
+      /*
       if (current->m_generated_tokens[0].m_generated_tokens[2].m_generated_tokens[0].m_lex == "valueOf" && sig == "short") {
         cerr<<"Testing valueOf(short i) in class String now "<<endl;
         cerr<<"Printing declaration of id: "<<current->m_generated_tokens[1].m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens[current->m_generated_tokens[1].m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens.size() - 1].m_type<<endl;
         cerr<<"Printing declaration of id: "<<current->m_generated_tokens[1].m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens[current->m_generated_tokens[1].m_generated_tokens[1].m_generated_tokens[0].m_generated_tokens[1].m_generated_tokens[2].m_generated_tokens[0].m_generated_tokens.size() - 1].declaration<<endl;
       }
-
+      */
       current->checkedType = returnType;
       if (current->m_generated_tokens[1].m_type == Block && current->m_generated_tokens[1].m_generated_tokens[1].m_type == BlockStatements) {
-        cerr<<"Calling typeCheck"<<endl;
-        TCType checkedType = typeCheck(&current->m_generated_tokens[1].m_generated_tokens[1], currentClass, current->scope, returnType);    
+        //cerr<<"Calling typeCheck"<<endl;
+        TCType checkedType = typeCheck(&current->m_generated_tokens[1].m_generated_tokens[1], currentClass, current->scope, returnType, isStatic);
       }
+    }
+    else if (current->m_type == ConstructorDeclaration) {
+      Token* currentClass = current->compilation_unit->SearchByTypeDFS(ClassDeclaration);
+      TCType returnType;
+      
+      returnType.type = 4;
+
+      string emptySignature = "";
+
+      // If not Object class, then need to check for 0 argument superclass constructor
+      if (currentClass->m_generated_tokens[2].m_lex != "Object") {
+        // Check that superClass has 0 argument constructor
+        for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> constructor: currentClass->super_class->scope.constructorsWithSignatures) {
+          if (constructor.second.find(emptySignature) == constructor.second.end()) {
+            throw std::logic_error("Type checking error: ConstructorDeclaration Zero argument superclass constructor does not exist");
+          }
+        }
+      }
+
+      current->checkedType = returnType;
+      if (current->m_generated_tokens[2].m_generated_tokens[1].m_type == BlockStatements) {
+        TCType checkedType = typeCheck(&current->m_generated_tokens[2].m_generated_tokens[1], currentClass, current->scope, returnType, false);
+      }
+    }
+    else if (current->m_type == FieldDeclaration) {
+      // cerr<<"Encountered field declaration..."<<endl;
+      Token* currentClass = current->compilation_unit->SearchByTypeDFS(ClassDeclaration);
+      TCType returnType;
+
+      returnType.type = 4;
+
+      TCType declaredType = getType(&current->m_generated_tokens[1]);
+      bool isStatic = false;
+
+      if (current->m_generated_tokens[0].SearchByTypeBFS(T_STATIC) != nullptr) {
+        isStatic = true;
+      }
+
+      if (current->m_generated_tokens[2].m_type == VariableDeclarator) {
+        TCType initializerType = typeCheck(&current->m_generated_tokens[2].m_generated_tokens[2], currentClass, currentClass->scope, returnType, isStatic);
+        
+        if (isAssignable(declaredType, initializerType) == false) {
+          throw std::logic_error("Type checking error: FieldDeclaration not assignable");
+        }
+      }
+
+      current->checkedType = declaredType;
     }
     for (Token& token: current->m_generated_tokens) {
       tokens.push_back(&token);
