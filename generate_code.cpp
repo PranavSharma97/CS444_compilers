@@ -16,7 +16,7 @@ void saveRegister(std::ofstream &file, std::string reg){
 
 void saveRegisters(std::ofstream &file){
   saveRegister(file, "ebp");
-  file << "move ebp, esp" << std::endl;
+  file << "mov ebp, esp" << std::endl;
   file << "sub esp, 12" << std::endl;
   saveRegister(file, "ebx");
   saveRegister(file, "esi");
@@ -31,12 +31,12 @@ void restoreRegisters(std::ofstream &file){
   restoreRegister(file, "edi");
   restoreRegister(file, "esi");
   restoreRegister(file, "ebx");
-  file << "move esp, ebp" << std::endl;
+  file << "mov esp, ebp" << std::endl;
   restoreRegister(file, "ebp");
 }
 
 int numOfFormalParameters(Token *ListToken){
-  int level = 0;
+  int level = 1;
   while (ListToken->m_generated_tokens.size() > 0){
     ListToken = &(ListToken->m_generated_tokens[0]);
     level += 1;
@@ -50,7 +50,8 @@ void setLocationForFormalParameterList(Token *ListToken, int offset){
       n.loc = "ebp + " + std::to_string(offset);
     }
     else{
-      setLocationForFormalParameterList(&n, offset+4);
+      offset -= 4;
+      setLocationForFormalParameterList(&n, offset);
     }
   }
 }
@@ -59,6 +60,9 @@ void GenerateCode::pushArguments(std::ofstream &file, Token *argumentList){
   for(Token& n: argumentList->m_generated_tokens){
     if (n.m_type == ArgumentList){
       pushArguments(file, &n);
+    }
+    else if (n.m_type == T_COMMA){
+      file << std::endl << "push ";
     }
     else{
       generateToken(file, &n);
@@ -76,36 +80,69 @@ Token *getDeclaration(Token *name){
 }
 
 void GenerateCode::generateToken(std::ofstream &file, Token *t){
-  if (t->m_type == MethodDeclarator){
+  if (t->m_type == MethodDeclaration){
+    Token *methodDeclarator =  t->SearchByTypeDFS(MethodDeclarator);
+
     // currently using declaration as method label
-    Token *identifierToken = &(t->m_generated_tokens[0]);
+    Token *identifierToken = &(methodDeclarator->m_generated_tokens[0]);
     file << identifierToken->declaration << ":" << std::endl;
     saveRegisters(file);
-    Token *formalParams = t->SearchByTypeDFS(FormalParameterList);
-    if (formalParams){setLocationForFormalParameterList(formalParams,8);}
+    Token *formalParams = methodDeclarator->SearchByTypeDFS(FormalParameterList);
+    if (formalParams){
+      int offset = numOfFormalParameters(formalParams)*4+4;
+      setLocationForFormalParameterList(formalParams,offset);
+    }
+    bool skipHeader = true;
     for(Token& n: t->m_generated_tokens){
-      generateToken(file, &n);
+      if (!skipHeader) generateToken(file, &n);
+      skipHeader = false;
     }
     restoreRegisters(file);
-  }
+    file << "ret" << std::endl;
+   }
 
   else if (t->m_type == MethodInvocation){
+    file << "ebx" << std::endl;
     Token *argumentList = t->SearchByTypeDFS(ArgumentList);
-    if (argumentList) { pushArguments(file, argumentList); }
+    if (argumentList) { 
+      file << "push ";
+      pushArguments(file, argumentList);
+      file << std::endl;
+    }
     Token *labelToken = getDeclaration(&(t->m_generated_tokens[0]));
     file << "call " << labelToken << std::endl;
     // currently method declarations are not connected
     if (labelToken) {
       Token *formalParameterList = labelToken->SearchByTypeDFS(FormalParameterList);
       if (formalParameterList) {
-        int offset = numOfFormalParameters(formalParameterList);
+        int offset = numOfFormalParameters(formalParameterList)*4;
         file << "add esp, " << offset << std::endl;
       }
     }
+    file << "mov eax, ebx" << std::endl;
+  }
+  
+  else if (t->m_type == INT_LITERAL){
+    file << t->m_lex;
+  }
+  else if (t->m_type == T_IDENTIFIER){
+    if (t->declaration) file << t->declaration->loc;
+  }
+  else if (t->m_type == ReturnStatement){
+    if (t->m_generated_tokens[1].m_generated_tokens.size() == 0){
+      file << "mov eax, ";
+      generateToken(file, &(t->m_generated_tokens[1]));
+      file << std::endl;
+    }
+    else {
+      generateToken(file, &(t->m_generated_tokens[1]));
+    }
   }
 
-  for(Token& n: t->m_generated_tokens){
-    generateToken(file, &n);
+  else {
+    for(Token& n: t->m_generated_tokens){
+      generateToken(file, &n);
+    }
   }
 }
 
