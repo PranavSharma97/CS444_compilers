@@ -4,13 +4,14 @@
 #include "environment.h"
 #include <string>
 #include <vector>
+#include "type.h"
 
 class Token{
  public:
   TokenType m_type;
   std::string m_lex;
   std::string m_display_name;
-
+  TCType checkedType;
   int m_rule;
   environment scope;
   Token* declaration;

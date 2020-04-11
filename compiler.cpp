@@ -15,10 +15,24 @@
 #include "type_linker.h"
 #include "color_print.h"
 #include "name_checker.h"
-
+#include "type_checker.h"
 
 using namespace std;
 
+void CheckToken(Token* t){
+  if(t->m_type == T_IDENTIFIER && t->declaration) {
+    std::cerr << "IDENTIFIER: " << t->m_lex << " is connected to " << t->declaration->m_display_name << std::endl;
+  }
+  else if (t->m_type == T_IDENTIFIER){
+    std::cerr << "IDENTIFIER: " << t->m_lex << " is not connected" << std::endl;
+  }  
+  else if(t->m_generated_tokens.size() > 0){
+    for(Token& child: t->m_generated_tokens){
+      CheckToken(&child);
+    }
+  }
+  return;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -125,7 +139,32 @@ int main(int argc, char *argv[]) {
   // TPLink.set_object_interface(&object_interface);
   if(!TPLink.Link()) return 42;
   if(!NCheck.CheckNames()) return 42;
+//  for(Token* t: tree_ptrs){
+//    if (!NCheck.LinkStringLiterals(t)) return 42;
+//  }  
+
+  /* 
+  cerr<<endl<<endl;
+  for (Token *ptr: tree_ptrs) {
+    //cerr<<ptr->m_generated_tokens[ptr->m_generated_tokens.size() -1].m_type<<endl;
+    if (ptr->m_generated_tokens[1].m_generated_tokens[ptr->m_generated_tokens[1].m_generated_tokens.size() -1].m_type == ClassDeclaration) {
+      cerr<<"Class name is: "<<ptr->m_generated_tokens[1].m_generated_tokens[ptr->m_generated_tokens[1].m_generated_tokens.size() -1].m_generated_tokens[2].m_lex<<endl;
+      if (ptr->m_generated_tokens[1].m_generated_tokens[ptr->m_generated_tokens[1].m_generated_tokens.size() -1].m_generated_tokens[2].m_lex == "String")
+        CheckToken(ptr);
+    }
+    //std::cout << "FILE " << std::endl; CheckToken(ptr);
+  }*/
   
+  try {
+    for(Token* t: tree_ptrs){
+      checkTypes(t);
+    }
+  }
+  catch (std::exception& e){
+    cerr<<e.what()<<endl;
+    return 42;
+  }
+
   /*
   for(Token* ti: tree_ptrs){
     vector<Token*> queue;
