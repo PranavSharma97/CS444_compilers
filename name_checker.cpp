@@ -713,10 +713,10 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
       if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression || t == MethodDeclarator){
         methodOrConstructor = true;
       }
-      if (t == FormalParameter || t == ArgumentList || (it-1)->m_type == T_LEFT_ROUND_BRACKET){
+      if (t == FormalParameter || t == ArgumentList || (*it).m_type == ArrayAccess || (it+1)->m_type == T_RIGHT_ROUND_BRACKET ||
+         ((it-1)->m_type == T_LEFT_ROUND_BRACKET && !(it+1)->m_type == T_LEFT_ROUND_BRACKET)){
         methodOrConstructor = false;
       }
-      if (root->m_type != FormalParameter && (it+1)->m_type == T_LEFT_ROUND_BRACKET){methodOrConstructor = true;}
       
       // constructor declarator blocks need to have access to all variables, fields, methods inside its parent class
       if (t == ConstructorDeclaration){
