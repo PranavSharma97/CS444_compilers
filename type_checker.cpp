@@ -967,7 +967,7 @@ bool isAssignable(TCType lhs, TCType rhs) {
   }
   else if ((rhs.type == 0) && (rhs.primitive == "char")) {
     // Char can only be assigned to char or int
-    if ((lhs.type != 0) || ((lhs.primitive != "char") && (lhs.primitive != "int") && (lhs.primitive != "byte") && (lhs.primitive != "short"))) {
+    if ((lhs.type != 0) || ((lhs.primitive != "char") && (lhs.primitive != "int"))) {
       return false;
     }
   }
