@@ -85,6 +85,7 @@ void GenerateCode::generateToken(std::ofstream &file, Token *t){
 
     // currently using declaration as method label
     Token *identifierToken = &(methodDeclarator->m_generated_tokens[0]);
+    file << ";" << identifierToken->m_lex << std::endl;
     file << identifierToken->declaration << ":" << std::endl;
     saveRegisters(file);
     Token *formalParams = methodDeclarator->SearchByTypeDFS(FormalParameterList);

@@ -42,6 +42,7 @@ class Token{
   Token* SearchByTypeDFS(TokenType type);
   // Get the one direct child that matches type
   Token* SearchOneChild(TokenType type);
+  int GetObjSize() const;
   void clear();
   friend std::ostream& operator<<(std::ostream& os, const Token& t);
 };

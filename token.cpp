@@ -723,7 +723,14 @@ Token* Token::SearchOneChild(TokenType type){
   return nullptr;
 }
 
-
+int Token::GetObjSize() const{
+  if(m_type == TokenType::ClassDeclaration ||
+     m_type == TokenType::InterfaceDeclaration){
+    return (scope.fields.size())<<2;
+  }else{
+    return -1;
+  }
+}
 std::ostream& operator<<(std::ostream& os, const Token& t){
   os << t.m_display_name;
   return os;
