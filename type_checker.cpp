@@ -458,10 +458,13 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
           castType.type = 3;
         }
       }
-      
-      // Must be assignable in atleast 1 direction
-      if ((isAssignable(expressionType, castType) == false) && (isAssignable(castType, expressionType) == false))  {
-        throw std::logic_error("Type checking error: CastExpression not assignable");
+     
+      // If 1 of them is not numeric
+      if (numericTypes.find(expressionType.primitive) == numericTypes.end() || numericTypes.find(castType.primitive) == numericTypes.end()) {
+        // Must be assignable in atleast 1 direction
+        if ((isAssignable(expressionType, castType) == false) && (isAssignable(castType, expressionType) == false))  {
+          throw std::logic_error("Type checking error: CastExpression not assignable");
+        }
       }
 
       current->checkedType = castType;
