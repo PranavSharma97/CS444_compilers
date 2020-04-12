@@ -427,10 +427,10 @@ Token* environment::GetInterface(std::string& name){
 
 Token* environment::GetDeclaration(std::string& name){
   Token *declaration = nullptr;
-  
-  if(localVariables.find(name) != localVariables.end()) declaration = localVariables[name];
+
+  if(formalParameters.find(name) != formalParameters.end()) declaration = formalParameters[name];
+  else if(localVariables.find(name) != localVariables.end()) declaration = localVariables[name];
   else if(fields.find(name) != fields.end()) declaration = fields[name];
-  else if(formalParameters.find(name) != formalParameters.end()) declaration = formalParameters[name];
   else if(classes.find(name) != classes.end()) declaration = classes[name];
 
   return declaration;
