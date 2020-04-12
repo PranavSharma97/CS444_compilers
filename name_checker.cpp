@@ -528,8 +528,9 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
 
   ***************************** COMMENTS END ********************/
   TokenType t = root->type();
-  envs[0]->force_merge(root->scope);
-
+  if (t != ClassDeclaration && t != InterfaceDeclaration){
+    envs[0]->force_merge(root->scope);
+  }
   environment next_local_env(*(envs[0]));
 
   environment* new_envs[4];
@@ -569,6 +570,28 @@ bool NameChecker::ResolveNameSpaces(Token* root, environment** envs){
   return true;
 }
 
+bool checkSelfDeclaration(Token *t, int beforeEqual, int brackets, std::string lex){
+  std::cout << "CHECKING IF " << lex << " is self declared" << std::endl;
+  std::cout << "beforeEqual: " << beforeEqual << std::endl;
+  std::cout << "token " << t->m_display_name << " lex: " << t->m_lex << std::endl;
+  for (std::vector<Token>::iterator it=t->m_generated_tokens.begin(); it!=t->m_generated_tokens.end(); it++){
+    if ((*it).m_type == T_EQUAL) beforeEqual = brackets;
+    if ((*it).m_type == T_LEFT_ROUND_BRACKET) brackets += 1;
+    //if ((*it).m_type == T_RIGHT_ROUND_BRACKET) brackets -= 1;
+
+    if ((*it).m_type == T_DOT) break;
+    if (beforeEqual == brackets && (*it).m_lex == lex && !((*(it+1)).m_type == T_LEFT_ROUND_BRACKET)){
+      std::cout << (*(it+1)).m_display_name << std::endl;
+      return false;
+    }
+    else if (t->m_type == ArgumentList && (*it).m_lex == lex) return false;
+    else {
+      if (!checkSelfDeclaration(&(*it), beforeEqual, brackets, lex)) return false;
+    }
+  }
+  return true;
+}
+
 bool NameChecker::ResolveFieldDeclarations(Token* root, environment** envs){
   TokenType t = root->type();
   if (t != ClassDeclaration && t!= InterfaceDeclaration){
@@ -588,15 +611,7 @@ bool NameChecker::ResolveFieldDeclarations(Token* root, environment** envs){
     Token *identifierToken = declarationToken.SearchByTypeDFS(T_IDENTIFIER);
     std::string identifier = identifierToken->m_lex;
 
-    Token *rightHandToken = root->SearchByTypeDFS(VariableDeclarator);
-    Token mostRightToken;
-    if (rightHandToken && 
-        rightHandToken->SearchByTypeDFS(ClassInstanceCreationExpression) == nullptr &&
-        rightHandToken->SearchByTypeDFS(PrimaryNoNewArray) == nullptr) mostRightToken = rightHandToken->m_generated_tokens.back();
-    Token *rightHandIdentifier = nullptr;
-
-    if (rightHandToken) rightHandIdentifier = mostRightToken.SearchByTypeDFS(T_IDENTIFIER);
-    if (rightHandIdentifier && rightHandIdentifier->m_lex == identifier){
+    if (!checkSelfDeclaration(root, -1, 0, identifier)){
       RED();
       std::cout << "Error cannot use field name \"" << identifier <<  "\" in self declaration" << std::endl;
       DEFAULT();
@@ -610,7 +625,10 @@ bool NameChecker::ResolveFieldDeclarations(Token* root, environment** envs){
   return true;
 }
 
-bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool methodOrConstructor, bool checkScope){
+
+// checkScope is used as an indicator, 1 means it is called from ResolveFields,
+// 2 means it is called from resolve fields and there is an equal sign next
+bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool methodOrConstructor, int checkScope){
   TokenType t = root->type();
 
   envs[0]->force_merge(root->scope);
@@ -689,7 +707,7 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
         std::cout << "SEARCHING FOR " << "java.lang."+root->m_lex << std::endl;
         declaration = m_packages->GetQualified("java.lang."+root->m_lex);
       }
-      if (!declaration) {
+      if (!declaration && checkScope != 2) {
         RED();
         std::cerr << "Error: cannot find variable: " << root->m_lex << std::endl;
         DEFAULT();
@@ -704,11 +722,12 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
     }
   } 
   if (t!=QualifiedName) {
-    int inscope = 0;
+    int oldCheckScope = checkScope;
     for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
       if (it->type() == T_DOT){ break; }
-      else if (checkScope && it->type() == T_LEFT_ROUND_BRACKET) inscope += 1;
-      else if (checkScope && it->type() == T_RIGHT_ROUND_BRACKET) inscope -= 1;
+
+      if ((it+1)->m_type == T_EQUAL) checkScope += 1;
+      else checkScope = oldCheckScope;
 
       if (t == ExplicitConstructorInvocation || t == MethodInvocation || t == ClassInstanceCreationExpression || t == MethodDeclarator){
         methodOrConstructor = true;
@@ -723,15 +742,12 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
         new_envs[0]->merge(root->scope);
       }
 
-      if (!checkScope || inscope == 0){
-        if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
-          t == MethodHeader || t == ConstructorDeclarator){
-          if (!ResolveExpressions(&(*it), envs, methodOrConstructor, checkScope)) return false;
-        }
-        // imports, ArrayType, CastExpression are all types that will be resolved later
-        else if (t != SingleTypeImportDeclaration && t != TypeImportOnDemandDeclaration && t != PackageDeclaration) {
-          if (!ResolveExpressions(&(*it), new_envs, methodOrConstructor, checkScope)) return false;
-        }
+      if (t == LocalVariableDeclarationStatement || t == FormalParameterList || t == FormalParameter || t == MethodDeclarator ||
+        t == MethodHeader || t == ConstructorDeclarator){
+        if (!ResolveExpressions(&(*it), envs, methodOrConstructor, checkScope)) return false;
+      }
+      else if (t != SingleTypeImportDeclaration && t != TypeImportOnDemandDeclaration && t != PackageDeclaration) {
+        if (!ResolveExpressions(&(*it), new_envs, methodOrConstructor, checkScope)) return false;
       }
     }
   }
