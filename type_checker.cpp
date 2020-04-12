@@ -372,6 +372,19 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
 			return checkedType;
     }
 
+    case ArrayType: {
+      TCType checkedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
+
+      if (checkedType.type == 0) {
+        checkedType.type = 2;
+      }
+      else if (checkedType.type == 1) {
+        checkedType.type = 3;
+      }
+
+      return checkedType;
+    }
+
     case AdditiveExpression: {
       //cerr<<"Inside Additive Expression"<<endl; 
       TCType leftCheckedType = typeCheck(&current->m_generated_tokens[0], currentClass, localEnv, returnType, isStatic);
@@ -460,7 +473,7 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       }
      
       // If 1 of them is not numeric
-      if (numericTypes.find(expressionType.primitive) == numericTypes.end() || numericTypes.find(castType.primitive) == numericTypes.end()) {
+      if ((numericTypes.find(expressionType.primitive) == numericTypes.end() || expressionType.type != 0) || (numericTypes.find(castType.primitive) == numericTypes.end() || castType.type != 0)) {
         // Must be assignable in atleast 1 direction
         if ((isAssignable(expressionType, castType) == false) && (isAssignable(castType, expressionType) == false))  {
           throw std::logic_error("Type checking error: CastExpression not assignable");
@@ -697,6 +710,10 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
         //cerr<<"Identifier..."<<endl;
         methodCalleeClass = currentClass;
         methodName = current->m_generated_tokens[0].m_lex;
+
+        if (isStatic == true) {
+          throw std::logic_error("Type checking error: MethodInvocation cannot use implicit T_THIS in static context");
+        }
       }
       // Qualified Name Static method call
       else if (current->m_generated_tokens[0].declaration->m_type == ClassDeclaration) {
@@ -757,9 +774,11 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
             
             if (signature.second[0]->m_generated_tokens[0].m_generated_tokens[0].SearchByTypeBFS(T_PROTECTED) != nullptr) {
               // Error if not in the same package, and not an inherited member
-              
-               if (methodCalleeClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) != currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) && ((methodCalleeClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr || currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr) || (currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex != methodCalleeClass->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex))) {
+              if (methodCalleeClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) != currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) && ((methodCalleeClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr || currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration) == nullptr) || (currentClass->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex != methodCalleeClass->compilation_unit->SearchByTypeDFS(PackageDeclaration)->m_generated_tokens[1].m_lex))) {
                 if (methodCalleeClass->scope.methodsWithSignaturesInherited.find(methodName) == methodCalleeClass->scope.methodsWithSignaturesInherited.end() || methodCalleeClass->scope.methodsWithSignaturesInherited[methodName].find(argSignature) == methodCalleeClass->scope.methodsWithSignaturesInherited[methodName].end()) {
+                  throw std::logic_error("Type checking error: MethodInvocation Protected method error");
+                }
+                else {
                   if (methodCalleeClass->scope.methodsWithSignaturesInherited[methodName][argSignature][0]->SearchByTypeDFS(ClassDeclaration) && isSubtype(methodCalleeClass->scope.methodsWithSignaturesInherited[methodName][argSignature][0]->SearchByTypeDFS(ClassDeclaration), currentClass) == false) {
                     throw std::logic_error("Type checking error: MethodInvocation Protected method error"); 
                   }
@@ -857,6 +876,20 @@ TCType typeCheck(Token* current, Token* currentClass, environment localEnv, TCTy
       string className = creationType.reference->m_generated_tokens[2].m_lex;
       bool signatureMatch = false;
       TCType checkedType;
+      bool isAbstract = false;
+
+      // Check that class must not be abstract
+      for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> method: creationType.reference->scope.methodsWithSignatures) {
+        for (std::pair<std::string,std::vector<Token*>> signature: method.second) {
+          if (signature.second[0]->Abstract == true) {
+            isAbstract = true;
+          }
+        }
+      }
+
+      if (isAbstract == true) {
+        throw std::logic_error("Type checking error: ClassInstanceCreationExpression cannot instantiate Abstract class");
+      }
 
       // Check that constructors have same name as class
       for (std::pair<std::string, std::map<std::string,std::vector<Token*>>> constructor: creationType.reference->scope.constructorsWithSignatures) {
