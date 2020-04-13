@@ -724,7 +724,7 @@ bool NameChecker::ResolveExpressions(Token* root, environment** envs, bool metho
   if (t!=QualifiedName) {
     int oldCheckScope = checkScope;
     for(std::vector<Token>::iterator it=root->m_generated_tokens.begin(); it!=root->m_generated_tokens.end(); it++){
-      if (it->type() == T_DOT){ break; }
+      if (it->type() == T_DOT && (it+2)->m_type != T_LEFT_ROUND_BRACKET){ break; }
 
       if ((it+1)->m_type == T_EQUAL) checkScope += 1;
       else checkScope = oldCheckScope;
