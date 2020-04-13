@@ -62,7 +62,7 @@ void GenerateCode::pushArguments(std::ofstream &file, Token *argumentList){
       pushArguments(file, &n);
     }
     else if (n.m_type == T_COMMA){
-      file << std::endl << "push ";
+      file << "push ebx" << std::endl;
     }
     else{
       generateToken(file, &n);
@@ -103,12 +103,10 @@ void GenerateCode::generateToken(std::ofstream &file, Token *t){
    }
 
   else if (t->m_type == MethodInvocation){
-    file << "ebx" << std::endl;
     Token *argumentList = t->SearchByTypeDFS(ArgumentList);
     if (argumentList) { 
-      file << "push ";
       pushArguments(file, argumentList);
-      file << std::endl;
+      file << "push ebx" << std::endl;
     }
     Token *labelToken = getDeclaration(&(t->m_generated_tokens[0]));
     file << "call " << labelToken << std::endl;
@@ -124,16 +122,15 @@ void GenerateCode::generateToken(std::ofstream &file, Token *t){
   }
   
   else if (t->m_type == INT_LITERAL){
-    file << t->m_lex;
+    file << "mov ebx, " << t->m_lex << std::endl;
   }
   else if (t->m_type == T_IDENTIFIER){
-    if (t->declaration) file << t->declaration->loc;
+    if (t->declaration) file << "mov ebx, [" << t->declaration->loc << "]" << std::endl;
   }
   else if (t->m_type == ReturnStatement){
     if (t->m_generated_tokens[1].m_generated_tokens.size() == 0){
-      file << "mov eax, ";
       generateToken(file, &(t->m_generated_tokens[1]));
-      file << std::endl;
+      file << "mov eax, ebx" << std::endl;
     }
     else {
       generateToken(file, &(t->m_generated_tokens[1]));
