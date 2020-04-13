@@ -85,8 +85,9 @@ void GenerateCode::generateToken(std::ofstream &file, Token *t){
 
     // currently using declaration as method label
     Token *identifierToken = &(methodDeclarator->m_generated_tokens[0]);
+    file << "jmp " << identifierToken->m_lex << identifierToken->declaration << "end" << std::endl;
     file << ";" << identifierToken->m_lex << std::endl;
-    file << identifierToken->declaration << ":" << std::endl;
+    file << identifierToken->m_lex << identifierToken->declaration << ":" << std::endl;
     saveRegisters(file);
     Token *formalParams = methodDeclarator->SearchByTypeDFS(FormalParameterList);
     if (formalParams){
@@ -100,6 +101,7 @@ void GenerateCode::generateToken(std::ofstream &file, Token *t){
     }
     restoreRegisters(file);
     file << "ret" << std::endl;
+    file << identifierToken->m_lex << identifierToken->declaration << "end:" << std::endl;
    }
 
   else if (t->m_type == MethodInvocation){
@@ -109,7 +111,8 @@ void GenerateCode::generateToken(std::ofstream &file, Token *t){
       file << "push ebx" << std::endl;
     }
     Token *labelToken = getDeclaration(&(t->m_generated_tokens[0]));
-    file << "call " << labelToken << std::endl;
+
+    file << "call " << t->m_generated_tokens[0].m_lex << labelToken << std::endl; 
     // currently method declarations are not connected
     if (labelToken) {
       Token *formalParameterList = labelToken->SearchByTypeDFS(FormalParameterList);
@@ -168,6 +171,11 @@ int GenerateCode::Generate(){
       file << "_start:" << std::endl;
     }
     generateToken(file, tree_ptr);
+    if (index == 1){
+      file << "mov eax, 1" << std::endl;
+      file << "mov ebx, 123" << std::endl;
+      file << "int 0x80" << std::endl;
+    }
     file.close();
     index++;
   }
