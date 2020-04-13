@@ -136,6 +136,18 @@ void GenerateCode::generateToken(std::ofstream &file, Token *t){
       generateToken(file, &(t->m_generated_tokens[1]));
     }
   }
+  else if (t->m_type == ClassDeclaration){
+    // TODO
+    for(Token& n: t->m_generated_tokens.back().m_generated_tokens){
+      generateToken(file, &n);
+    }
+  }
+  else if (t->m_type == ConstructorDeclaration){
+    // TODO
+    for(Token& n: t->m_generated_tokens.back().m_generated_tokens){
+      generateToken(file, &n);
+    }
+  }
 
   else {
     for(Token& n: t->m_generated_tokens){
@@ -151,7 +163,7 @@ int GenerateCode::Generate(){
   int index = 0;
   for(Token* tree_ptr: tree_ptrs){
     std::ofstream file("output/"+fileName+std::to_string(index)+".s");
-    if (index == 0){
+    if (index == 1){
       file << "global _start" << std::endl;
       file << "_start:" << std::endl;
     }
