@@ -98,10 +98,15 @@ int main(int argc, char *argv[]) {
   }
     
   for(int i = 0; i<parse_trees.size();i++){
-    BuildEnvironment(&parse_trees[i]);
-    tree_ptrs.emplace_back((&parse_trees[i]));
-    vector<int> levels{0};
-    printEnvironments(levels,&parse_trees[i]);
+    try{
+      BuildEnvironment(&parse_trees[i]);
+      tree_ptrs.emplace_back((&parse_trees[i]));
+      vector<int> levels{0};
+      printEnvironments(levels,&parse_trees[i]);
+    } catch (std::exception& e){
+      std::cerr<<e.what()<<std::endl;
+      return 42;
+    }
     //printEnvironments(levels,&parse_trees[i-1],1);
   }
   //BuildEnvironment(&object_interface);
