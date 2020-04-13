@@ -21,7 +21,7 @@ class environment {
   void overwrite_merge(environment& src);
   // used for checking self import
   bool check_exist(Token* t);
-  
+  bool check_name_exist(const std::string& name);
   Token* GetType(std::string & name);
   Token* GetClass(std::string & name);
   Token* GetInterface(std::string & name);

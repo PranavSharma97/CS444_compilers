@@ -269,7 +269,7 @@ bool TypeLinker::ResolvePackage(Token* cun,environment** envs){
 	  pack_env = m_packages->Search(pack_name);
 	}else continue;
       }
-	
+      std::cout<<"PACK NAME:"<<pack_name<<std::endl;
       if(pack_env == nullptr){
 	RED();
 	std::cerr<<"Type Linker ERROR: cannot find ";
@@ -368,6 +368,7 @@ bool TypeLinker::Link(){
     file_index ++;
     
     // check if any package name is a class name
+    // Check single type import doesn't collide with local
     //if(!m_packages->CheckNames(envs)) return false;
     CYAN();
     std::cout<<"PACKAGE NAMES CHECKED"<<std::endl;
@@ -958,6 +959,18 @@ bool TypeLinker::ResolveAST(Token* root, environment** envs){
     if(root->m_generated_tokens.size() > 0 &&
        root->m_generated_tokens[2].type() == TokenType::T_IDENTIFIER ||
        root->m_generated_tokens[2].type() == TokenType::QualifiedName){
+      // check collision between class/interfce and single type import
+      
+	// check if it collide with local class interface
+	bool collide = false;
+	std::string type_name = root->m_generated_tokens[2].m_lex;
+	if(envs[1]->check_name_exist(type_name) &&
+	   envs[1]->GetType(type_name) != root){
+	  RED();
+	  std::cerr<<"SINGLE TYPE IMPORT ERROR: Import "<<type_name<<" collide with local class/interface name."<<std::endl;
+	  DEFAULT();
+	  return false;
+	}
       //CYAN();
       //std::cout<<"Link: "<<(*root)<<","<<root->m_lex<<std::endl;
       //DEFAULT();

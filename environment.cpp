@@ -143,6 +143,22 @@ bool environment::check_exist(Token* t){
   }
   return false;
 }
+
+bool environment::check_name_exist(const std::string& name){
+  std::cout<<"CHECK NAME EXIST:"<<name<<std::endl;
+  for(std::pair<std::string, Token*> kv: classes){
+    std::cout<<kv.first<<" ";
+  }
+  std::cout<<std::endl;
+  for(std::pair<std::string, Token*> kv: interfaces){
+    std::cout<<kv.first<<" ";
+  }
+  std::cout<<std::endl;
+  if(classes.find(name) != classes.end()) return true;
+  if(interfaces.find(name) != interfaces.end()) return true;
+  return false;
+}
+
 bool environment::merge(environment src,Token** clash_token){
   // Merge classes
   int counter = 0;
